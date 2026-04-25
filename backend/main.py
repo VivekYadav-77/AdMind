@@ -1,0 +1,154 @@
+import json
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import PlainTextResponse, StreamingResponse
+
+from agents.auditor import run_auditor
+from agents.copywriter import run_copywriter
+from agents.strategist import run_strategist
+from models.schemas import PipelineResult
+from services.csv_parser import parse_csv
+from services.gemini import GeminiError
+
+
+load_dotenv()
+
+app = FastAPI(title="AdMind API", version="1.0.0")
+
+cors_origins = [
+    origin.strip()
+    for origin in os.getenv("FRONTEND_ORIGINS", "http://localhost:5173").split(",")
+    if origin.strip()
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+BASE_DIR = Path(__file__).resolve().parent
+SAMPLE_CSV_PATH = BASE_DIR / "sample_data.csv"
+
+
+def _sse_event(event: str, data):
+    return f"data: {json.dumps({'event': event, 'data': data})}\n\n"
+
+
+async def _read_csv_upload(file: UploadFile) -> str:
+    if not file.filename or not file.filename.lower().endswith(".csv"):
+        raise HTTPException(status_code=400, detail="Only CSV files accepted")
+
+    content = await file.read()
+    try:
+        return content.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise HTTPException(status_code=400, detail="CSV must be UTF-8 encoded") from exc
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "version": "1.0.0"}
+
+
+@app.get("/sample-csv")
+async def get_sample_csv():
+    if not SAMPLE_CSV_PATH.exists():
+        raise HTTPException(status_code=404, detail="Sample CSV not found")
+
+    return PlainTextResponse(
+        SAMPLE_CSV_PATH.read_text(encoding="utf-8"),
+        media_type="text/csv",
+        headers={"Content-Disposition": 'attachment; filename="sample_ads.csv"'},
+    )
+
+
+@app.post("/analyze")
+async def analyze(file: UploadFile = File(...)):
+    csv_text = await _read_csv_upload(file)
+
+    async def event_stream():
+        try:
+            yield _sse_event("start", {"message": "Pipeline started", "total_steps": 3})
+
+            rows, stats = parse_csv(csv_text)
+            yield _sse_event(
+                "csv_parsed",
+                {
+                    "rows": stats["total_rows"],
+                    "total_spend": stats["total_spend"],
+                    "total_revenue": stats["total_revenue"],
+                },
+            )
+
+            yield _sse_event(
+                "agent_start",
+                {"agent": "auditor", "message": "Analyzing campaign performance..."},
+            )
+            audit = await run_auditor(rows)
+            yield _sse_event(
+                "agent_done",
+                {"agent": "auditor", "result": audit.model_dump()},
+            )
+
+            yield _sse_event(
+                "agent_start",
+                {"agent": "strategist", "message": "Generating strategy recommendations..."},
+            )
+            strategy = await run_strategist(rows, audit)
+            yield _sse_event(
+                "agent_done",
+                {"agent": "strategist", "result": strategy.model_dump()},
+            )
+
+            yield _sse_event(
+                "agent_start",
+                {"agent": "copywriter", "message": "Rewriting underperforming ad copy..."},
+            )
+            copy = await run_copywriter(rows, audit)
+            yield _sse_event(
+                "agent_done",
+                {"agent": "copywriter", "result": copy.model_dump()},
+            )
+
+            final = PipelineResult(audit=audit, strategy=strategy, copy=copy)
+            yield _sse_event("complete", final.model_dump())
+        except Exception as exc:
+            yield _sse_event("error", {"message": str(exc)})
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@app.post("/analyze-sync")
+async def analyze_sync(file: UploadFile = File(...)):
+    try:
+        csv_text = await _read_csv_upload(file)
+        rows, _stats = parse_csv(csv_text)
+
+        audit = await run_auditor(rows)
+        strategy = await run_strategist(rows, audit)
+        copy = await run_copywriter(rows, audit)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except GeminiError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    return PipelineResult(audit=audit, strategy=strategy, copy=copy)
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)

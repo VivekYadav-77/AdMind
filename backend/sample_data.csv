@@ -1,0 +1,11 @@
+campaign_name,ad_group,keyword,impressions,clicks,ctr,avg_cpc,spend,conversions,conversion_rate,revenue
+Summer Sale,Shoes,running shoes,10000,120,1.2%,2.50,300,2,1.67%,100
+Summer Sale,Shoes,buy shoes online,5000,20,0.4%,3.00,60,0,0%,0
+Brand Campaign,Homepage,brand name,8000,400,5.0%,0.80,320,45,11.25%,2250
+Competitor,Rival Brand,competitor name,3000,15,0.5%,4.50,67.5,0,0%,0
+Winter Promo,Jackets,winter jackets,6000,90,1.5%,2.20,198,8,8.89%,480
+Winter Promo,Jackets,cheap jackets,4000,22,0.55%,1.80,39.6,0,0%,0
+Retargeting,All Visitors,retargeting,2000,180,9.0%,1.20,216,30,16.67%,1500
+Display,Awareness,display banner,50000,100,0.2%,5.00,500,0,0%,0
+Search Brand,Mobile,mobile brand,3500,280,8.0%,0.90,252,22,7.86%,1100
+Search,Electronics,wireless headphones,7000,85,1.21%,3.20,272,3,3.53%,270
