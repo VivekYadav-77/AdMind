@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from pydantic import BaseModel
 
@@ -15,6 +15,9 @@ class AdRow(BaseModel):
     conversions: int
     conversion_rate: str
     revenue: float
+    device: Optional[str] = None
+    location: Optional[str] = None
+    age_group: Optional[str] = None
 
 
 class AuditIssue(BaseModel):
@@ -24,6 +27,8 @@ class AuditIssue(BaseModel):
     severity: str
     spend: float
     detail: str
+    segment_type: Optional[str] = None
+    segment_value: Optional[str] = None
 
 
 class AuditResult(BaseModel):
@@ -33,6 +38,7 @@ class AuditResult(BaseModel):
     wasted_spend: float
     issues: List[AuditIssue]
     summary: str
+    segment_anomalies: Optional[List[AuditIssue]] = None
 
 
 class StrategyRecommendation(BaseModel):
@@ -48,14 +54,19 @@ class StrategyResult(BaseModel):
     summary: str
 
 
+class ABTestVariant(BaseModel):
+    label: str
+    angle: str
+    headline: str
+    description: str
+
+
 class CopyVariant(BaseModel):
     keyword: str
     campaign_name: str
-    original_headline: str
-    original_description: str
-    new_headline: str
-    new_description: str
-    improvement_reason: str
+    test_a: ABTestVariant
+    test_b: ABTestVariant
+    test_rationale: str
 
 
 class CopyResult(BaseModel):
@@ -66,5 +77,5 @@ class CopyResult(BaseModel):
 class PipelineResult(BaseModel):
     audit: AuditResult
     strategy: StrategyResult
-    copy: CopyResult
+    copy_results: CopyResult
     status: str = "complete"

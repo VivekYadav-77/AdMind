@@ -1,11 +1,21 @@
-campaign_name,ad_group,keyword,impressions,clicks,ctr,avg_cpc,spend,conversions,conversion_rate,revenue
-Summer Sale,Shoes,running shoes,10000,120,1.2%,2.50,300,2,1.67%,100
-Summer Sale,Shoes,buy shoes online,5000,20,0.4%,3.00,60,0,0%,0
-Brand Campaign,Homepage,brand name,8000,400,5.0%,0.80,320,45,11.25%,2250
-Competitor,Rival Brand,competitor name,3000,15,0.5%,4.50,67.5,0,0%,0
-Winter Promo,Jackets,winter jackets,6000,90,1.5%,2.20,198,8,8.89%,480
-Winter Promo,Jackets,cheap jackets,4000,22,0.55%,1.80,39.6,0,0%,0
-Retargeting,All Visitors,retargeting,2000,180,9.0%,1.20,216,30,16.67%,1500
-Display,Awareness,display banner,50000,100,0.2%,5.00,500,0,0%,0
-Search Brand,Mobile,mobile brand,3500,280,8.0%,0.90,252,22,7.86%,1100
-Search,Electronics,wireless headphones,7000,85,1.21%,3.20,272,3,3.53%,270
+campaign_name,ad_group,keyword,impressions,clicks,ctr,avg_cpc,spend,conversions,conversion_rate,revenue,device,location,age_group
+Summer Sale,Shoes,running shoes,6000,80,1.33%,2.50,200,2,2.50%,100,Mobile,California,25-34
+Summer Sale,Shoes,running shoes,4000,40,1.00%,2.50,100,0,0%,0,Desktop,California,25-34
+Summer Sale,Shoes,buy shoes online,3000,12,0.40%,3.00,36,0,0%,0,Mobile,New York,18-24
+Summer Sale,Shoes,buy shoes online,2000,8,0.40%,3.00,24,0,0%,0,Desktop,New York,18-24
+Brand Campaign,Homepage,brand name,5000,300,6.00%,0.80,240,35,11.67%,1750,Desktop,Texas,35-44
+Brand Campaign,Homepage,brand name,3000,100,3.33%,0.80,80,10,10.00%,500,Mobile,Texas,35-44
+Competitor,Rival Brand,competitor name,2000,10,0.50%,4.50,45,0,0%,0,Desktop,Florida,25-34
+Competitor,Rival Brand,competitor name,1000,5,0.50%,4.50,22.5,0,0%,0,Mobile,Florida,25-34
+Winter Promo,Jackets,winter jackets,4000,60,1.50%,2.20,132,6,10.00%,360,Desktop,Illinois,35-44
+Winter Promo,Jackets,winter jackets,2000,30,1.50%,2.20,66,2,6.67%,120,Mobile,Illinois,35-44
+Winter Promo,Jackets,cheap jackets,2500,14,0.56%,1.80,25.2,0,0%,0,Desktop,Ohio,18-24
+Winter Promo,Jackets,cheap jackets,1500,8,0.53%,1.80,14.4,0,0%,0,Mobile,Ohio,18-24
+Retargeting,All Visitors,retargeting,1200,120,10.00%,1.20,144,22,18.33%,1100,Desktop,California,25-34
+Retargeting,All Visitors,retargeting,800,60,7.50%,1.20,72,8,13.33%,400,Mobile,California,25-34
+Display,Awareness,display banner,30000,60,0.20%,5.00,300,0,0%,0,Desktop,New York,45-54
+Display,Awareness,display banner,20000,40,0.20%,5.00,200,0,0%,0,Mobile,New York,45-54
+Search Brand,Mobile,mobile brand,1500,180,12.00%,0.90,162,18,10.00%,900,Mobile,Texas,25-34
+Search Brand,Mobile,mobile brand,2000,100,5.00%,0.90,90,4,4.00%,200,Desktop,Texas,25-34
+Search,Electronics,wireless headphones,4000,50,1.25%,3.20,160,2,4.00%,180,Desktop,California,25-34
+Search,Electronics,wireless headphones,3000,35,1.17%,3.20,112,1,2.86%,90,Mobile,California,25-34

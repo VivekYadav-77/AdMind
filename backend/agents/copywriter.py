@@ -6,8 +6,10 @@ from services.gemini import call_gemini
 
 
 SYSTEM_INSTRUCTION = """
-You are an expert direct-response copywriter specializing in paid search and social ads.
-You write headlines that are specific, benefit-focused, and create urgency without being spammy.
+You are an expert direct-response copywriter AND A/B testing strategist specializing in paid search and social ads.
+For every underperforming keyword, you produce two distinct ad variations (Test A and Test B) with
+completely different creative angles. You explain the strategic rationale for WHY these two angles
+should be tested against each other.
 You always respond with valid JSON only. No explanations outside the JSON.
 """.strip()
 
@@ -16,8 +18,22 @@ def _select_underperforming_rows(rows: List[AdRow], audit: AuditResult) -> List[
     issue_keywords = {issue.keyword for issue in audit.issues}
     selected = [row for row in rows if row.keyword in issue_keywords]
 
+    # Deduplicate by keyword (demographic rows create duplicates)
+    seen_keywords = set()
+    unique_selected = []
+    for row in selected:
+        if row.keyword not in seen_keywords:
+            seen_keywords.add(row.keyword)
+            unique_selected.append(row)
+    selected = unique_selected
+
     if len(selected) < 2:
-        selected = sorted(rows, key=lambda row: percent_to_float(row.ctr))[:2]
+        for row in sorted(rows, key=lambda r: percent_to_float(r.ctr)):
+            if row.keyword not in seen_keywords:
+                seen_keywords.add(row.keyword)
+                selected.append(row)
+            if len(selected) >= 2:
+                break
 
     return selected[:5]
 
@@ -33,17 +49,24 @@ def _format_keywords(rows: List[AdRow]) -> str:
 async def run_copywriter(rows: List[AdRow], audit: AuditResult) -> CopyResult:
     selected_rows = _select_underperforming_rows(rows, audit)
     prompt = f"""
-Rewrite ad copy for these underperforming keywords to improve CTR and conversions.
+Create structured A/B test ad copy for these underperforming keywords.
+For each keyword, produce TWO distinct creative angles to test against each other.
 
 KEYWORDS TO IMPROVE:
 {_format_keywords(selected_rows)}
 
-RULES FOR NEW COPY:
+RULES FOR EACH VARIATION:
 - Headlines: max 30 characters
 - Descriptions: max 90 characters
 - Be specific and benefit-focused
 - Include a clear call to action
 - Match user search intent for the keyword
+
+CREATIVE ANGLES TO CONSIDER:
+- Emotional hook vs Data-driven hook
+- Urgency-based vs Trust-based
+- Problem-focused vs Solution-focused
+- Benefit-led vs Feature-led
 
 Respond ONLY with this JSON structure:
 {{
@@ -51,14 +74,22 @@ Respond ONLY with this JSON structure:
     {{
       "keyword": "<keyword>",
       "campaign_name": "<campaign>",
-      "original_headline": "<generate a realistic original generic headline for this keyword>",
-      "original_description": "<generate a realistic original generic description>",
-      "new_headline": "<your improved headline>",
-      "new_description": "<your improved description>",
-      "improvement_reason": "<one sentence: what specific change you made and why>"
+      "test_a": {{
+        "label": "<short name for this angle, e.g. 'Emotional Hook'>",
+        "angle": "<1 sentence describing the creative strategy>",
+        "headline": "<your headline for test A>",
+        "description": "<your description for test A>"
+      }},
+      "test_b": {{
+        "label": "<short name for opposite angle, e.g. 'Data-Driven'>",
+        "angle": "<1 sentence describing the creative strategy>",
+        "headline": "<your headline for test B>",
+        "description": "<your description for test B>"
+      }},
+      "test_rationale": "<1-2 sentences explaining WHY testing these two angles will reveal which messaging resonates best with this audience>"
     }}
   ],
-  "summary": "<1-2 sentence summary of the copy strategy used>"
+  "summary": "<2-3 sentence summary of the overall A/B testing strategy>"
 }}
 """.strip()
 

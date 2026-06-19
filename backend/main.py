@@ -116,7 +116,7 @@ async def analyze(file: UploadFile = File(...)):
                 {"agent": "copywriter", "result": copy.model_dump()},
             )
 
-            final = PipelineResult(audit=audit, strategy=strategy, copy=copy)
+            final = PipelineResult(audit=audit, strategy=strategy, copy_results=copy)
             yield _sse_event("complete", final.model_dump())
         except Exception as exc:
             yield _sse_event("error", {"message": str(exc)})
@@ -145,7 +145,7 @@ async def analyze_sync(file: UploadFile = File(...)):
     except GeminiError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 
-    return PipelineResult(audit=audit, strategy=strategy, copy=copy)
+    return PipelineResult(audit=audit, strategy=strategy, copy_results=copy)
 
 
 if __name__ == "__main__":

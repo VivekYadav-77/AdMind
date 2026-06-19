@@ -16,6 +16,6 @@ async def run_pipeline(csv_content: str) -> PipelineResult:
     return PipelineResult(
         audit=audit_result,
         strategy=strategy_result,
-        copy=copy_result,
+        copy_results=copy_result,
         status="complete",
     )

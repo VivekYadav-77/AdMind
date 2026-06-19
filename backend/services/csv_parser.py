@@ -16,6 +16,8 @@ REQUIRED_COLUMNS = {
     "revenue",
 }
 
+OPTIONAL_COLUMNS = {"device", "location", "age_group"}
+
 
 def _clean_text(value: str | None) -> str:
     return (value or "").strip()
@@ -46,6 +48,10 @@ def parse_csv(raw_csv: str) -> Tuple[List[AdRow], Dict[str, float]]:
 
     if missing_columns:
         raise ValueError(f"Missing required CSV columns: {', '.join(missing_columns)}")
+
+    has_device = "device" in fieldnames
+    has_location = "location" in fieldnames
+    has_age_group = "age_group" in fieldnames
 
     rows: List[AdRow] = []
 
@@ -81,6 +87,9 @@ def parse_csv(raw_csv: str) -> Tuple[List[AdRow], Dict[str, float]]:
                 conversions=conversions,
                 conversion_rate=conversion_rate,
                 revenue=revenue,
+                device=_clean_text(raw_row.get("device")) if has_device else None,
+                location=_clean_text(raw_row.get("location")) if has_location else None,
+                age_group=_clean_text(raw_row.get("age_group")) if has_age_group else None,
             )
         )
 
