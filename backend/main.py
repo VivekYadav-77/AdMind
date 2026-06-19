@@ -3,19 +3,25 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse, StreamingResponse
+from sqlalchemy.orm import Session
 
 from agents.auditor import run_auditor
 from agents.copywriter import run_copywriter
 from agents.strategist import run_strategist
+from db.database import Base, engine, get_db
+from db.models import AnalysisJob
 from models.schemas import PipelineResult
 from services.csv_parser import parse_csv
 from services.gemini import GeminiError
 
 
 load_dotenv()
+
+# Create DB tables
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="AdMind API", version="1.0.0")
 
@@ -68,8 +74,14 @@ async def get_sample_csv():
     )
 
 
+@app.get("/history")
+def get_history(db: Session = Depends(get_db)):
+    jobs = db.query(AnalysisJob).order_by(AnalysisJob.created_at.desc()).all()
+    return jobs
+
+
 @app.post("/analyze")
-async def analyze(file: UploadFile = File(...)):
+async def analyze(file: UploadFile = File(...), db: Session = Depends(get_db)):
     csv_text = await _read_csv_upload(file)
 
     async def event_stream():
@@ -77,9 +89,22 @@ async def analyze(file: UploadFile = File(...)):
             yield _sse_event("start", {"message": "Pipeline started", "total_steps": 3})
 
             rows, stats = parse_csv(csv_text)
+            
+            # Create job in database
+            job = AnalysisJob(
+                total_rows=stats["total_rows"],
+                input_spend=stats["total_spend"],
+                input_revenue=stats["total_revenue"],
+                status="processing"
+            )
+            db.add(job)
+            db.commit()
+            db.refresh(job)
+
             yield _sse_event(
                 "csv_parsed",
                 {
+                    "job_id": job.id,
                     "rows": stats["total_rows"],
                     "total_spend": stats["total_spend"],
                     "total_revenue": stats["total_revenue"],
@@ -91,6 +116,10 @@ async def analyze(file: UploadFile = File(...)):
                 {"agent": "auditor", "message": "Analyzing campaign performance..."},
             )
             audit = await run_auditor(rows)
+            
+            job.audit_data = audit.model_dump()
+            db.commit()
+
             yield _sse_event(
                 "agent_done",
                 {"agent": "auditor", "result": audit.model_dump()},
@@ -101,6 +130,10 @@ async def analyze(file: UploadFile = File(...)):
                 {"agent": "strategist", "message": "Generating strategy recommendations..."},
             )
             strategy = await run_strategist(rows, audit)
+            
+            job.strategy_data = strategy.model_dump()
+            db.commit()
+
             yield _sse_event(
                 "agent_done",
                 {"agent": "strategist", "result": strategy.model_dump()},
@@ -111,6 +144,11 @@ async def analyze(file: UploadFile = File(...)):
                 {"agent": "copywriter", "message": "Rewriting underperforming ad copy..."},
             )
             copy = await run_copywriter(rows, audit)
+            
+            job.copy_data = copy.model_dump()
+            job.status = "complete"
+            db.commit()
+
             yield _sse_event(
                 "agent_done",
                 {"agent": "copywriter", "result": copy.model_dump()},
@@ -132,14 +170,35 @@ async def analyze(file: UploadFile = File(...)):
 
 
 @app.post("/analyze-sync")
-async def analyze_sync(file: UploadFile = File(...)):
+async def analyze_sync(file: UploadFile = File(...), db: Session = Depends(get_db)):
     try:
         csv_text = await _read_csv_upload(file)
-        rows, _stats = parse_csv(csv_text)
+        rows, stats = parse_csv(csv_text)
+
+        # Create job
+        job = AnalysisJob(
+            total_rows=stats["total_rows"],
+            input_spend=stats["total_spend"],
+            input_revenue=stats["total_revenue"],
+            status="processing"
+        )
+        db.add(job)
+        db.commit()
+        db.refresh(job)
 
         audit = await run_auditor(rows)
+        job.audit_data = audit.model_dump()
+        db.commit()
+
         strategy = await run_strategist(rows, audit)
+        job.strategy_data = strategy.model_dump()
+        db.commit()
+
         copy = await run_copywriter(rows, audit)
+        job.copy_data = copy.model_dump()
+        job.status = "complete"
+        db.commit()
+
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except GeminiError as exc:
