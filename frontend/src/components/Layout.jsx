@@ -1,6 +1,8 @@
-import { History, LayoutDashboard, LogOut, Settings } from 'lucide-react'
+import { History, LayoutDashboard, LogOut, Settings, ChevronDown, Plus } from 'lucide-react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useEffect, useState, useRef } from 'react'
+import { API } from '../services/api'
 import clsx from 'clsx'
 
 export default function Layout() {
@@ -12,6 +14,50 @@ export default function Layout() {
     logout()
     navigate('/login')
   }
+
+  const [workspaces, setWorkspaces] = useState([])
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState(
+    localStorage.getItem('activeWorkspaceId') || null
+  )
+  const [showDropdown, setShowDropdown] = useState(false)
+
+  useEffect(() => {
+    async function loadWorkspaces() {
+      try {
+        const data = await API.getWorkspaces()
+        setWorkspaces(data)
+        if (data.length > 0 && !activeWorkspaceId) {
+          handleWorkspaceChange(data[0].id)
+        }
+      } catch (e) {
+        console.error("Failed to load workspaces", e)
+      }
+    }
+    loadWorkspaces()
+  }, [])
+
+  const handleWorkspaceChange = (id) => {
+    setActiveWorkspaceId(id)
+    localStorage.setItem('activeWorkspaceId', id.toString())
+    setShowDropdown(false)
+    // Optional: reload the page or trigger a context update to refresh data
+    window.location.reload()
+  }
+
+  const handleNewWorkspace = async () => {
+    const name = prompt("Enter new workspace name:")
+    if (name) {
+      try {
+        const newWs = await API.createWorkspace(name)
+        setWorkspaces([...workspaces, newWs])
+        handleWorkspaceChange(newWs.id)
+      } catch (e) {
+        alert("Failed to create workspace")
+      }
+    }
+  }
+
+  const activeWorkspace = workspaces.find(w => w.id.toString() === activeWorkspaceId?.toString())
 
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
@@ -75,7 +121,7 @@ export default function Layout() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden z-10">
-        <header className="h-24 flex items-center px-10 shrink-0">
+        <header className="h-24 flex items-center justify-between px-10 shrink-0">
           <h1 className="text-2xl font-bold text-white tracking-tight">
             {location.pathname === '/' 
               ? 'Campaign Dashboard' 
@@ -87,6 +133,44 @@ export default function Layout() {
               ? 'System Settings'
               : 'Overview'}
           </h1>
+          
+          <div className="relative">
+            <button 
+              onClick={() => setShowDropdown(!showDropdown)}
+              className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors"
+            >
+              {activeWorkspace ? activeWorkspace.name : 'Loading...'}
+              <ChevronDown size={16} className="text-slate-400" />
+            </button>
+            
+            {showDropdown && (
+              <div className="absolute right-0 mt-2 w-56 bg-[#111625] border border-white/10 rounded-2xl shadow-xl overflow-hidden z-50">
+                <div className="p-2 space-y-1">
+                  {workspaces.map(ws => (
+                    <button
+                      key={ws.id}
+                      onClick={() => handleWorkspaceChange(ws.id)}
+                      className={clsx(
+                        "w-full text-left px-4 py-2.5 rounded-xl text-sm transition-colors",
+                        activeWorkspaceId?.toString() === ws.id.toString() 
+                          ? "bg-blue-600/20 text-blue-400 font-bold" 
+                          : "text-slate-300 hover:bg-white/5"
+                      )}
+                    >
+                      {ws.name}
+                    </button>
+                  ))}
+                  <div className="h-px bg-white/10 my-2" />
+                  <button
+                    onClick={handleNewWorkspace}
+                    className="w-full flex items-center gap-2 text-left px-4 py-2.5 rounded-xl text-sm text-slate-300 hover:bg-white/5 transition-colors"
+                  >
+                    <Plus size={16} /> New Workspace
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </header>
         <div className="p-10 pt-0 max-w-7xl mx-auto w-full h-full overflow-auto">
           <Outlet />

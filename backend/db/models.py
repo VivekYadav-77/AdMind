@@ -15,8 +15,33 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # Establish relationship to AnalysisJob
     analysis_jobs = relationship("AnalysisJob", back_populates="user")
+    workspaces = relationship("WorkspaceMember", back_populates="user")
+
+
+class Workspace(Base):
+    __tablename__ = "workspaces"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    owner = relationship("User")
+    members = relationship("WorkspaceMember", back_populates="workspace")
+    analysis_jobs = relationship("AnalysisJob", back_populates="workspace")
+
+
+class WorkspaceMember(Base):
+    __tablename__ = "workspace_members"
+
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    role = Column(String, default="member")  # e.g. "admin", "member"
+    joined_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    workspace = relationship("Workspace", back_populates="members")
+    user = relationship("User", back_populates="workspaces")
 
 
 class AnalysisJob(Base):
@@ -24,10 +49,11 @@ class AnalysisJob(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=True) # nullable for backward compatibility
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
-    # Establish relationship to User
     user = relationship("User", back_populates="analysis_jobs")
+    workspace = relationship("Workspace", back_populates="analysis_jobs")
     
     # Input stats
     total_rows = Column(Integer, default=0)
@@ -40,3 +66,19 @@ class AnalysisJob(Base):
     copy_data = Column(JSON, nullable=True)
     
     status = Column(String, default="processing")
+    progress_logs = Column(JSON, nullable=True)
+    error_message = Column(String, nullable=True)
+    
+    chat_messages = relationship("ChatMessage", back_populates="job")
+
+
+class ChatMessage(Base):
+    __tablename__ = "chat_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    job_id = Column(Integer, ForeignKey("analysis_jobs.id"), nullable=False)
+    role = Column(String, nullable=False) # "user" or "assistant"
+    content = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    job = relationship("AnalysisJob", back_populates="chat_messages")

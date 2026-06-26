@@ -1,4 +1,4 @@
-import { Calendar, CheckCircle2, Clock, BarChart3, TrendingUp, AlertTriangle } from 'lucide-react'
+import { Calendar, CheckCircle2, Clock, BarChart3, TrendingUp, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
@@ -15,12 +15,16 @@ export default function History() {
   const navigate = useNavigate()
   const [jobs, setJobs] = useState([])
   const [loading, setLoading] = useState(true)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
 
   useEffect(() => {
     async function fetchHistory() {
+      setLoading(true)
       try {
-        const data = await API.getHistory()
-        setJobs(data)
+        const data = await API.getHistory(page, 10)
+        setJobs(data.items || [])
+        setTotalPages(data.pages || 1)
       } catch (err) {
         console.error("Failed to fetch history", err)
       } finally {
@@ -28,7 +32,7 @@ export default function History() {
       }
     }
     fetchHistory()
-  }, [])
+  }, [page])
 
   if (loading) {
     return (
@@ -236,6 +240,28 @@ export default function History() {
             )
           })}
         </div>
+
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-4 mt-8 pt-4 border-t border-white/5">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="p-2 bg-white/5 rounded-xl hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 transition-colors"
+            >
+              <ChevronLeft size={20} className="text-slate-300" />
+            </button>
+            <span className="text-sm font-semibold text-slate-400">
+              Page {page} of {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="p-2 bg-white/5 rounded-xl hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-white/5 transition-colors"
+            >
+              <ChevronRight size={20} className="text-slate-300" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

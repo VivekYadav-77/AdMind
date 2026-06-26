@@ -1,23 +1,26 @@
 import json
 import os
+import asyncio
 from pathlib import Path
 from datetime import timedelta
+from typing import Optional
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, status
+from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, status, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from sqlalchemy import desc
 
 from agents.auditor import run_auditor
 from agents.copywriter import run_copywriter
 from agents.strategist import run_strategist
-from db.database import Base, engine, get_db
-from db.models import AnalysisJob, User
+from db.database import Base, engine, get_db, SessionLocal
+from db.models import AnalysisJob, User, Workspace, WorkspaceMember, ChatMessage
 from models.schemas import PipelineResult, UserCreate, Token
 from services.csv_parser import parse_csv
-from services.gemini import GeminiError
+from services.gemini import GeminiError, call_gemini_chat
 from auth import (
     verify_password,
     get_password_hash,
@@ -27,10 +30,10 @@ from auth import (
     ACCESS_TOKEN_EXPIRE_MINUTES
 )
 
+from pydantic import BaseModel
 
 load_dotenv()
 
-# Create DB tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="AdMind API", version="1.0.0")
@@ -68,19 +71,78 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     return user
 
 
-def _sse_event(event: str, data):
-    return f"data: {json.dumps({'event': event, 'data': data})}\n\n"
-
-
 async def _read_csv_upload(file: UploadFile) -> str:
     if not file.filename or not file.filename.lower().endswith(".csv"):
         raise HTTPException(status_code=400, detail="Only CSV files accepted")
-
     content = await file.read()
     try:
         return content.decode("utf-8-sig")
     except UnicodeDecodeError as exc:
         raise HTTPException(status_code=400, detail="CSV must be UTF-8 encoded") from exc
+
+
+def _append_job_log(db: Session, job_id: int, event: str, data: dict):
+    # Retrieve job, append log, commit. Needs to run in sync.
+    job = db.query(AnalysisJob).filter(AnalysisJob.id == job_id).first()
+    if job:
+        logs = job.progress_logs or []
+        logs.append({"event": event, "data": data})
+        # SQLAlchemy needs to know the JSON array changed
+        job.progress_logs = list(logs)
+        db.commit()
+
+async def run_analysis_task(job_id: int, csv_text: str):
+    # Open a new DB session for the background task
+    db = SessionLocal()
+    try:
+        _append_job_log(db, job_id, "start", {"message": "Pipeline started", "total_steps": 3})
+        
+        rows, stats = parse_csv(csv_text)
+        
+        job = db.query(AnalysisJob).filter(AnalysisJob.id == job_id).first()
+        job.total_rows = stats["total_rows"]
+        job.input_spend = stats["total_spend"]
+        job.input_revenue = stats["total_revenue"]
+        db.commit()
+
+        _append_job_log(db, job_id, "csv_parsed", {
+            "job_id": job.id,
+            "rows": stats["total_rows"],
+            "total_spend": stats["total_spend"],
+            "total_revenue": stats["total_revenue"],
+        })
+
+        _append_job_log(db, job_id, "agent_start", {"agent": "auditor", "message": "Analyzing campaign performance..."})
+        audit = await run_auditor(rows)
+        job.audit_data = audit.model_dump()
+        db.commit()
+        _append_job_log(db, job_id, "agent_done", {"agent": "auditor", "result": audit.model_dump()})
+
+        _append_job_log(db, job_id, "agent_start", {"agent": "strategist", "message": "Generating strategy recommendations..."})
+        strategy = await run_strategist(rows, audit)
+        job.strategy_data = strategy.model_dump()
+        db.commit()
+        _append_job_log(db, job_id, "agent_done", {"agent": "strategist", "result": strategy.model_dump()})
+
+        _append_job_log(db, job_id, "agent_start", {"agent": "copywriter", "message": "Rewriting underperforming ad copy..."})
+        copy = await run_copywriter(rows, audit)
+        job.copy_data = copy.model_dump()
+        job.status = "complete"
+        db.commit()
+        _append_job_log(db, job_id, "agent_done", {"agent": "copywriter", "result": copy.model_dump()})
+
+        final = PipelineResult(audit=audit, strategy=strategy, copy_results=copy)
+        _append_job_log(db, job_id, "complete", final.model_dump())
+
+    except Exception as exc:
+        job = db.query(AnalysisJob).filter(AnalysisJob.id == job_id).first()
+        if job:
+            job.status = "error"
+            job.error_message = str(exc)
+            db.commit()
+            _append_job_log(db, job_id, "error", {"message": str(exc)})
+    finally:
+        db.close()
 
 
 @app.get("/health")
@@ -100,6 +162,16 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
     
+    # Create default workspace
+    ws = Workspace(name="My Workspace", owner_id=new_user.id)
+    db.add(ws)
+    db.commit()
+    db.refresh(ws)
+    
+    ws_member = WorkspaceMember(workspace_id=ws.id, user_id=new_user.id, role="admin")
+    db.add(ws_member)
+    db.commit()
+
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": new_user.email}, expires_delta=access_token_expires
@@ -111,16 +183,9 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password", headers={"WWW-Authenticate": "Bearer"})
     
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
-    )
+    access_token = create_access_token(data={"sub": user.email}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     return {"access_token": access_token, "token_type": "bearer"}
 
 
@@ -128,7 +193,6 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
 async def get_sample_csv():
     if not SAMPLE_CSV_PATH.exists():
         raise HTTPException(status_code=404, detail="Sample CSV not found")
-
     return PlainTextResponse(
         SAMPLE_CSV_PATH.read_text(encoding="utf-8"),
         media_type="text/csv",
@@ -136,10 +200,138 @@ async def get_sample_csv():
     )
 
 
+# Workspace Endpoints
+class WorkspaceCreate(BaseModel):
+    name: str
+
+@app.get("/workspaces")
+def get_workspaces(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    members = db.query(WorkspaceMember).filter(WorkspaceMember.user_id == current_user.id).all()
+    workspaces = [m.workspace for m in members]
+    return [{"id": w.id, "name": w.name, "role": m.role} for m, w in zip(members, workspaces)]
+
+@app.post("/workspaces")
+def create_workspace(ws: WorkspaceCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    new_ws = Workspace(name=ws.name, owner_id=current_user.id)
+    db.add(new_ws)
+    db.commit()
+    db.refresh(new_ws)
+    member = WorkspaceMember(workspace_id=new_ws.id, user_id=current_user.id, role="admin")
+    db.add(member)
+    db.commit()
+    return {"id": new_ws.id, "name": new_ws.name, "role": "admin"}
+
+
+# Analyze Endpoints
+def _get_workspace_id(request: Request, db: Session, current_user: User):
+    # Try to get from header
+    wid = request.headers.get("X-Workspace-Id")
+    if wid:
+        # verify access
+        member = db.query(WorkspaceMember).filter(WorkspaceMember.workspace_id == int(wid), WorkspaceMember.user_id == current_user.id).first()
+        if member:
+            return int(wid)
+    # fallback to first workspace
+    first_member = db.query(WorkspaceMember).filter(WorkspaceMember.user_id == current_user.id).first()
+    if first_member:
+        return first_member.workspace_id
+    return None
+
+
+@app.post("/analyze")
+async def analyze(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...), 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    csv_text = await _read_csv_upload(file)
+    wid = _get_workspace_id(request, db, current_user)
+    
+    job = AnalysisJob(
+        user_id=current_user.id,
+        workspace_id=wid,
+        status="processing",
+        progress_logs=[]
+    )
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
+    background_tasks.add_task(run_analysis_task, job.id, csv_text)
+    return {"job_id": job.id}
+
+
+@app.get("/analyze/{job_id}/stream")
+async def analyze_stream(
+    job_id: int, 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Verify access
+    job = db.query(AnalysisJob).filter(AnalysisJob.id == job_id, AnalysisJob.user_id == current_user.id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    async def event_stream():
+        last_idx = 0
+        while True:
+            # Re-fetch job to get latest logs
+            db.refresh(job)
+            logs = job.progress_logs or []
+            
+            # Yield any new logs
+            for i in range(last_idx, len(logs)):
+                log = logs[i]
+                yield f"data: {json.dumps(log)}\n\n"
+            
+            last_idx = len(logs)
+            
+            if job.status in ["complete", "error"]:
+                break
+                
+            await asyncio.sleep(1)
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+# History Endpoints
 @app.get("/history")
-def get_history(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    jobs = db.query(AnalysisJob).filter(AnalysisJob.user_id == current_user.id).order_by(AnalysisJob.created_at.desc()).all()
-    return jobs
+def get_history(
+    request: Request,
+    page: int = 1, 
+    size: int = 10,
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    wid = _get_workspace_id(request, db, current_user)
+    query = db.query(AnalysisJob).filter(AnalysisJob.user_id == current_user.id)
+    if wid:
+        query = query.filter(AnalysisJob.workspace_id == wid)
+        
+    total = query.count()
+    jobs = query.order_by(desc(AnalysisJob.created_at)).offset((page - 1) * size).limit(size).all()
+    
+    # Return without the massive JSON payloads to keep list fast
+    return {
+        "items": [{
+            "id": j.id, 
+            "created_at": j.created_at, 
+            "status": j.status,
+            "total_rows": j.total_rows,
+            "input_spend": j.input_spend,
+            "input_revenue": j.input_revenue
+        } for j in jobs],
+        "total": total,
+        "page": page,
+        "size": size,
+        "pages": (total + size - 1) // size
+    }
 
 
 @app.get("/history/{job_id}")
@@ -157,144 +349,63 @@ def get_job_detail(
     return job
 
 
-@app.post("/analyze")
-async def analyze(
-    file: UploadFile = File(...), 
-    db: Session = Depends(get_db),
+# Chat Endpoints
+class ChatRequest(BaseModel):
+    message: str
+
+@app.get("/history/{job_id}/chat")
+def get_chat_history(job_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    job = db.query(AnalysisJob).filter(AnalysisJob.id == job_id, AnalysisJob.user_id == current_user.id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    messages = db.query(ChatMessage).filter(ChatMessage.job_id == job_id).order_by(ChatMessage.created_at).all()
+    return [{"role": m.role, "content": m.content, "created_at": m.created_at} for m in messages]
+
+@app.post("/history/{job_id}/chat")
+async def send_chat_message(
+    job_id: int, 
+    req: ChatRequest, 
+    db: Session = Depends(get_db), 
     current_user: User = Depends(get_current_user)
 ):
-    csv_text = await _read_csv_upload(file)
+    job = db.query(AnalysisJob).filter(AnalysisJob.id == job_id, AnalysisJob.user_id == current_user.id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    if job.status != "complete":
+        raise HTTPException(status_code=400, detail="Cannot chat until report is complete")
 
-    async def event_stream():
-        try:
-            yield _sse_event("start", {"message": "Pipeline started", "total_steps": 3})
+    # Save user message
+    user_msg = ChatMessage(job_id=job.id, role="user", content=req.message)
+    db.add(user_msg)
+    db.commit()
 
-            rows, stats = parse_csv(csv_text)
-            
-            # Create job in database for this user
-            job = AnalysisJob(
-                user_id=current_user.id,
-                total_rows=stats["total_rows"],
-                input_spend=stats["total_spend"],
-                input_revenue=stats["total_revenue"],
-                status="processing"
-            )
-            db.add(job)
-            db.commit()
-            db.refresh(job)
+    # Get history
+    history = db.query(ChatMessage).filter(ChatMessage.job_id == job_id).order_by(ChatMessage.created_at).all()
+    history_dicts = [{"role": m.role, "content": m.content} for m in history]
 
-            yield _sse_event(
-                "csv_parsed",
-                {
-                    "job_id": job.id,
-                    "rows": stats["total_rows"],
-                    "total_spend": stats["total_spend"],
-                    "total_revenue": stats["total_revenue"],
-                },
-            )
+    # Job Context
+    context = {
+        "total_rows": job.total_rows,
+        "input_spend": job.input_spend,
+        "input_revenue": job.input_revenue,
+        "audit": job.audit_data,
+        "strategy": job.strategy_data,
+        "copy": job.copy_data
+    }
 
-            yield _sse_event(
-                "agent_start",
-                {"agent": "auditor", "message": "Analyzing campaign performance..."},
-            )
-            audit = await run_auditor(rows)
-            
-            job.audit_data = audit.model_dump()
-            db.commit()
+    # Call Gemini
+    reply_text = await call_gemini_chat(context, history_dicts, req.message)
 
-            yield _sse_event(
-                "agent_done",
-                {"agent": "auditor", "result": audit.model_dump()},
-            )
+    # Save Assistant message
+    asst_msg = ChatMessage(job_id=job.id, role="assistant", content=reply_text)
+    db.add(asst_msg)
+    db.commit()
 
-            yield _sse_event(
-                "agent_start",
-                {"agent": "strategist", "message": "Generating strategy recommendations..."},
-            )
-            strategy = await run_strategist(rows, audit)
-            
-            job.strategy_data = strategy.model_dump()
-            db.commit()
-
-            yield _sse_event(
-                "agent_done",
-                {"agent": "strategist", "result": strategy.model_dump()},
-            )
-
-            yield _sse_event(
-                "agent_start",
-                {"agent": "copywriter", "message": "Rewriting underperforming ad copy..."},
-            )
-            copy = await run_copywriter(rows, audit)
-            
-            job.copy_data = copy.model_dump()
-            job.status = "complete"
-            db.commit()
-
-            yield _sse_event(
-                "agent_done",
-                {"agent": "copywriter", "result": copy.model_dump()},
-            )
-
-            final = PipelineResult(audit=audit, strategy=strategy, copy_results=copy)
-            yield _sse_event("complete", final.model_dump())
-        except Exception as exc:
-            yield _sse_event("error", {"message": str(exc)})
-
-    return StreamingResponse(
-        event_stream(),
-        media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "X-Accel-Buffering": "no",
-        },
-    )
-
-
-@app.post("/analyze-sync")
-async def analyze_sync(
-    file: UploadFile = File(...), 
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    try:
-        csv_text = await _read_csv_upload(file)
-        rows, stats = parse_csv(csv_text)
-
-        # Create job
-        job = AnalysisJob(
-            user_id=current_user.id,
-            total_rows=stats["total_rows"],
-            input_spend=stats["total_spend"],
-            input_revenue=stats["total_revenue"],
-            status="processing"
-        )
-        db.add(job)
-        db.commit()
-        db.refresh(job)
-
-        audit = await run_auditor(rows)
-        job.audit_data = audit.model_dump()
-        db.commit()
-
-        strategy = await run_strategist(rows, audit)
-        job.strategy_data = strategy.model_dump()
-        db.commit()
-
-        copy = await run_copywriter(rows, audit)
-        job.copy_data = copy.model_dump()
-        job.status = "complete"
-        db.commit()
-
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    except GeminiError as exc:
-        raise HTTPException(status_code=502, detail=str(exc)) from exc
-
-    return PipelineResult(audit=audit, strategy=strategy, copy_results=copy)
+    return {"role": "assistant", "content": reply_text}
 
 
 if __name__ == "__main__":
     import uvicorn
-
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run("main_v2:app", host="0.0.0.0", port=8000, reload=False)

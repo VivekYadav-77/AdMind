@@ -236,3 +236,48 @@ async def call_gemini(prompt: str, system_instruction: str = "") -> str:
             # TODO: REAL_GEMINI_KEY - remove this fallback once live Gemini quota is available.
             return _mock_gemini_response(prompt)
         raise GeminiError(f"Gemini API call failed: {exc}") from exc
+
+
+async def call_gemini_chat(job_context: dict, chat_history: list, new_message: str) -> str:
+    """
+    Handles conversational interactions about a specific report.
+    chat_history is a list of dicts: [{"role": "user"/"assistant", "content": "..."}]
+    """
+    if not GEMINI_API_KEY or GEMINI_API_KEY == "your_gemini_api_key_here":
+        if "budget" in new_message.lower():
+            return "Based on your context, you should reallocate budget from Display to Retargeting."
+        return "I am AdMind's AI assistant. I can help you understand your marketing report in detail."
+
+    try:
+        system_instruction = (
+            "You are AdMind, an expert AI marketing analyst. You are chatting with a user about their marketing campaign report.\n"
+            f"Here is the context of their analysis job:\n{json.dumps(job_context, indent=2)}\n"
+            "Answer the user's questions based ONLY on this context. Be concise, actionable, and professional."
+        )
+
+        model = genai.GenerativeModel(
+            model_name=GEMINI_MODEL,
+            system_instruction=system_instruction,
+            generation_config={
+                "temperature": 0.4,
+                "max_output_tokens": 1024,
+            },
+        )
+        
+        # Build contents array
+        contents = []
+        for msg in chat_history:
+            role = "model" if msg["role"] == "assistant" else "user"
+            contents.append({"role": role, "parts": [msg["content"]]})
+            
+        contents.append({"role": "user", "parts": [new_message]})
+
+        response = await asyncio.wait_for(
+            model.generate_content_async(contents),
+            timeout=30,
+        )
+        return response.text or ""
+    except Exception as exc:
+        if GEMINI_USE_MOCK_FALLBACK:
+            return "Mock response: This is a simulated chat reply because the real API failed or is not configured."
+        raise GeminiError(f"Gemini Chat API call failed: {exc}") from exc

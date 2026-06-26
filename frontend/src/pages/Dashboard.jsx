@@ -78,6 +78,19 @@ export default function Dashboard() {
   }
 
   const runAnalysis = async (file) => {
+    // Basic CSV Validation
+    try {
+      const text = await file.slice(0, 5000).text()
+      const firstLine = text.split('\n')[0].toLowerCase()
+      if (!firstLine.includes('spend') || !firstLine.includes('revenue')) {
+        setError('CSV must contain "Spend" and "Revenue" columns.')
+        setStage('error')
+        return
+      }
+    } catch (e) {
+      console.error('Failed to validate CSV', e)
+    }
+
     setStage('running')
     setAgentStatus(initialAgentStatus)
     setResults(initialResults)
@@ -86,12 +99,17 @@ export default function Dashboard() {
     setWaitingForBackend(true)
 
     try {
+      // Start background job
       const response = await API.analyzeCSV(file)
-      if (!response.ok || !response.body) {
-        throw new Error('Could not start analysis')
+      const { job_id } = response
+
+      // Consume SSE stream
+      const streamRes = await API.streamAnalysis(job_id)
+      if (!streamRes.ok || !streamRes.body) {
+        throw new Error('Could not connect to analysis stream')
       }
 
-      const reader = response.body.getReader()
+      const reader = streamRes.body.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
 

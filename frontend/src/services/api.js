@@ -6,10 +6,18 @@ function apiUrl(path) {
 
 function getAuthHeaders() {
   const token = localStorage.getItem('token')
+  const headers = {}
+  
   if (token && token !== 'undefined' && token !== 'null') {
-    return { 'Authorization': `Bearer ${token}` }
+    headers['Authorization'] = `Bearer ${token}`
   }
-  return {}
+  
+  const workspaceId = localStorage.getItem('activeWorkspaceId')
+  if (workspaceId) {
+    headers['X-Workspace-Id'] = workspaceId
+  }
+  
+  return headers
 }
 
 export const API = {
@@ -55,16 +63,51 @@ export const API = {
     return res.json()
   },
 
-  analyzeCSV: (file) => {
+  // Workspaces
+  getWorkspaces: async () => {
+    const res = await fetch(apiUrl('/workspaces'), {
+      method: 'GET',
+      headers: getAuthHeaders()
+    })
+    if (!res.ok) throw new Error('Could not fetch workspaces')
+    return res.json()
+  },
+
+  createWorkspace: async (name) => {
+    const res = await fetch(apiUrl('/workspaces'), {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    })
+    if (!res.ok) throw new Error('Could not create workspace')
+    return res.json()
+  },
+
+  analyzeCSV: async (file) => {
     const formData = new FormData()
     formData.append('file', file)
     
-    // Server Sent Events don't natively support headers in EventSource easily,
-    // but since we're using fetch and a stream reader in Dashboard, we CAN use headers!
-    return fetch(apiUrl('/analyze'), { 
+    const res = await fetch(apiUrl('/analyze'), { 
       method: 'POST', 
       headers: getAuthHeaders(),
       body: formData 
+    })
+    
+    if (!res.ok) {
+      let errorMessage = 'Upload failed'
+      try {
+        const data = await res.json()
+        errorMessage = data.detail || errorMessage
+      } catch (e) {}
+      throw new Error(errorMessage)
+    }
+    return res.json() // returns { job_id: 123 }
+  },
+
+  streamAnalysis: async (jobId) => {
+    return fetch(apiUrl(`/analyze/${jobId}/stream`), {
+      method: 'GET',
+      headers: getAuthHeaders()
     })
   },
 
@@ -77,8 +120,8 @@ export const API = {
     return new File([text], 'sample_ads.csv', { type: 'text/csv' })
   },
 
-  getHistory: async () => {
-    const res = await fetch(apiUrl('/history'), {
+  getHistory: async (page = 1, size = 10) => {
+    const res = await fetch(apiUrl(`/history?page=${page}&size=${size}`), {
       method: 'GET',
       headers: getAuthHeaders()
     })
@@ -95,6 +138,33 @@ export const API = {
     })
     if (!res.ok) {
       throw new Error(`Could not fetch details for report #${jobId}`)
+    }
+    return res.json()
+  },
+
+  // Chat
+  getChatHistory: async (jobId) => {
+    const res = await fetch(apiUrl(`/history/${jobId}/chat`), {
+      method: 'GET',
+      headers: getAuthHeaders()
+    })
+    if (!res.ok) throw new Error('Could not fetch chat history')
+    return res.json()
+  },
+
+  sendChatMessage: async (jobId, message) => {
+    const res = await fetch(apiUrl(`/history/${jobId}/chat`), {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message })
+    })
+    if (!res.ok) {
+      let errorMessage = 'Failed to send message'
+      try {
+        const data = await res.json()
+        errorMessage = data.detail || errorMessage
+      } catch (e) {}
+      throw new Error(errorMessage)
     }
     return res.json()
   }
