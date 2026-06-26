@@ -6,7 +6,10 @@ function apiUrl(path) {
 
 function getAuthHeaders() {
   const token = localStorage.getItem('token')
-  return token ? { 'Authorization': `Bearer ${token}` } : {}
+  if (token && token !== 'undefined' && token !== 'null') {
+    return { 'Authorization': `Bearer ${token}` }
+  }
+  return {}
 }
 
 export const API = {
