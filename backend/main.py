@@ -142,6 +142,21 @@ def get_history(db: Session = Depends(get_db), current_user: User = Depends(get_
     return jobs
 
 
+@app.get("/history/{job_id}")
+def get_job_detail(
+    job_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    job = db.query(AnalysisJob).filter(
+        AnalysisJob.id == job_id,
+        AnalysisJob.user_id == current_user.id
+    ).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Analysis job not found")
+    return job
+
+
 @app.post("/analyze")
 async def analyze(
     file: UploadFile = File(...), 

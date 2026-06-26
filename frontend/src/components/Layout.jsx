@@ -41,7 +41,9 @@ export default function Layout() {
         
         <nav className="flex-1 mt-8 px-4 space-y-2 relative z-10">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.path
+            const isActive = item.path === '/' 
+              ? location.pathname === '/' 
+              : location.pathname.startsWith(item.path)
             return (
               <Link
                 key={item.name}
@@ -75,7 +77,15 @@ export default function Layout() {
       <main className="flex-1 flex flex-col h-screen overflow-hidden z-10">
         <header className="h-24 flex items-center px-10 shrink-0">
           <h1 className="text-2xl font-bold text-white tracking-tight">
-            {location.pathname === '/' ? 'Overview' : location.pathname.substring(1)}
+            {location.pathname === '/' 
+              ? 'Campaign Dashboard' 
+              : location.pathname.startsWith('/history/')
+              ? 'Detailed Analysis Report'
+              : location.pathname === '/history'
+              ? 'Analysis History'
+              : location.pathname === '/settings'
+              ? 'System Settings'
+              : 'Overview'}
           </h1>
         </header>
         <div className="p-10 pt-0 max-w-7xl mx-auto w-full h-full overflow-auto">

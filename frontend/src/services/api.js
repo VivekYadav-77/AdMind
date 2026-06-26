@@ -72,5 +72,27 @@ export const API = {
     }
     const text = await res.text()
     return new File([text], 'sample_ads.csv', { type: 'text/csv' })
+  },
+
+  getHistory: async () => {
+    const res = await fetch(apiUrl('/history'), {
+      method: 'GET',
+      headers: getAuthHeaders()
+    })
+    if (!res.ok) {
+      throw new Error('Could not fetch analysis history')
+    }
+    return res.json()
+  },
+
+  getJobDetails: async (jobId) => {
+    const res = await fetch(apiUrl(`/history/${jobId}`), {
+      method: 'GET',
+      headers: getAuthHeaders()
+    })
+    if (!res.ok) {
+      throw new Error(`Could not fetch details for report #${jobId}`)
+    }
+    return res.json()
   }
 }
