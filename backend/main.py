@@ -1,21 +1,31 @@
 import json
 import os
 from pathlib import Path
+from datetime import timedelta
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse, StreamingResponse
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from agents.auditor import run_auditor
 from agents.copywriter import run_copywriter
 from agents.strategist import run_strategist
 from db.database import Base, engine, get_db
-from db.models import AnalysisJob
-from models.schemas import PipelineResult
+from db.models import AnalysisJob, User
+from models.schemas import PipelineResult, UserCreate, Token
 from services.csv_parser import parse_csv
 from services.gemini import GeminiError
+from auth import (
+    verify_password,
+    get_password_hash,
+    create_access_token,
+    decode_token,
+    oauth2_scheme,
+    ACCESS_TOKEN_EXPIRE_MINUTES
+)
 
 
 load_dotenv()
@@ -42,6 +52,22 @@ BASE_DIR = Path(__file__).resolve().parent
 SAMPLE_CSV_PATH = BASE_DIR / "sample_data.csv"
 
 
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    payload = decode_token(token)
+    email: str = payload.get("sub")
+    if email is None:
+        raise credentials_exception
+    user = db.query(User).filter(User.email == email).first()
+    if user is None:
+        raise credentials_exception
+    return user
+
+
 def _sse_event(event: str, data):
     return f"data: {json.dumps({'event': event, 'data': data})}\n\n"
 
@@ -62,6 +88,42 @@ async def health_check():
     return {"status": "ok", "version": "1.0.0"}
 
 
+@app.post("/register", response_model=Token)
+def register_user(user: UserCreate, db: Session = Depends(get_db)):
+    db_user = db.query(User).filter(User.email == user.email).first()
+    if db_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    hashed_password = get_password_hash(user.password)
+    new_user = User(email=user.email, hashed_password=hashed_password)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": new_user.email}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+@app.post("/login", response_model=Token)
+def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == form_data.username).first()
+    if not user or not verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
 @app.get("/sample-csv")
 async def get_sample_csv():
     if not SAMPLE_CSV_PATH.exists():
@@ -75,13 +137,17 @@ async def get_sample_csv():
 
 
 @app.get("/history")
-def get_history(db: Session = Depends(get_db)):
-    jobs = db.query(AnalysisJob).order_by(AnalysisJob.created_at.desc()).all()
+def get_history(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    jobs = db.query(AnalysisJob).filter(AnalysisJob.user_id == current_user.id).order_by(AnalysisJob.created_at.desc()).all()
     return jobs
 
 
 @app.post("/analyze")
-async def analyze(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def analyze(
+    file: UploadFile = File(...), 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     csv_text = await _read_csv_upload(file)
 
     async def event_stream():
@@ -90,8 +156,9 @@ async def analyze(file: UploadFile = File(...), db: Session = Depends(get_db)):
 
             rows, stats = parse_csv(csv_text)
             
-            # Create job in database
+            # Create job in database for this user
             job = AnalysisJob(
+                user_id=current_user.id,
                 total_rows=stats["total_rows"],
                 input_spend=stats["total_spend"],
                 input_revenue=stats["total_revenue"],
@@ -170,13 +237,18 @@ async def analyze(file: UploadFile = File(...), db: Session = Depends(get_db)):
 
 
 @app.post("/analyze-sync")
-async def analyze_sync(file: UploadFile = File(...), db: Session = Depends(get_db)):
+async def analyze_sync(
+    file: UploadFile = File(...), 
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     try:
         csv_text = await _read_csv_upload(file)
         rows, stats = parse_csv(csv_text)
 
         # Create job
         job = AnalysisJob(
+            user_id=current_user.id,
             total_rows=stats["total_rows"],
             input_spend=stats["total_spend"],
             input_revenue=stats["total_revenue"],

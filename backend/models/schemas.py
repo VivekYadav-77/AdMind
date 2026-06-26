@@ -79,3 +79,18 @@ class PipelineResult(BaseModel):
     strategy: StrategyResult
     copy_results: CopyResult
     status: str = "complete"
+
+
+class UserCreate(BaseModel):
+    email: str
+    password: str
+
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str

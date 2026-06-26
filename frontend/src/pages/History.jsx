@@ -14,7 +14,10 @@ export default function History() {
   useEffect(() => {
     async function fetchHistory() {
       try {
-        const res = await fetch(`${API_BASE_URL}/history`)
+        const token = localStorage.getItem('token')
+        const res = await fetch(`${API_BASE_URL}/history`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        })
         const data = await res.json()
         setJobs(data)
       } catch (err) {

@@ -1,14 +1,68 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 function apiUrl(path) {
   return `${API_BASE_URL}${path}`
 }
 
+function getAuthHeaders() {
+  const token = localStorage.getItem('token')
+  return token ? { 'Authorization': `Bearer ${token}` } : {}
+}
+
 export const API = {
+  register: async (email, password) => {
+    const res = await fetch(apiUrl('/register'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    })
+    if (!res.ok) {
+      let errorMessage = 'Registration failed'
+      try {
+        const data = await res.json()
+        errorMessage = data.detail || errorMessage
+      } catch (e) {
+        errorMessage = `Server Error: ${res.status} ${res.statusText}`
+      }
+      throw new Error(errorMessage)
+    }
+    return res.json()
+  },
+
+  login: async (email, password) => {
+    const formData = new URLSearchParams()
+    formData.append('username', email)
+    formData.append('password', password)
+
+    const res = await fetch(apiUrl('/login'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formData
+    })
+    if (!res.ok) {
+      let errorMessage = 'Login failed'
+      try {
+        const data = await res.json()
+        errorMessage = data.detail || errorMessage
+      } catch (e) {
+        errorMessage = `Server Error: ${res.status} ${res.statusText}`
+      }
+      throw new Error(errorMessage)
+    }
+    return res.json()
+  },
+
   analyzeCSV: (file) => {
     const formData = new FormData()
     formData.append('file', file)
-    return fetch(apiUrl('/analyze'), { method: 'POST', body: formData })
+    
+    // Server Sent Events don't natively support headers in EventSource easily,
+    // but since we're using fetch and a stream reader in Dashboard, we CAN use headers!
+    return fetch(apiUrl('/analyze'), { 
+      method: 'POST', 
+      headers: getAuthHeaders(),
+      body: formData 
+    })
   },
 
   getSampleCSV: async () => {
