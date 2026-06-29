@@ -1,5 +1,76 @@
 import { motion } from 'framer-motion'
-import { Beaker, Sparkles, Target, Zap } from 'lucide-react'
+import { Beaker, Sparkles, Target, Zap, Globe, MoreHorizontal, ThumbsUp, MessageCircle, Share2, ExternalLink } from 'lucide-react'
+
+function AdMockup({ testData, type, label }) {
+  const isA = type === 'A'
+  const accentColor = isA ? 'blue' : 'amber'
+  const AccentIcon = isA ? Target : Zap
+  
+  return (
+    <div className={`relative flex flex-col rounded-2xl border-2 border-${accentColor}-500/30 bg-slate-900 overflow-hidden group hover:border-${accentColor}-500/60 transition-colors shadow-lg`}>
+      {/* Top Banner */}
+      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-${accentColor}-400 to-${accentColor}-600`} />
+      
+      {/* Ad Header (Mock Profile) */}
+      <div className="p-4 flex items-center justify-between border-b border-white/5 bg-white/5">
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-full bg-gradient-to-br from-${accentColor}-400 to-${accentColor}-600 flex items-center justify-center shadow-inner`}>
+            <span className="text-white font-black text-lg">A</span>
+          </div>
+          <div>
+            <p className="text-sm font-bold text-white leading-tight">AdMind Preview</p>
+            <div className="flex items-center gap-1 text-[11px] text-slate-400">
+              <span>Sponsored</span>
+              <span>•</span>
+              <Globe size={10} />
+            </div>
+          </div>
+        </div>
+        <MoreHorizontal size={18} className="text-slate-500" />
+      </div>
+
+      {/* Primary Text (Description) */}
+      <div className="p-4 bg-slate-900">
+        <p className="text-[14px] leading-relaxed text-slate-200">
+          {testData?.description || 'Discover our new optimization strategies.'}
+        </p>
+      </div>
+
+      {/* Image Placeholder */}
+      <div className={`w-full h-40 bg-gradient-to-br from-slate-800 to-slate-900 relative overflow-hidden border-y border-white/5 flex items-center justify-center`}>
+        <div className={`absolute inset-0 bg-${accentColor}-500/10`} />
+        <div className="text-center z-10">
+          <AccentIcon size={32} className={`mx-auto text-${accentColor}-500/50 mb-2`} />
+          <span className={`text-xs font-black uppercase tracking-widest text-${accentColor}-500/50`}>
+            {label}
+          </span>
+        </div>
+      </div>
+
+      {/* Headline & CTA */}
+      <div className="p-4 bg-slate-800/80 flex items-center justify-between gap-4">
+        <div className="flex-1">
+          <p className="text-[10px] uppercase tracking-wider text-slate-400 font-bold mb-1">
+            {testData?.angle || 'Performance Angle'}
+          </p>
+          <h3 className="text-base font-bold text-white leading-tight">
+            {testData?.headline || 'Boost Your Campaign ROI Today'}
+          </h3>
+        </div>
+        <button className={`shrink-0 bg-white/10 hover:bg-white/20 transition-colors text-white text-xs font-bold px-4 py-2 rounded-lg border border-white/10`}>
+          Learn More
+        </button>
+      </div>
+
+      {/* Social Actions (Mock) */}
+      <div className="px-4 py-3 flex items-center gap-6 border-t border-white/5 text-slate-400">
+        <div className="flex items-center gap-1.5 hover:text-slate-200 cursor-pointer transition-colors"><ThumbsUp size={16} /> <span className="text-xs font-medium">Like</span></div>
+        <div className="flex items-center gap-1.5 hover:text-slate-200 cursor-pointer transition-colors"><MessageCircle size={16} /> <span className="text-xs font-medium">Comment</span></div>
+        <div className="flex items-center gap-1.5 hover:text-slate-200 cursor-pointer transition-colors"><Share2 size={16} /> <span className="text-xs font-medium">Share</span></div>
+      </div>
+    </div>
+  )
+}
 
 export default function CopyResults({ copy }) {
   if (!copy) return null
@@ -10,111 +81,79 @@ export default function CopyResults({ copy }) {
       animate={{ opacity: 1, y: 0 }}
       className="py-4"
     >
-      <div className="glass-panel rounded-3xl p-8 border-white/5">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-2xl font-bold text-white">A/B Test Frameworks</h2>
-            <p className="text-slate-400 mt-1">AI-generated structured creative tests</p>
-          </div>
+      <div className="glass-panel rounded-3xl p-6 lg:p-8 border-white/5 relative overflow-hidden">
+        {/* Subtle background glow */}
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-[100px] pointer-events-none" />
+
+        <div className="flex items-center gap-4 mb-8">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/20 text-purple-400 shadow-inner">
             <Beaker size={24} aria-hidden="true" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-white tracking-tight">A/B Test Frameworks</h2>
+            <p className="text-slate-400 text-sm mt-0.5">AI-generated structured creative tests</p>
           </div>
         </div>
 
         <motion.div 
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
-          className="rounded-2xl bg-purple-900/20 border border-purple-500/20 p-6 text-sm leading-relaxed text-purple-100 mb-10 shadow-[0_0_15px_rgba(168,85,247,0.1)]"
+          initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}
+          className="rounded-2xl bg-gradient-to-r from-purple-900/40 to-slate-900/40 border border-purple-500/20 p-6 text-sm leading-relaxed text-purple-100 mb-12 shadow-[0_0_15px_rgba(168,85,247,0.15)] backdrop-blur-sm"
         >
-          <span className="font-semibold mr-2 text-purple-300">Copywriter Summary:</span>
-          {copy.summary}
+          <span className="font-bold mr-2 text-purple-400 uppercase tracking-wider text-xs border border-purple-500/30 bg-purple-500/10 px-2 py-1 rounded">Copywriter Summary</span>
+          <span className="ml-2 block mt-3 text-[15px]">{copy.summary}</span>
         </motion.div>
 
-        <div className="grid gap-8">
+        <div className="grid gap-16">
           {copy.variants.map((variant, index) => (
             <motion.article
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 * index }}
               key={`${variant.keyword}-ab`}
-              className="rounded-2xl border border-white/5 glass-panel p-6 shadow-sm hover:shadow-[0_0_20px_rgba(168,85,247,0.1)] transition-shadow"
+              className="relative"
             >
               {/* Keyword header */}
-              <div className="mb-6 flex flex-wrap items-center gap-3">
-                <span className="rounded-xl bg-white/10 px-4 py-1.5 text-sm font-bold text-white shadow-sm border border-white/5">
+              <div className="mb-8 flex flex-col items-center text-center">
+                <span className="inline-block rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 px-6 py-2 text-lg font-black text-white shadow-[0_0_15px_rgba(168,85,247,0.2)] border border-purple-500/30 tracking-wide">
                   {variant.keyword}
                 </span>
-                <span className="text-sm font-medium text-slate-400">
-                  in <span className="text-slate-200">{variant.campaign_name}</span>
+                <span className="text-sm font-bold text-slate-400 mt-3 uppercase tracking-widest flex items-center gap-2">
+                  <ExternalLink size={14} /> {variant.campaign_name}
                 </span>
               </div>
 
               {/* Side-by-side A/B tests */}
-              <div className="grid gap-6 md:grid-cols-2 relative">
+              <div className="grid lg:grid-cols-2 gap-8 relative px-4 lg:px-0">
                 
                 {/* VS Badge in the middle */}
-                <div className="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-slate-800 border-2 border-slate-700 items-center justify-center z-10 shadow-sm">
-                  <span className="text-[10px] font-black text-slate-400">VS</span>
+                <div className="hidden lg:flex absolute top-[40%] left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-slate-900 border-4 border-slate-800 items-center justify-center z-10 shadow-[0_0_20px_rgba(0,0,0,0.8)]">
+                  <span className="text-[12px] font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-amber-400">VS</span>
                 </div>
 
-                {/* Test A */}
-                <div className="rounded-2xl border-2 border-blue-500/20 bg-gradient-to-b from-blue-900/20 to-transparent p-6 relative overflow-hidden group hover:border-blue-500/50 transition-colors">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110" />
-                  
-                  <div className="mb-4 flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/20 border border-blue-500/30 px-3 py-1 text-xs font-black uppercase tracking-wider text-blue-400">
-                      <Target size={14} /> Test A
-                    </span>
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                      {variant.test_a?.label || 'Variation A'}
-                    </span>
-                  </div>
-                  
-                  <p className="mb-3 text-xs font-semibold text-blue-400 uppercase tracking-wider">
-                    {variant.test_a?.angle || ''}
-                  </p>
-                  <h3 className="text-xl font-bold text-white mb-2 leading-tight">
-                    {variant.test_a?.headline || ''}
-                  </h3>
-                  <p className="text-sm leading-relaxed text-slate-300">
-                    {variant.test_a?.description || ''}
-                  </p>
-                </div>
+                {/* Test A Mockup */}
+                <AdMockup testData={variant.test_a} type="A" label={variant.test_a?.label || 'Variation A'} />
 
-                {/* Test B */}
-                <div className="rounded-2xl border-2 border-amber-500/20 bg-gradient-to-b from-amber-900/20 to-transparent p-6 relative overflow-hidden group hover:border-amber-500/50 transition-colors">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110" />
-                  
-                  <div className="mb-4 flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/20 border border-amber-500/30 px-3 py-1 text-xs font-black uppercase tracking-wider text-amber-400">
-                      <Zap size={14} /> Test B
-                    </span>
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                      {variant.test_b?.label || 'Variation B'}
-                    </span>
-                  </div>
-                  
-                  <p className="mb-3 text-xs font-semibold text-amber-400 uppercase tracking-wider">
-                    {variant.test_b?.angle || ''}
-                  </p>
-                  <h3 className="text-xl font-bold text-white mb-2 leading-tight">
-                    {variant.test_b?.headline || ''}
-                  </h3>
-                  <p className="text-sm leading-relaxed text-slate-300">
-                    {variant.test_b?.description || ''}
-                  </p>
-                </div>
+                {/* Test B Mockup */}
+                <AdMockup testData={variant.test_b} type="B" label={variant.test_b?.label || 'Variation B'} />
               </div>
 
               {/* Test rationale */}
-              <div className="mt-6 flex items-start gap-3 rounded-xl bg-white/5 p-4 border border-white/10">
-                <div className="p-1.5 bg-white/10 rounded-md shadow-sm border border-white/5">
-                  <Sparkles size={16} className="text-purple-400" aria-hidden="true" />
+              <div className="mt-8 mx-auto max-w-3xl flex items-start gap-4 rounded-2xl bg-gradient-to-r from-slate-900/80 to-slate-800/80 p-6 border border-white/10 shadow-lg">
+                <div className="p-2 bg-purple-500/20 rounded-xl shadow-[0_0_10px_rgba(168,85,247,0.2)] border border-purple-500/30">
+                  <Sparkles size={20} className="text-purple-400" aria-hidden="true" />
                 </div>
-                <p className="text-sm leading-relaxed text-slate-300">
-                  <span className="font-semibold text-white">Strategic Rationale: </span>
-                  {variant.test_rationale || variant.improvement_reason || ''}
-                </p>
+                <div className="flex-1">
+                  <h4 className="font-bold text-white text-base mb-1">Strategic Rationale</h4>
+                  <p className="text-[15px] leading-relaxed text-slate-300">
+                    {variant.test_rationale || variant.improvement_reason || ''}
+                  </p>
+                </div>
               </div>
+              
+              {/* Divider between variants (except last) */}
+              {index < copy.variants.length - 1 && (
+                <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent mt-16" />
+              )}
             </motion.article>
           ))}
         </div>
