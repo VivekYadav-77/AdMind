@@ -82,13 +82,14 @@ async def _read_csv_upload(file: UploadFile) -> str:
 
 
 def _append_job_log(db: Session, job_id: int, event: str, data: dict):
+    from sqlalchemy.orm.attributes import flag_modified
     # Retrieve job, append log, commit. Needs to run in sync.
     job = db.query(AnalysisJob).filter(AnalysisJob.id == job_id).first()
     if job:
-        logs = job.progress_logs or []
-        logs.append({"event": event, "data": data})
-        # SQLAlchemy needs to know the JSON array changed
-        job.progress_logs = list(logs)
+        if job.progress_logs is None:
+            job.progress_logs = []
+        job.progress_logs.append({"event": event, "data": data})
+        flag_modified(job, "progress_logs")
         db.commit()
 
 async def run_analysis_task(job_id: int, csv_text: str):
@@ -277,19 +278,26 @@ async def analyze_stream(
     async def event_stream():
         last_idx = 0
         while True:
-            # Re-fetch job to get latest logs
-            db.refresh(job)
-            logs = job.progress_logs or []
-            
-            # Yield any new logs
-            for i in range(last_idx, len(logs)):
-                log = logs[i]
-                yield f"data: {json.dumps(log)}\n\n"
-            
-            last_idx = len(logs)
-            
-            if job.status in ["complete", "error"]:
-                break
+            # Create a new session since the request db session is closed during streaming
+            db_stream = SessionLocal()
+            try:
+                # Re-fetch job to get latest logs
+                current_job = db_stream.query(AnalysisJob).filter(AnalysisJob.id == job_id).first()
+                if not current_job:
+                    break
+                logs = current_job.progress_logs or []
+                
+                # Yield any new logs
+                for i in range(last_idx, len(logs)):
+                    log = logs[i]
+                    yield f"data: {json.dumps(log)}\n\n"
+                
+                last_idx = len(logs)
+                
+                if current_job.status in ["complete", "error"]:
+                    break
+            finally:
+                db_stream.close()
                 
             await asyncio.sleep(1)
 
@@ -408,4 +416,4 @@ async def send_chat_message(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main_v2:app", host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=False)

@@ -128,6 +128,30 @@ export default function Dashboard() {
           handleEvent(payload.event, payload.data)
         }
       }
+
+      // Fallback: If the stream closes but we missed events (e.g. buffering or reconnect), 
+      // fetch the final job state and trigger UI updates manually.
+      try {
+        const finalJob = await API.getJobDetails(job_id)
+        if (finalJob.status === 'complete') {
+          if (finalJob.total_rows > 0) {
+            handleEvent('csv_parsed', {
+              rows: finalJob.total_rows,
+              total_spend: finalJob.input_spend,
+              total_revenue: finalJob.input_revenue
+            })
+          }
+          if (finalJob.audit_data) handleEvent('agent_done', { agent: 'auditor', result: finalJob.audit_data })
+          if (finalJob.strategy_data) handleEvent('agent_done', { agent: 'strategist', result: finalJob.strategy_data })
+          if (finalJob.copy_data) handleEvent('agent_done', { agent: 'copywriter', result: finalJob.copy_data })
+          handleEvent('complete', null)
+        } else if (finalJob.status === 'error') {
+          handleEvent('error', { message: finalJob.error_message || 'Analysis failed' })
+        }
+      } catch (err) {
+        console.error('Failed to fetch final job status:', err)
+      }
+
     } catch (caught) {
       setWaitingForBackend(false)
       setError(caught.message)
