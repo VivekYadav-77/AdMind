@@ -7,6 +7,7 @@ import clsx from 'clsx'
 
 import { API } from '../services/api'
 import AuditResults from '../components/AuditResults'
+import CampaignHealthScore from '../components/CampaignHealthScore'
 import StrategyResults from '../components/StrategyResults'
 import CopyResults from '../components/CopyResults'
 
@@ -209,6 +210,7 @@ export default function ReportDetail() {
 
         {/* Tabs and Results Section */}
         <div className="space-y-6">
+          {job.audit_data && <CampaignHealthScore audit={job.audit_data} />}
           <div className="flex border-b border-white/10 gap-2">
             {tabs.map((tab) => {
               const Icon = tab.icon

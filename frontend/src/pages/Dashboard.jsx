@@ -5,6 +5,7 @@ import html2pdf from 'html2pdf.js'
 
 import AgentPipeline from '../components/AgentPipeline'
 import AuditResults from '../components/AuditResults'
+import CampaignHealthScore from '../components/CampaignHealthScore'
 import ColdStartLoader from '../components/ColdStartLoader'
 import CopyResults from '../components/CopyResults'
 import StrategyResults from '../components/StrategyResults'
@@ -247,6 +248,7 @@ export default function Dashboard() {
       {/* Results Section with Tabs and PDF Export */}
       {(results.audit || results.strategy || results.copy) && (
         <div className="mt-12 space-y-6">
+          {results.audit && <CampaignHealthScore audit={results.audit} />}
           <div className="flex items-center justify-between border-b border-white/10 pb-4">
             <div className="flex gap-2">
               {tabs.map((tab) => {

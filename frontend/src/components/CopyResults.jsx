@@ -13,37 +13,33 @@ function AdMockup({ testData, type, label }) {
       
       {/* Ad Header (Mock Profile) */}
       <div className="p-4 flex items-center justify-between border-b border-white/5 bg-white/5">
+      {/* Ad Header */}
+      <div className="flex items-center justify-between p-4 border-b border-white/5 bg-white/5">
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-full bg-gradient-to-br from-${accentColor}-400 to-${accentColor}-600 flex items-center justify-center shadow-inner`}>
-            <span className="text-white font-black text-lg">A</span>
+          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 border border-white/10 shadow-inner flex items-center justify-center p-1">
+            <div className="h-full w-full rounded-full bg-slate-800 flex items-center justify-center text-xs font-black text-slate-400">
+              {brandName.charAt(0)}
+            </div>
           </div>
           <div>
-            <p className="text-sm font-bold text-white leading-tight">AdMind Preview</p>
-            <div className="flex items-center gap-1 text-[11px] text-slate-400">
+            <h4 className="text-[15px] font-bold text-white tracking-tight leading-none mb-1">{brandName}</h4>
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
               <span>Sponsored</span>
-              <span>•</span>
+              <span className="w-1 h-1 rounded-full bg-slate-600" />
               <Globe size={10} />
             </div>
           </div>
         </div>
-        <MoreHorizontal size={18} className="text-slate-500" />
+        <button className="text-slate-500 hover:text-slate-300 transition-colors">
+          <MoreHorizontal size={20} />
+        </button>
       </div>
 
-      {/* Primary Text (Description) */}
-      <div className="p-4 bg-slate-900">
-        <p className="text-[14px] leading-relaxed text-slate-200">
-          {testData?.description || 'Discover our new optimization strategies.'}
+      {/* Ad Text */}
+      <div className="p-5 flex-1 relative">
+        <p className="text-[15px] text-slate-200 whitespace-pre-wrap leading-relaxed font-medium">
+          {text}
         </p>
-      </div>
-
-      {/* Image Placeholder */}
-      <div className={`w-full h-40 bg-gradient-to-br from-slate-800 to-slate-900 relative overflow-hidden border-y border-white/5 flex items-center justify-center`}>
-        <div className={`absolute inset-0 bg-${accentColor}-500/10`} />
-        <div className="text-center z-10">
-          <AccentIcon size={32} className={`mx-auto text-${accentColor}-500/50 mb-2`} />
-          <span className={`text-xs font-black uppercase tracking-widest text-${accentColor}-500/50`}>
-            {label}
-          </span>
         </div>
       </div>
 
