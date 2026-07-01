@@ -178,5 +178,42 @@ export const API = {
       throw new Error(errorMessage)
     }
     return res.json()
+  },
+
+  // Tools
+  auditLandingPage: async (url) => {
+    const res = await fetch(apiUrl('/tools/audit-landing-page'), {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url })
+    })
+    if (!res.ok) {
+      throw new Error('Failed to audit landing page')
+    }
+    return res.json()
+  },
+
+  buildAudience: async (description) => {
+    const res = await fetch(apiUrl('/tools/audience-builder'), {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description })
+    })
+    if (!res.ok) {
+      throw new Error('Failed to build audience')
+    }
+    return res.json()
+  },
+
+  competitorTeardown: async (ad_copy) => {
+    const res = await fetch(apiUrl('/tools/competitor-teardown'), {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ad_copy })
+    })
+    if (!res.ok) {
+      throw new Error('Failed to tear down competitor ad')
+    }
+    return res.json()
   }
 }

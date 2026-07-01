@@ -16,6 +16,9 @@ from sqlalchemy import desc
 from agents.auditor import run_auditor
 from agents.copywriter import run_copywriter
 from agents.strategist import run_strategist
+from agents.landing_page_auditor import run_landing_page_auditor
+from agents.audience_builder import run_audience_builder
+from agents.competitor_teardown import run_competitor_teardown
 from db.database import Base, engine, get_db, SessionLocal
 from db.models import AnalysisJob, User, Workspace, WorkspaceMember, ChatMessage
 from models.schemas import PipelineResult, UserCreate, Token
@@ -458,6 +461,29 @@ async def send_chat_message(
     db.commit()
 
     return {"role": "assistant", "content": reply_text}
+
+
+# Tools Endpoints
+class UrlRequest(BaseModel):
+    url: str
+
+class DescRequest(BaseModel):
+    description: str
+
+class AdRequest(BaseModel):
+    ad_copy: str
+
+@app.post("/tools/audit-landing-page")
+async def audit_landing_page(req: UrlRequest, current_user: User = Depends(get_current_user)):
+    return await run_landing_page_auditor(req.url)
+
+@app.post("/tools/audience-builder")
+async def build_audience(req: DescRequest, current_user: User = Depends(get_current_user)):
+    return await run_audience_builder(req.description)
+
+@app.post("/tools/competitor-teardown")
+async def tear_down_competitor(req: AdRequest, current_user: User = Depends(get_current_user)):
+    return await run_competitor_teardown(req.ad_copy)
 
 
 if __name__ == "__main__":

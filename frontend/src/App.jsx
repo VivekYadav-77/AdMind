@@ -3,6 +3,7 @@ import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import History from './pages/History'
+import Tools from './pages/Tools'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import ReportDetail from './pages/ReportDetail'
@@ -33,6 +34,7 @@ export default function App() {
             <Route index element={<Dashboard />} />
             <Route path="history" element={<History />} />
             <Route path="history/:id" element={<ReportDetail />} />
+            <Route path="tools" element={<Tools />} />
             <Route path="settings" element={<Settings />} />
             <Route path="*" element={<Dashboard />} />
           </Route>
