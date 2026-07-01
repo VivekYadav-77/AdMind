@@ -31,13 +31,19 @@ class AuditIssue(BaseModel):
     segment_value: Optional[str] = None
 
 
+class AuditSummary(BaseModel):
+    overview: str
+    critical_finding: str
+    action_required: str
+
+
 class AuditResult(BaseModel):
     total_spend: float
     total_revenue: float
     total_roas: float
     wasted_spend: float
     issues: List[AuditIssue]
-    summary: str
+    summary: AuditSummary
     segment_anomalies: Optional[List[AuditIssue]] = None
 
 

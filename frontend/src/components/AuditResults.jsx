@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { AlertTriangle, MapPin, Monitor, Users, TrendingDown, ArrowRight, BarChart3, Bot } from 'lucide-react'
+import { AlertTriangle, MapPin, Monitor, Users, TrendingDown, ArrowRight, BarChart3, Bot, Target } from 'lucide-react'
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts'
 import clsx from 'clsx'
 
@@ -91,21 +91,58 @@ export default function AuditResults({ audit }) {
           </div>
         </motion.div>
 
-        {/* AI Typing Box Effect */}
-        <motion.div 
-          variants={itemVariants}
-          className="relative rounded-3xl bg-gradient-to-r from-blue-900/30 to-indigo-900/30 border border-blue-400/20 p-8 text-[15px] leading-relaxed text-blue-50 mb-12 shadow-[0_0_30px_rgba(59,130,246,0.15)] backdrop-blur-xl overflow-hidden group"
-        >
-          <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 group-hover:shadow-[0_0_20px_#3b82f6] transition-all" />
-          <div className="flex items-start gap-4">
-            <div className="p-2 bg-blue-500/20 rounded-xl text-blue-400 shadow-inner">
-              <Bot size={20} />
+        {/* AI Structured Summary */}
+        <motion.div variants={containerVariants} className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-12">
+          {/* Overview Card */}
+          <motion.div 
+            variants={itemVariants}
+            className="relative rounded-3xl bg-gradient-to-r from-blue-900/20 to-indigo-900/20 border border-blue-400/20 p-6 text-[14px] leading-relaxed text-blue-50 shadow-[0_0_20px_rgba(59,130,246,0.1)] backdrop-blur-xl overflow-hidden group"
+          >
+            <div className="absolute top-0 left-0 w-1 h-full bg-blue-500 group-hover:shadow-[0_0_20px_#3b82f6] transition-all" />
+            <div className="flex items-start gap-4">
+              <div className="p-2 bg-blue-500/20 rounded-xl text-blue-400 shrink-0">
+                <Bot size={18} />
+              </div>
+              <div>
+                <span className="font-bold text-blue-400 uppercase tracking-widest text-[10px] mb-1.5 block">Overview</span>
+                <p className="font-medium text-slate-200">{audit.summary?.overview}</p>
+              </div>
             </div>
-            <div>
-              <span className="font-bold text-blue-400 uppercase tracking-widest text-xs mb-2 block">AI Executive Summary</span>
-              <p className="font-medium text-slate-200">{audit.summary}</p>
+          </motion.div>
+
+          {/* Critical Finding Card */}
+          <motion.div 
+            variants={itemVariants}
+            className="relative rounded-3xl bg-gradient-to-r from-red-900/20 to-orange-900/20 border border-red-500/20 p-6 text-[14px] leading-relaxed text-red-50 shadow-[0_0_20px_rgba(239,68,68,0.1)] backdrop-blur-xl overflow-hidden group"
+          >
+            <div className="absolute top-0 left-0 w-1 h-full bg-red-500 group-hover:shadow-[0_0_20px_#ef4444] transition-all" />
+            <div className="flex items-start gap-4">
+              <div className="p-2 bg-red-500/20 rounded-xl text-red-400 shrink-0">
+                <AlertTriangle size={18} />
+              </div>
+              <div>
+                <span className="font-bold text-red-400 uppercase tracking-widest text-[10px] mb-1.5 block">Critical Finding</span>
+                <p className="font-medium text-slate-200">{audit.summary?.critical_finding}</p>
+              </div>
             </div>
-          </div>
+          </motion.div>
+
+          {/* Action Required Card */}
+          <motion.div 
+            variants={itemVariants}
+            className="relative rounded-3xl bg-gradient-to-r from-emerald-900/20 to-teal-900/20 border border-emerald-500/20 p-6 text-[14px] leading-relaxed text-emerald-50 shadow-[0_0_20px_rgba(16,185,129,0.1)] backdrop-blur-xl overflow-hidden group"
+          >
+            <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500 group-hover:shadow-[0_0_20px_#10b981] transition-all" />
+            <div className="flex items-start gap-4">
+              <div className="p-2 bg-emerald-500/20 rounded-xl text-emerald-400 shrink-0">
+                <Target size={18} />
+              </div>
+              <div>
+                <span className="font-bold text-emerald-400 uppercase tracking-widest text-[10px] mb-1.5 block">Immediate Action</span>
+                <p className="font-medium text-slate-200">{audit.summary?.action_required}</p>
+              </div>
+            </div>
+          </motion.div>
         </motion.div>
         
         {/* Top Stats */}

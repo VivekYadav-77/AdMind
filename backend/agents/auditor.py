@@ -86,7 +86,11 @@ Respond ONLY with this JSON structure:
       "detail": "<one sentence explaining the specific problem>"
     }}
   ],{segment_json}
-  "summary": "<2-3 sentence overall audit summary>"
+  "summary": {{
+    "overview": "<1-sentence bottom line>",
+    "critical_finding": "<the biggest problem found, or 'None'>",
+    "action_required": "<the immediate next step>"
+  }}
 }}
 """.strip()
 
