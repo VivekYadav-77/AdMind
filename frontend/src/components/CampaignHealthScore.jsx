@@ -5,7 +5,8 @@ import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts'
 export default function CampaignHealthScore({ audit }) {
   if (!audit || !audit.total_spend) return null
 
-  const efficiency = Math.max(0, audit.total_spend - audit.inefficient_spend) / audit.total_spend
+  const inefficientSpend = audit.inefficient_spend !== undefined ? audit.inefficient_spend : (audit.wasted_spend || 0)
+  const efficiency = Math.max(0, audit.total_spend - inefficientSpend) / audit.total_spend
   const roas = audit.total_roas || 0
   
   let score = 0

@@ -45,10 +45,11 @@ const itemVariants = {
 export default function AuditResults({ audit }) {
   if (!audit) return null
 
-  const efficientSpend = Math.max(0, audit.total_spend - audit.inefficient_spend)
+  const inefficientSpend = audit.inefficient_spend !== undefined ? audit.inefficient_spend : (audit.wasted_spend || 0)
+  const efficientSpend = Math.max(0, audit.total_spend - inefficientSpend)
   const pieData = [
     { name: 'Efficient Spend', value: efficientSpend, color: '#3b82f6' },
-    { name: 'Inefficient Spend', value: audit.inefficient_spend, color: '#ef4444' }
+    { name: 'Inefficient Spend', value: inefficientSpend, color: '#ef4444' }
   ]
 
   const topWasted = [...audit.issues]
@@ -64,7 +65,7 @@ export default function AuditResults({ audit }) {
     ['Total Spend', money(audit.total_spend), 'text-white'],
     ['Total Revenue', money(audit.total_revenue), 'text-emerald-400'],
     ['ROAS', `${Number(audit.total_roas || 0).toFixed(2)}x`, 'text-blue-400'],
-    ['Inefficient Spend', money(audit.inefficient_spend), 'text-red-400']
+    ['Inefficient Spend', money(inefficientSpend), 'text-red-400']
   ]
 
   const anomalies = audit.segment_anomalies || []
