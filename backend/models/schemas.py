@@ -41,7 +41,7 @@ class AuditResult(BaseModel):
     total_spend: float
     total_revenue: float
     total_roas: float
-    wasted_spend: float
+    inefficient_spend: float
     issues: List[AuditIssue]
     summary: AuditSummary
     segment_anomalies: Optional[List[AuditIssue]] = None

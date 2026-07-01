@@ -45,10 +45,10 @@ const itemVariants = {
 export default function AuditResults({ audit }) {
   if (!audit) return null
 
-  const efficientSpend = Math.max(0, audit.total_spend - audit.wasted_spend)
+  const efficientSpend = Math.max(0, audit.total_spend - audit.inefficient_spend)
   const pieData = [
     { name: 'Efficient Spend', value: efficientSpend, color: '#3b82f6' },
-    { name: 'Wasted Spend', value: audit.wasted_spend, color: '#ef4444' }
+    { name: 'Inefficient Spend', value: audit.inefficient_spend, color: '#ef4444' }
   ]
 
   const topWasted = [...audit.issues]
@@ -64,7 +64,7 @@ export default function AuditResults({ audit }) {
     ['Total Spend', money(audit.total_spend), 'text-white'],
     ['Total Revenue', money(audit.total_revenue), 'text-emerald-400'],
     ['ROAS', `${Number(audit.total_roas || 0).toFixed(2)}x`, 'text-blue-400'],
-    ['Wasted Spend', money(audit.wasted_spend), 'text-red-400']
+    ['Inefficient Spend', money(audit.inefficient_spend), 'text-red-400']
   ]
 
   const anomalies = audit.segment_anomalies || []
@@ -157,7 +157,7 @@ export default function AuditResults({ audit }) {
               <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">{label}</p>
               <p className={clsx("text-3xl font-black flex items-center gap-2", colorClass)}>
                 {value}
-                {label === 'Wasted Spend' && <TrendingDown size={24} className="text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]" />}
+                {label === 'Inefficient Spend' && <TrendingDown size={24} className="text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]" />}
               </p>
             </motion.div>
           ))}
@@ -201,7 +201,7 @@ export default function AuditResults({ audit }) {
                 <div className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)]" /> Efficient
               </span>
               <span className="flex items-center gap-2 text-red-400">
-                <div className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" /> Wasted
+                <div className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]" /> Inefficient
               </span>
             </div>
           </motion.div>

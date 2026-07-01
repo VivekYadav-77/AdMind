@@ -64,10 +64,9 @@ CAMPAIGN DATA:
 {formatted_table}
 
 METRICS TO ANALYZE:
-- Wasted spend: keywords with spend > $30 and 0 conversions
-- Low CTR: keywords with CTR < 0.5% and impressions > 1000
-- Zero conversion keywords with significant spend (> $20)
-- High CPC relative to revenue (CPC > revenue per conversion)
+- Inefficient Spend (Negative ROI): Any keyword or segment where the acquisition cost exceeds the revenue generated (e.g., spend > revenue).
+- Wasted Spend (Strict): Any keyword or segment with significant spend (>$20) and 0 conversions.
+- Low Engagement: Keywords with CTR < 0.5% and impressions > 1000.
 {demographic_section}
 
 Respond ONLY with this JSON structure:
@@ -75,7 +74,7 @@ Respond ONLY with this JSON structure:
   "total_spend": <number>,
   "total_revenue": <number>,
   "total_roas": <number>,
-  "wasted_spend": <total $ wasted on zero-conversion keywords>,
+  "inefficient_spend": <total $ of ALL unprofitable spend combined (e.g. 0-conversion spend + negative ROI spend)>,
   "issues": [
     {{
       "keyword": "<keyword>",
