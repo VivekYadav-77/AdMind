@@ -142,6 +142,17 @@ export const API = {
     return res.json()
   },
 
+  getTrends: async () => {
+    const res = await fetch(apiUrl('/history/trends'), {
+      method: 'GET',
+      headers: getAuthHeaders()
+    })
+    if (!res.ok) {
+      throw new Error('Could not fetch historical trends')
+    }
+    return res.json()
+  },
+
   // Chat
   getChatHistory: async (jobId) => {
     const res = await fetch(apiUrl(`/history/${jobId}/chat`), {

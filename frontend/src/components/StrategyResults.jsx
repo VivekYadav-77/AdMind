@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { ArrowUpRight, Lightbulb, Play, Pause, RefreshCw, Layers, Zap, Target, Gauge, Bot } from 'lucide-react'
+import { ArrowUpRight, Lightbulb, Play, Pause, RefreshCw, Layers, Zap, Target, Gauge, Bot, Download } from 'lucide-react'
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts'
 import clsx from 'clsx'
 
@@ -44,6 +44,37 @@ const itemVariants = {
 export default function StrategyResults({ strategy }) {
   if (!strategy) return null
 
+  const handleExportCSV = () => {
+    if (!strategy || !strategy.recommendations) return
+    
+    const headers = ['Priority', 'Action', 'Target', 'Reasoning', 'Expected Impact']
+    const escapeCsv = (str) => {
+      if (str === null || str === undefined) return '""'
+      const stringified = String(str)
+      if (stringified.includes(',') || stringified.includes('"') || stringified.includes('\n')) {
+        return `"${stringified.replace(/"/g, '""')}"`
+      }
+      return stringified
+    }
+    
+    const rows = strategy.recommendations.map(r => [
+      r.priority,
+      r.action,
+      r.target,
+      r.reasoning,
+      r.expected_impact
+    ].map(escapeCsv).join(','))
+    
+    const csvContent = [headers.join(','), ...rows].join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.setAttribute('download', 'admind_strategy_plan.csv')
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   // Group recommendations by priority
   const grouped = strategy.recommendations.reduce((acc, item) => {
     const p = String(item.priority).toLowerCase()
@@ -78,14 +109,24 @@ export default function StrategyResults({ strategy }) {
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[100px] pointer-events-none" />
 
-        <motion.div variants={itemVariants} className="flex items-center gap-5 mb-10">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/30 to-purple-500/30 text-indigo-300 shadow-[0_0_30px_rgba(79,70,229,0.3)] border border-indigo-400/20 backdrop-blur-md">
-            <Lightbulb size={28} aria-hidden="true" />
+        <motion.div variants={itemVariants} className="flex items-center justify-between gap-5 mb-10 flex-wrap">
+          <div className="flex items-center gap-5">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/30 to-purple-500/30 text-indigo-300 shadow-[0_0_30px_rgba(79,70,229,0.3)] border border-indigo-400/20 backdrop-blur-md">
+              <Lightbulb size={28} aria-hidden="true" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-black text-white tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">Strategy Recommendations</h2>
+              <p className="text-slate-400 text-sm mt-1 font-medium">Actionable insights to optimize your campaigns</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-3xl font-black text-white tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">Strategy Recommendations</h2>
-            <p className="text-slate-400 text-sm mt-1 font-medium">Actionable insights to optimize your campaigns</p>
-          </div>
+          
+          <button 
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-400 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:shadow-[0_0_30px_rgba(99,102,241,0.6)]"
+          >
+            <Download size={18} />
+            <span>Export to CSV</span>
+          </button>
         </motion.div>
 
         <div className="grid lg:grid-cols-3 gap-8 mb-12">

@@ -9,6 +9,7 @@ import CampaignHealthScore from '../components/CampaignHealthScore'
 import ColdStartLoader from '../components/ColdStartLoader'
 import CopyResults from '../components/CopyResults'
 import StrategyResults from '../components/StrategyResults'
+import HistoricalTrends from '../components/HistoricalTrends'
 import UploadZone from '../components/UploadZone'
 import { API } from '../services/api'
 import clsx from 'clsx'
@@ -305,19 +306,23 @@ export default function Dashboard() {
       )}
 
       {stage === 'done' && (
-        <motion.section 
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          className="pt-12 text-center"
-        >
-          <button
-            type="button"
-            onClick={reset}
-            className="inline-flex items-center gap-2 rounded-xl glass-panel px-6 py-3 text-sm font-semibold text-slate-300 shadow-lg transition-all hover:bg-white/10"
+        <div className="space-y-12 mt-12 border-t border-white/10 pt-12">
+          <HistoricalTrends />
+          
+          <motion.section 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="text-center"
           >
-            <RotateCcw size={18} aria-hidden="true" />
-            Start New Analysis
-          </button>
-        </motion.section>
+            <button
+              type="button"
+              onClick={reset}
+              className="inline-flex items-center gap-2 rounded-xl glass-panel px-6 py-3 text-sm font-semibold text-slate-300 shadow-lg transition-all hover:bg-white/10"
+            >
+              <RotateCcw size={18} aria-hidden="true" />
+              Start New Analysis
+            </button>
+          </motion.section>
+        </div>
       )}
     </motion.div>
   )

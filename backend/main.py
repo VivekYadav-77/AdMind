@@ -309,6 +309,52 @@ async def analyze_stream(
 
 
 # History Endpoints
+@app.get("/history/trends")
+def get_trends(
+    request: Request,
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_user)
+):
+    wid = _get_workspace_id(request, db, current_user)
+    query = db.query(AnalysisJob).filter(
+        AnalysisJob.user_id == current_user.id,
+        AnalysisJob.status == "complete"
+    )
+    if wid:
+        query = query.filter(AnalysisJob.workspace_id == wid)
+        
+    jobs = query.order_by(AnalysisJob.created_at).all()
+    
+    trends = []
+    for job in jobs:
+        if not job.audit_data:
+            continue
+            
+        audit = job.audit_data
+        total_spend = audit.get("total_spend", 0)
+        inefficient_spend = audit.get("inefficient_spend")
+        if inefficient_spend is None:
+            inefficient_spend = audit.get("wasted_spend", 0)
+            
+        efficiency = 0
+        if total_spend > 0:
+            efficiency = max(0, total_spend - inefficient_spend) / total_spend
+            
+        roas = audit.get("total_roas", 0)
+        score = (efficiency * 60) + (min(roas / 4, 1) * 40)
+        
+        trends.append({
+            "id": job.id,
+            "date": job.created_at.strftime("%b %d"),
+            "timestamp": job.created_at.isoformat(),
+            "score": round(score),
+            "efficiency": round(efficiency * 100),
+            "roas": round(roas, 2)
+        })
+        
+    return trends
+
+
 @app.get("/history")
 def get_history(
     request: Request,
