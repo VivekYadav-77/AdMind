@@ -79,18 +79,7 @@ export default function Dashboard() {
   }
 
   const runAnalysis = async (file) => {
-    // Basic CSV Validation
-    try {
-      const text = await file.slice(0, 5000).text()
-      const firstLine = text.split('\n')[0].toLowerCase()
-      if (!firstLine.includes('spend') || !firstLine.includes('revenue')) {
-        setError('CSV must contain "Spend" and "Revenue" columns.')
-        setStage('error')
-        return
-      }
-    } catch (e) {
-      console.error('Failed to validate CSV', e)
-    }
+    // Let the backend handle CSV validation to support column aliases
 
     setStage('running')
     setAgentStatus(initialAgentStatus)

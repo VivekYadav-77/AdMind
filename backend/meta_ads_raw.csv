@@ -1,0 +1,5 @@
+Campaign name,Ad group,Search keyword,Impressions,Clicks,Amount spent,Conversion,Purchase value,Device,Location,Age group
+Retargeting,All Visitors,retargeting,1200,120,144.00,22,1100.00,Desktop,California,25-34
+Retargeting,All Visitors,retargeting,800,60,72.00,8,400.00,Mobile,California,25-34
+Cold Traffic,Lookalike,lookalike audience,15000,180,500.00,2,80.00,Mobile,Florida,18-24
+Competitor,Rival Brand,competitor name,2000,10,45.00,0,0.00,Desktop,Florida,25-34
