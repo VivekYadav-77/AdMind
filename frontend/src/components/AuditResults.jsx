@@ -57,7 +57,7 @@ export default function AuditResults({ audit }) {
     .map(issue => ({
       name: issue.keyword.length > 15 ? issue.keyword.substring(0, 15) + '...' : issue.keyword,
       fullKeyword: issue.keyword,
-      Wasted: issue.spend
+      Impacted: issue.spend
     }))
 
   const stats = [
@@ -208,7 +208,7 @@ export default function AuditResults({ audit }) {
 
           {/* Top Wasted Spend Bar Chart */}
           <motion.div variants={itemVariants} className="lg:col-span-2 rounded-3xl border border-white/10 bg-white/5 p-8 shadow-lg flex flex-col backdrop-blur-lg">
-            <h3 className="text-sm font-black text-slate-300 mb-6 uppercase tracking-widest">Top 5 Wasted Spend Keywords</h3>
+            <h3 className="text-sm font-black text-slate-300 mb-6 uppercase tracking-widest">Highest Impact Issues (by Spend)</h3>
             <div className="h-48 w-full flex-1">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={topWasted} margin={{ top: 10, right: 10, left: -20, bottom: 0 }} barSize={36}>
@@ -235,9 +235,9 @@ export default function AuditResults({ audit }) {
                     contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(10px)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '16px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }}
                     labelStyle={{ color: '#cbd5e1', marginBottom: '6px', fontWeight: 'bold' }}
                     itemStyle={{ color: '#ef4444', fontWeight: '900', fontSize: '16px' }}
-                    formatter={(value) => [money(value), 'Wasted']}
+                    formatter={(value) => [money(value), 'Impacted Spend']}
                   />
-                  <Bar dataKey="Wasted" fill="#ef4444" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="Impacted" fill="#ef4444" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -279,7 +279,7 @@ export default function AuditResults({ audit }) {
                     <p className="text-sm font-bold text-slate-200 capitalize">{issue.issue_type.replace(/_/g, ' ')}</p>
                   </div>
                   <div className="text-right border-l border-white/10 pl-6">
-                    <p className="text-[10px] uppercase tracking-widest text-slate-500 font-black mb-1">Wasted</p>
+                    <p className="text-[10px] uppercase tracking-widest text-slate-500 font-black mb-1">Impacted Spend</p>
                     <p className="text-xl font-black text-red-400 drop-shadow-[0_0_5px_rgba(239,68,68,0.5)]">{money(issue.spend)}</p>
                   </div>
                 </div>
@@ -344,7 +344,7 @@ export default function AuditResults({ audit }) {
                     <p className="text-sm text-slate-300 mt-2 flex-1 leading-relaxed font-medium">{anomaly.detail}</p>
                     
                     <div className="mt-6 pt-5 border-t border-amber-500/20 flex justify-between items-center text-xs font-black">
-                      <span className="text-slate-400 uppercase tracking-widest">Wasted Segment Spend</span>
+                      <span className="text-slate-400 uppercase tracking-widest">Impacted Segment Spend</span>
                       <span className="text-amber-400 text-xl drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]">{money(anomaly.spend)}</span>
                     </div>
                   </motion.div>

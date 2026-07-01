@@ -51,7 +51,7 @@ For each segment anomaly found, include it in the "segment_anomalies" array with
       "issue_type": "<device_anomaly|location_anomaly|age_anomaly>",
       "severity": "<high|medium|low>",
       "spend": <number>,
-      "detail": "<one sentence explaining the specific segment problem>",
+      "detail": "<One conversational, marketer-friendly sentence explaining the anomaly (e.g. 'Mobile users are clicking, but they convert at half the rate of Desktop users, bleeding your budget.').>",
       "segment_type": "<device|location|age_group>",
       "segment_value": "<the underperforming segment value>"
     }}
@@ -83,7 +83,7 @@ Respond ONLY with this JSON structure:
       "issue_type": "<wasted_spend|low_ctr|zero_conversion|high_cpc>",
       "severity": "<high|medium|low>",
       "spend": <number>,
-      "detail": "<one sentence explaining the specific problem>"
+      "detail": "<One conversational, marketer-friendly sentence explaining why this hurts performance (e.g. 'You are paying too much for clicks here, wiping out any profit from a conversion.').>"
     }}
   ],{segment_json}
   "summary": {{

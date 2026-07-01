@@ -5,14 +5,13 @@ function AdMockup({ testData, type, label }) {
   const isA = type === 'A'
   const accentColor = isA ? 'blue' : 'amber'
   const AccentIcon = isA ? Target : Zap
+  const brandName = "AdMind"
   
   return (
     <div className={`relative flex flex-col rounded-2xl border-2 border-${accentColor}-500/30 bg-slate-900 overflow-hidden group hover:border-${accentColor}-500/60 transition-colors shadow-lg`}>
       {/* Top Banner */}
       <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-${accentColor}-400 to-${accentColor}-600`} />
       
-      {/* Ad Header (Mock Profile) */}
-      <div className="p-4 flex items-center justify-between border-b border-white/5 bg-white/5">
       {/* Ad Header */}
       <div className="flex items-center justify-between p-4 border-b border-white/5 bg-white/5">
         <div className="flex items-center gap-3">
@@ -38,9 +37,8 @@ function AdMockup({ testData, type, label }) {
       {/* Ad Text */}
       <div className="p-5 flex-1 relative">
         <p className="text-[15px] text-slate-200 whitespace-pre-wrap leading-relaxed font-medium">
-          {text}
+          {testData?.description}
         </p>
-        </div>
       </div>
 
       {/* Headline & CTA */}
