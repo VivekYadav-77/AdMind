@@ -1,4 +1,4 @@
-import { History, LayoutDashboard, LogOut, Settings, ChevronDown, Plus, Wrench } from 'lucide-react'
+import { History, LayoutDashboard, LogOut, Settings, ChevronDown, Plus, Wrench, FlaskConical } from 'lucide-react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useEffect, useState, useRef } from 'react'
@@ -63,6 +63,7 @@ export default function Layout() {
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'History', path: '/history', icon: History },
     { name: 'AI Tools', path: '/tools', icon: Wrench },
+    { name: 'A/B Tracker', path: '/tests', icon: FlaskConical },
     { name: 'Settings', path: '/settings', icon: Settings }
   ]
 
@@ -132,6 +133,8 @@ export default function Layout() {
               ? 'Analysis History'
               : location.pathname.startsWith('/tools')
               ? 'AI Marketing Tools'
+              : location.pathname.startsWith('/tests')
+              ? 'A/B Test Tracking'
               : location.pathname === '/settings'
               ? 'System Settings'
               : 'Overview'}

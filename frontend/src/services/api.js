@@ -215,5 +215,55 @@ export const API = {
       throw new Error('Failed to tear down competitor ad')
     }
     return res.json()
+  },
+
+  // Comments
+  getComments: async (jobId) => {
+    const res = await fetch(apiUrl(`/history/${jobId}/comments`), {
+      method: 'GET',
+      headers: getAuthHeaders()
+    })
+    if (!res.ok) throw new Error('Could not fetch comments')
+    return res.json()
+  },
+
+  addComment: async (jobId, targetKeyword, commentText) => {
+    const res = await fetch(apiUrl(`/history/${jobId}/comments`), {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target_keyword: targetKeyword, comment_text: commentText })
+    })
+    if (!res.ok) throw new Error('Could not add comment')
+    return res.json()
+  },
+
+  // AB Test Tracker
+  getAbTests: async () => {
+    const res = await fetch(apiUrl('/workspaces/tests'), {
+      method: 'GET',
+      headers: getAuthHeaders()
+    })
+    if (!res.ok) throw new Error('Could not fetch AB tests')
+    return res.json()
+  },
+
+  createAbTest: async (testName, variantA, variantB) => {
+    const res = await fetch(apiUrl('/workspaces/tests'), {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ test_name: testName, variant_a_copy: variantA, variant_b_copy: variantB })
+    })
+    if (!res.ok) throw new Error('Could not create AB test')
+    return res.json()
+  },
+
+  declareWinner: async (testId, winner) => {
+    const res = await fetch(apiUrl(`/workspaces/tests/${testId}/winner`), {
+      method: 'PUT',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ winner })
+    })
+    if (!res.ok) throw new Error('Could not declare winner')
+    return res.json()
   }
 }

@@ -82,3 +82,27 @@ class ChatMessage(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     job = relationship("AnalysisJob", back_populates="chat_messages")
+
+
+class RecommendationComment(Base):
+    __tablename__ = "recommendation_comments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    job_id = Column(Integer, ForeignKey("analysis_jobs.id"), nullable=False)
+    target_keyword = Column(String, nullable=False)
+    comment_text = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class ABTestCampaign(Base):
+    __tablename__ = "ab_test_campaigns"
+
+    id = Column(Integer, primary_key=True, index=True)
+    workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=False)
+    test_name = Column(String, nullable=False)
+    variant_a_copy = Column(String, nullable=False)
+    variant_b_copy = Column(String, nullable=False)
+    status = Column(String, default="running")
+    winner = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

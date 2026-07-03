@@ -20,7 +20,7 @@ from agents.landing_page_auditor import run_landing_page_auditor
 from agents.audience_builder import run_audience_builder
 from agents.competitor_teardown import run_competitor_teardown
 from db.database import Base, engine, get_db, SessionLocal
-from db.models import AnalysisJob, User, Workspace, WorkspaceMember, ChatMessage
+from db.models import AnalysisJob, User, Workspace, WorkspaceMember, ChatMessage, RecommendationComment, ABTestCampaign
 from models.schemas import PipelineResult, UserCreate, Token
 from services.csv_parser import parse_csv
 from services.gemini import GeminiError, call_gemini_chat
@@ -461,6 +461,106 @@ async def send_chat_message(
     db.commit()
 
     return {"role": "assistant", "content": reply_text}
+
+
+# Comments Endpoints
+class CommentCreate(BaseModel):
+    target_keyword: str
+    comment_text: str
+
+@app.get("/history/{job_id}/comments")
+def get_comments(job_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    job = db.query(AnalysisJob).filter(AnalysisJob.id == job_id, AnalysisJob.user_id == current_user.id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    comments = db.query(RecommendationComment).filter(RecommendationComment.job_id == job_id).order_by(RecommendationComment.created_at).all()
+    # We can fetch the user emails too for UI display
+    result = []
+    for c in comments:
+        user = db.query(User).filter(User.id == c.user_id).first()
+        result.append({
+            "id": c.id,
+            "target_keyword": c.target_keyword,
+            "comment_text": c.comment_text,
+            "user_email": user.email if user else "Unknown",
+            "created_at": c.created_at
+        })
+    return result
+
+@app.post("/history/{job_id}/comments")
+def add_comment(job_id: int, req: CommentCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    job = db.query(AnalysisJob).filter(AnalysisJob.id == job_id, AnalysisJob.user_id == current_user.id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+        
+    new_comment = RecommendationComment(
+        user_id=current_user.id,
+        job_id=job.id,
+        target_keyword=req.target_keyword,
+        comment_text=req.comment_text
+    )
+    db.add(new_comment)
+    db.commit()
+    db.refresh(new_comment)
+    
+    return {
+        "id": new_comment.id,
+        "target_keyword": new_comment.target_keyword,
+        "comment_text": new_comment.comment_text,
+        "user_email": current_user.email,
+        "created_at": new_comment.created_at
+    }
+
+
+# AB Test Campaign Endpoints
+class ABTestCreate(BaseModel):
+    test_name: str
+    variant_a_copy: str
+    variant_b_copy: str
+
+class ABTestWinner(BaseModel):
+    winner: str # 'A' or 'B'
+
+@app.get("/workspaces/tests")
+def get_ab_tests(request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    wid = _get_workspace_id(request, db, current_user)
+    if not wid:
+        return []
+    
+    tests = db.query(ABTestCampaign).filter(ABTestCampaign.workspace_id == wid).order_by(desc(ABTestCampaign.created_at)).all()
+    return tests
+
+@app.post("/workspaces/tests")
+def create_ab_test(req: ABTestCreate, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    wid = _get_workspace_id(request, db, current_user)
+    if not wid:
+        raise HTTPException(status_code=400, detail="No active workspace found")
+        
+    test = ABTestCampaign(
+        workspace_id=wid,
+        test_name=req.test_name,
+        variant_a_copy=req.variant_a_copy,
+        variant_b_copy=req.variant_b_copy,
+        status="running"
+    )
+    db.add(test)
+    db.commit()
+    db.refresh(test)
+    return test
+
+@app.put("/workspaces/tests/{test_id}/winner")
+def declare_winner(test_id: int, req: ABTestWinner, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    wid = _get_workspace_id(request, db, current_user)
+    test = db.query(ABTestCampaign).filter(ABTestCampaign.id == test_id, ABTestCampaign.workspace_id == wid).first()
+    if not test:
+        raise HTTPException(status_code=404, detail="Test not found")
+        
+    test.status = "completed"
+    test.winner = req.winner
+    db.commit()
+    db.refresh(test)
+    return test
 
 
 # Tools Endpoints
