@@ -73,6 +73,7 @@ class CopyVariant(BaseModel):
     test_a: ABTestVariant
     test_b: ABTestVariant
     test_rationale: str
+    visual_prompt: Optional[str] = None
 
 
 class CopyResult(BaseModel):

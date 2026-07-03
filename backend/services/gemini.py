@@ -169,6 +169,7 @@ def _mock_gemini_response(prompt: str) -> str:
                             "headline": "Loved by 50K+ Shoppers",
                             "description": "See why thousands choose us. Top-rated products with free shipping.",
                         },
+                        "visual_prompt": "A modern digital display banner showing a large 50% off sign in glowing neon red, professional photography, high contrast.",
                         "test_rationale": "Display traffic is cold and skeptical. Testing urgency vs social proof will reveal whether this audience responds better to time pressure or trust signals.",
                     },
                     {
@@ -186,6 +187,7 @@ def _mock_gemini_response(prompt: str) -> str:
                             "headline": "Save 40% On Shoes",
                             "description": "Summer sale on top running shoes. Fast checkout, free shipping.",
                         },
+                        "visual_prompt": "A sleek modern running shoe on a glowing neon track, highly detailed, photorealistic.",
                         "test_rationale": "This keyword has clear purchase intent but zero conversions. Testing a benefit-led approach against a deal-focused one will show if users need quality reassurance or a price incentive to convert.",
                     },
                     {
@@ -203,6 +205,7 @@ def _mock_gemini_response(prompt: str) -> str:
                             "headline": "A Smarter Alternative",
                             "description": "Discover a new option loved by former [Rival] customers. Try free.",
                         },
+                        "visual_prompt": "A cinematic shot of a confident person holding a modern smartphone, standing out from a grey crowd.",
                         "test_rationale": "Competitor keywords attract users already loyal to another brand. Testing aggressive comparison vs gentle alternative framing reveals the right tone for conquesting.",
                     },
                 ],
@@ -250,9 +253,10 @@ async def call_gemini_chat(job_context: dict, chat_history: list, new_message: s
 
     try:
         system_instruction = (
-            "You are AdMind, an expert AI marketing analyst. You are chatting with a user about their marketing campaign report.\n"
-            f"Here is the context of their analysis job:\n{json.dumps(job_context, indent=2)}\n"
-            "Answer the user's questions based ONLY on this context. Be concise, actionable, and professional."
+            "You are AdMind's Elite Data Analyst. You are chatting with a user about their marketing campaign data.\n"
+            "You have full access to their raw data, audit results, and AI recommendations. Your goal is to answer their specific questions mathematically and strategically.\n"
+            f"Here is the deep context of their analysis job (including metrics and insights):\n{json.dumps(job_context, indent=2)}\n"
+            "Answer the user's questions based ONLY on this context. Be concise, highly analytical, actionable, and professional. Use markdown formatting to make your data easy to read."
         )
 
         model = genai.GenerativeModel(
