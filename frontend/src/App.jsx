@@ -8,6 +8,7 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import ReportDetail from './pages/ReportDetail'
 import Settings from './pages/Settings'
+import TestTracker from './pages/TestTracker'
 import { AuthProvider, useAuth } from './context/AuthContext'
 
 function ProtectedRoute({ children }) {
@@ -35,6 +36,7 @@ export default function App() {
             <Route path="history" element={<History />} />
             <Route path="history/:id" element={<ReportDetail />} />
             <Route path="tools" element={<Tools />} />
+            <Route path="tests" element={<TestTracker />} />
             <Route path="settings" element={<Settings />} />
             <Route path="*" element={<Dashboard />} />
           </Route>

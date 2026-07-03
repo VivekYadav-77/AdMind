@@ -1,6 +1,8 @@
-import { motion } from 'framer-motion'
-import { ArrowUpRight, Lightbulb, Play, Pause, RefreshCw, Layers, Zap, Target, Gauge, Bot, Download } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ArrowUpRight, Lightbulb, Play, Pause, RefreshCw, Layers, Zap, Target, Gauge, Bot, Download, MessageSquare, Send } from 'lucide-react'
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts'
+import { useState, useEffect } from 'react'
+import { API } from '../services/api'
 import clsx from 'clsx'
 
 function actionIcon(action) {
@@ -41,7 +43,40 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
 }
 
-export default function StrategyResults({ strategy }) {
+export default function StrategyResults({ strategy, jobId }) {
+  const [comments, setComments] = useState({}) // { [target_keyword]: [comment1, comment2] }
+  const [newComment, setNewComment] = useState({}) // { [target_keyword]: "text" }
+  const [activeCommentBox, setActiveCommentBox] = useState(null)
+
+  useEffect(() => {
+    if (jobId) {
+      API.getComments(jobId).then(data => {
+        const grouped = {}
+        data.forEach(c => {
+          if (!grouped[c.target_keyword]) grouped[c.target_keyword] = []
+          grouped[c.target_keyword].push(c)
+        })
+        setComments(grouped)
+      }).catch(console.error)
+    }
+  }, [jobId])
+
+  const handleAddComment = async (keyword) => {
+    const text = newComment[keyword]
+    if (!text || !text.trim() || !jobId) return
+
+    try {
+      const added = await API.addComment(jobId, keyword, text)
+      setComments(prev => ({
+        ...prev,
+        [keyword]: [...(prev[keyword] || []), added]
+      }))
+      setNewComment(prev => ({ ...prev, [keyword]: '' }))
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
   if (!strategy) return null
 
   const handleExportCSV = () => {
@@ -213,8 +248,59 @@ export default function StrategyResults({ strategy }) {
                               <div className={`w-2.5 h-2.5 rounded-full bg-${color}-500`} style={{ boxShadow: `0 0 8px ${shadow}` }} />
                             </div>
                             <p className="text-[15px] font-bold text-slate-200 leading-snug">{item.expected_impact}</p>
+                            
+                            <button 
+                              onClick={() => setActiveCommentBox(activeCommentBox === item.target ? null : item.target)}
+                              className="mt-4 flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-indigo-400 transition-colors"
+                            >
+                              <MessageSquare size={14} /> 
+                              {comments[item.target]?.length || 0} Comments
+                            </button>
                           </div>
                         </div>
+
+                        {/* Comments Section */}
+                        <AnimatePresence>
+                          {activeCommentBox === item.target && (
+                            <motion.div 
+                              initial={{ opacity: 0, height: 0 }} 
+                              animate={{ opacity: 1, height: 'auto' }} 
+                              exit={{ opacity: 0, height: 0 }}
+                              className="mt-6 pt-6 border-t border-white/10"
+                            >
+                              <div className="space-y-4 mb-4 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                                {comments[item.target]?.map(c => (
+                                  <div key={c.id} className="bg-white/5 p-3 rounded-xl border border-white/5">
+                                    <div className="flex justify-between items-center mb-1">
+                                      <span className="text-xs font-bold text-indigo-300">{c.user_email}</span>
+                                      <span className="text-[10px] text-slate-500">{new Date(c.created_at).toLocaleDateString()}</span>
+                                    </div>
+                                    <p className="text-sm text-slate-300">{c.comment_text}</p>
+                                  </div>
+                                ))}
+                                {(!comments[item.target] || comments[item.target].length === 0) && (
+                                  <p className="text-sm text-slate-500 italic">No comments yet. Start the discussion!</p>
+                                )}
+                              </div>
+                              <div className="flex gap-2">
+                                <input 
+                                  type="text" 
+                                  placeholder="Add a team comment..."
+                                  value={newComment[item.target] || ''}
+                                  onChange={e => setNewComment(prev => ({...prev, [item.target]: e.target.value}))}
+                                  onKeyDown={e => e.key === 'Enter' && handleAddComment(item.target)}
+                                  className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-500/50"
+                                />
+                                <button 
+                                  onClick={() => handleAddComment(item.target)}
+                                  className="bg-indigo-600 hover:bg-indigo-500 text-white p-2.5 rounded-xl transition-colors"
+                                >
+                                  <Send size={16} />
+                                </button>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </motion.article>
                     )
                   })}
