@@ -154,6 +154,23 @@ export default function Dashboard() {
     const element = reportRef.current
     if (!element) return
 
+    // Inject White-Label Branding
+    const agencyName = localStorage.getItem('agencyName')
+    const logoUrl = localStorage.getItem('logoUrl')
+    
+    let brandingDiv = null
+    if (agencyName || logoUrl) {
+      brandingDiv = document.createElement('div')
+      brandingDiv.className = 'flex items-center gap-4 mb-8 p-6 bg-slate-900 rounded-2xl border border-white/10'
+      if (logoUrl) {
+        brandingDiv.innerHTML += `<img src="${logoUrl}" alt="Logo" class="h-12 w-auto object-contain rounded" crossorigin="anonymous" />`
+      }
+      if (agencyName) {
+        brandingDiv.innerHTML += `<h2 class="text-2xl font-bold text-white">${agencyName}</h2>`
+      }
+      element.insertBefore(brandingDiv, element.firstChild)
+    }
+
     const opt = {
       margin: [10, 10, 10, 10], // top, left, bottom, right in mm
       filename: 'AdMind_Report.pdf',
@@ -162,7 +179,12 @@ export default function Dashboard() {
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     }
 
-    html2pdf().set(opt).from(element).save()
+    html2pdf().set(opt).from(element).save().then(() => {
+      // Clean up branding div after PDF is generated
+      if (brandingDiv) {
+        element.removeChild(brandingDiv)
+      }
+    })
   }
 
   const tabs = [

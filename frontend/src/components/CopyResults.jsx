@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { Beaker, Sparkles, Target, Zap, Globe, MoreHorizontal, ThumbsUp, MessageCircle, Share2, ExternalLink } from 'lucide-react'
 
-function AdMockup({ testData, type, label }) {
+function AdMockup({ testData, type, label, visualPrompt }) {
   const isA = type === 'A'
   const accentColor = isA ? 'blue' : 'amber'
   const AccentIcon = isA ? Target : Zap
@@ -33,6 +33,21 @@ function AdMockup({ testData, type, label }) {
           <MoreHorizontal size={20} />
         </button>
       </div>
+
+      {/* Ad Image from Pollinations */}
+      {visualPrompt && (
+        <div className="w-full aspect-video bg-slate-800 overflow-hidden relative border-b border-white/5">
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-slate-500 text-xs font-bold animate-pulse">Generating AI Creative...</span>
+          </div>
+          <img 
+            src={`https://image.pollinations.ai/prompt/${encodeURIComponent(visualPrompt)}`} 
+            alt="AI Generated Ad Creative" 
+            className="w-full h-full object-cover relative z-10 transition-opacity duration-500"
+            loading="lazy"
+          />
+        </div>
+      )}
 
       {/* Ad Text */}
       <div className="p-5 flex-1 relative">
@@ -125,10 +140,10 @@ export default function CopyResults({ copy }) {
                 </div>
 
                 {/* Test A Mockup */}
-                <AdMockup testData={variant.test_a} type="A" label={variant.test_a?.label || 'Variation A'} />
+                <AdMockup testData={variant.test_a} type="A" label={variant.test_a?.label || 'Variation A'} visualPrompt={variant.visual_prompt} />
 
                 {/* Test B Mockup */}
-                <AdMockup testData={variant.test_b} type="B" label={variant.test_b?.label || 'Variation B'} />
+                <AdMockup testData={variant.test_b} type="B" label={variant.test_b?.label || 'Variation B'} visualPrompt={variant.visual_prompt} />
               </div>
 
               {/* Test rationale */}

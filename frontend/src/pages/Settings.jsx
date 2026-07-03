@@ -24,6 +24,11 @@ export default function Settings() {
     minRoasTarget: 2.5
   })
 
+  const [branding, setBranding] = useState({
+    agencyName: localStorage.getItem('agencyName') || '',
+    logoUrl: localStorage.getItem('logoUrl') || ''
+  })
+
   const [passwordStatus, setPasswordStatus] = useState(null) // { type: 'success'|'error', message: '' }
   const [settingsSaved, setSettingsSaved] = useState(false)
 
@@ -48,6 +53,8 @@ export default function Settings() {
   }
 
   const handleSaveSettings = () => {
+    localStorage.setItem('agencyName', branding.agencyName)
+    localStorage.setItem('logoUrl', branding.logoUrl)
     setSettingsSaved(true)
     setTimeout(() => {
       setSettingsSaved(false)
@@ -178,6 +185,32 @@ export default function Settings() {
                     <span className="text-slate-400 font-bold text-sm">x</span>
                   </div>
                   <span className="text-[10px] text-slate-400 mt-1 block">Flags campaigns yielding lower target returns.</span>
+                </div>
+              </div>
+
+              {/* White Label Settings */}
+              <div className="grid grid-cols-2 gap-4 border-t border-white/5 pt-6">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">Agency Name</label>
+                  <input
+                    type="text"
+                    value={branding.agencyName}
+                    onChange={(e) => setBranding(prev => ({ ...prev, agencyName: e.target.value }))}
+                    placeholder="E.g. AdMind Agency"
+                    className="w-full bg-[#111625] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-blue-500/50"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-1 block">Appears on PDF reports.</span>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-300 mb-2">Logo URL</label>
+                  <input
+                    type="url"
+                    value={branding.logoUrl}
+                    onChange={(e) => setBranding(prev => ({ ...prev, logoUrl: e.target.value }))}
+                    placeholder="https://example.com/logo.png"
+                    className="w-full bg-[#111625] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-blue-500/50"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-1 block">Image URL for PDF reports.</span>
                 </div>
               </div>
 
