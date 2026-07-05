@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { Beaker, Sparkles, Target, Zap, Globe, MoreHorizontal, ThumbsUp, MessageCircle, Share2, ExternalLink } from 'lucide-react'
 
-function AdMockup({ testData, type, label }) {
+function AdMockup({ testData, type, label, visualPrompt }) {
   const isA = type === 'A'
   const accentColor = isA ? 'blue' : 'amber'
   const AccentIcon = isA ? Target : Zap
@@ -40,6 +40,17 @@ function AdMockup({ testData, type, label }) {
           {testData?.description}
         </p>
       </div>
+
+      {/* Ad Image Creative (Pollinations.ai) */}
+      {visualPrompt && (
+        <div className="w-full aspect-[4/3] overflow-hidden border-y border-white/5 bg-slate-950 relative">
+          <img 
+            src={`https://image.pollinations.ai/prompt/${encodeURIComponent(visualPrompt)}?width=800&height=600&nologo=true`} 
+            alt="AI Generated Ad Creative" 
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+          />
+        </div>
+      )}
 
       {/* Headline & CTA */}
       <div className="p-4 bg-slate-800/80 flex items-center justify-between gap-4">
@@ -125,10 +136,10 @@ export default function CopyResults({ copy }) {
                 </div>
 
                 {/* Test A Mockup */}
-                <AdMockup testData={variant.test_a} type="A" label={variant.test_a?.label || 'Variation A'} />
+                <AdMockup testData={variant.test_a} type="A" label={variant.test_a?.label || 'Variation A'} visualPrompt={variant.visual_prompt} />
 
                 {/* Test B Mockup */}
-                <AdMockup testData={variant.test_b} type="B" label={variant.test_b?.label || 'Variation B'} />
+                <AdMockup testData={variant.test_b} type="B" label={variant.test_b?.label || 'Variation B'} visualPrompt={variant.visual_prompt} />
               </div>
 
               {/* Test rationale */}

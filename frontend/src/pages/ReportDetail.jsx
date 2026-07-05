@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Calendar, Download, AlertCircle, FileSearch, Lightbulb, PenLine, BarChart3, MessageSquare, Send, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import html2pdf from 'html2pdf.js'
+import ReactMarkdown from 'react-markdown'
 import clsx from 'clsx'
 
 import { API } from '../services/api'
@@ -242,7 +243,7 @@ export default function ReportDetail() {
               )}
               {activeTab === 'strategy' && job.strategy_data && (
                 <motion.div key="strategy" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>
-                  <StrategyResults strategy={job.strategy_data} />
+                  <StrategyResults strategy={job.strategy_data} jobId={job.id} />
                 </motion.div>
               )}
               {activeTab === 'copy' && job.copy_data && (
@@ -291,9 +292,9 @@ export default function ReportDetail() {
                     "max-w-[85%] rounded-2xl px-5 py-3 text-sm leading-relaxed",
                     msg.role === 'user' 
                       ? "bg-blue-600 text-white rounded-tr-sm" 
-                      : "bg-white/10 text-slate-200 border border-white/5 rounded-tl-sm"
+                      : "bg-white/10 text-slate-200 border border-white/5 rounded-tl-sm prose prose-invert prose-p:leading-relaxed prose-a:text-blue-400 max-w-full"
                   )}>
-                    {msg.content}
+                    {msg.role === 'user' ? msg.content : <ReactMarkdown>{msg.content}</ReactMarkdown>}
                   </div>
                 </div>
               ))}
