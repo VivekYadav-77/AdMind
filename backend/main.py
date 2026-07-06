@@ -238,7 +238,11 @@ async def generate_image(prompt: str):
     
     try:
         image_bytes = await image_manager.generate_image(prompt)
-        return Response(content=image_bytes, media_type="image/jpeg")
+        return Response(
+            content=image_bytes, 
+            media_type="image/jpeg",
+            headers={"Cache-Control": "public, max-age=86400"}
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

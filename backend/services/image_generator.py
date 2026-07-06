@@ -15,12 +15,19 @@ class ImageGenerationManager:
         self.hf_key = os.getenv("HUGGINGFACE_API_KEY")
         self.pollinations_key = os.getenv("POLLINATIONS_API_KEY")
         self._gemini_semaphore = None
+        import threading
+        self._init_lock = threading.Lock()
+        self._cache = {}
 
     async def generate_image(self, prompt: str) -> bytes:
         """
         Attempts to generate an image using a strict priority fallback sequence:
         1. Gemini -> 2. Cloudflare -> 3. Hugging Face -> 4. Pollinations
         """
+        if prompt in self._cache:
+            logger.info("Returning cached image to prevent rate limits.")
+            return self._cache[prompt]
+
         providers = [
             ("Gemini (gemini-2.5-flash-image)", self._generate_gemini),
             ("Cloudflare (FLUX.1 Schnell)", self._generate_cloudflare),
@@ -36,6 +43,7 @@ class ImageGenerationManager:
                 image_bytes = await provider_func(prompt)
                 if image_bytes:
                     logger.info(f"Successfully generated image with {name}.")
+                    self._cache[prompt] = image_bytes
                     return image_bytes
             except Exception as e:
                 logger.warning(f"Provider {name} failed: {str(e)}")
@@ -48,7 +56,9 @@ class ImageGenerationManager:
     async def _generate_gemini(self, prompt: str) -> bytes:
         import asyncio
         if self._gemini_semaphore is None:
-            self._gemini_semaphore = asyncio.Semaphore(1)  # Strictly 1 request at a time to prevent 429
+            with self._init_lock:
+                if self._gemini_semaphore is None:
+                    self._gemini_semaphore = asyncio.Semaphore(1)  # Strictly 1 request at a time to prevent 429
 
         if not self.gemini_key or self.gemini_key.startswith("your_"):
             raise ValueError("Gemini API key is not configured.")
