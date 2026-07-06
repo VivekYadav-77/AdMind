@@ -169,6 +169,7 @@ def _mock_gemini_response(prompt: str) -> str:
                             "headline": "Loved by 50K+ Shoppers",
                             "description": "See why thousands choose us. Top-rated products with free shipping.",
                         },
+                        "visual_prompt": "A cinematic, highly detailed photograph of a glowing red countdown timer overlaying a crowded shopping cart in a modern minimalist style.",
                         "test_rationale": "Display traffic is cold and skeptical. Testing urgency vs social proof will reveal whether this audience responds better to time pressure or trust signals.",
                     },
                     {
@@ -186,6 +187,7 @@ def _mock_gemini_response(prompt: str) -> str:
                             "headline": "Save 40% On Shoes",
                             "description": "Summer sale on top running shoes. Fast checkout, free shipping.",
                         },
+                        "visual_prompt": "A pair of premium running shoes mid-stride on a glowing neon track at sunset, photorealistic, 4k resolution.",
                         "test_rationale": "This keyword has clear purchase intent but zero conversions. Testing a benefit-led approach against a deal-focused one will show if users need quality reassurance or a price incentive to convert.",
                     },
                     {
@@ -203,6 +205,7 @@ def _mock_gemini_response(prompt: str) -> str:
                             "headline": "A Smarter Alternative",
                             "description": "Discover a new option loved by former [Rival] customers. Try free.",
                         },
+                        "visual_prompt": "A split screen showing a broken, complex machine on the left and a sleek, glowing futuristic smart device on the right, high contrast.",
                         "test_rationale": "Competitor keywords attract users already loyal to another brand. Testing aggressive comparison vs gentle alternative framing reveals the right tone for conquesting.",
                     },
                 ],
