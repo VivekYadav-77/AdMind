@@ -18,6 +18,7 @@ class ImageGenerationManager:
         import threading
         self._init_lock = threading.Lock()
         self._cache = {}
+        self._provider_index = 0
 
     async def generate_image(self, prompt: str) -> bytes:
         """
@@ -35,9 +36,15 @@ class ImageGenerationManager:
             ("Pollinations (Fallback)", self._generate_pollinations)
         ]
 
+        with self._init_lock:
+            start_idx = self._provider_index
+            self._provider_index = (self._provider_index + 1) % len(providers)
+            
+        ordered_providers = providers[start_idx:] + providers[:start_idx]
+
         last_exception = None
 
-        for name, provider_func in providers:
+        for name, provider_func in ordered_providers:
             try:
                 logger.info(f"Attempting to generate image with {name}...")
                 image_bytes = await provider_func(prompt)
