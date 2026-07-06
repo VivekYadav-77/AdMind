@@ -14,6 +14,7 @@ class ImageGenerationManager:
         self.cf_account_id = os.getenv("CLOUDFLARE_ACCOUNT_ID")
         self.hf_key = os.getenv("HUGGINGFACE_API_KEY")
         self.pollinations_key = os.getenv("POLLINATIONS_API_KEY")
+        self._gemini_semaphore = None
 
     async def generate_image(self, prompt: str) -> bytes:
         """
@@ -45,6 +46,10 @@ class ImageGenerationManager:
         raise Exception(f"All image generation providers failed. Last error: {str(last_exception)}")
 
     async def _generate_gemini(self, prompt: str) -> bytes:
+        import asyncio
+        if self._gemini_semaphore is None:
+            self._gemini_semaphore = asyncio.Semaphore(1)  # Strictly 1 request at a time to prevent 429
+
         if not self.gemini_key or self.gemini_key.startswith("your_"):
             raise ValueError("Gemini API key is not configured.")
 
@@ -54,16 +59,28 @@ class ImageGenerationManager:
             "contents": [{"parts": [{"text": prompt}]}]
         }
         
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=payload, timeout=30.0)
-            response.raise_for_status()
-            data = response.json()
-            try:
-                # The image is returned as a base64 string in inlineData
-                b64 = data["candidates"][0]["content"]["parts"][0]["inlineData"]["data"]
-                return base64.b64decode(b64)
-            except (KeyError, IndexError):
-                raise ValueError(f"Unexpected response format from Gemini: {data}")
+        async with self._gemini_semaphore:
+            max_retries = 3
+            async with httpx.AsyncClient() as client:
+                for attempt in range(max_retries):
+                    response = await client.post(url, json=payload, timeout=60.0)
+                    
+                    if response.status_code == 429 and attempt < max_retries - 1:
+                        wait_time = 2 ** (attempt + 1)
+                        logger.warning(f"Gemini Rate Limited (429). Retrying in {wait_time}s...")
+                        await asyncio.sleep(wait_time)
+                        continue
+                        
+                    response.raise_for_status()
+                    data = response.json()
+                    try:
+                        # The image is returned as a base64 string in inlineData
+                        b64 = data["candidates"][0]["content"]["parts"][0]["inlineData"]["data"]
+                        return base64.b64decode(b64)
+                    except (KeyError, IndexError):
+                        raise ValueError(f"Unexpected response format from Gemini: {data}")
+                        
+                raise Exception("Gemini rate limit exceeded after max retries")
 
     async def _generate_cloudflare(self, prompt: str) -> bytes:
         if not self.cf_token or not self.cf_account_id or self.cf_token.startswith("your_"):
