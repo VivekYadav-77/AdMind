@@ -9,12 +9,9 @@ logger = logging.getLogger(__name__)
 
 class ImageGenerationManager:
     def __init__(self):
-        self.gemini_key = os.getenv("GEMINI_IMAGE_API_KEY") or os.getenv("GEMINI_API_KEY")
         self.cf_token = os.getenv("CLOUDFLARE_API_TOKEN")
         self.cf_account_id = os.getenv("CLOUDFLARE_ACCOUNT_ID")
-        self.hf_key = os.getenv("HUGGINGFACE_API_KEY")
         self.pollinations_key = os.getenv("POLLINATIONS_API_KEY")
-        self._gemini_semaphore = None
         import threading
         self._init_lock = threading.Lock()
         self._cache = {}
@@ -23,16 +20,14 @@ class ImageGenerationManager:
     async def generate_image(self, prompt: str) -> bytes:
         """
         Attempts to generate an image using a strict priority fallback sequence:
-        1. Gemini -> 2. Cloudflare -> 3. Hugging Face -> 4. Pollinations
+        1. Cloudflare -> 2. Pollinations
         """
         if prompt in self._cache:
             logger.info("Returning cached image to prevent rate limits.")
             return self._cache[prompt]
 
         providers = [
-            ("Gemini (gemini-2.5-flash-image)", self._generate_gemini),
             ("Cloudflare (FLUX.1 Schnell)", self._generate_cloudflare),
-            ("Hugging Face (FLUX.1 Schnell)", self._generate_huggingface),
             ("Pollinations (Fallback)", self._generate_pollinations)
         ]
 
