@@ -111,20 +111,20 @@ function AdMockup({ testData, type, label, visualPrompt }) {
           {countdown !== null && (
             <div className="absolute inset-0 bg-slate-900/95 backdrop-blur-md flex items-center justify-center flex-col text-center z-20 p-6 overflow-hidden">
               {/* Background animated gradients */}
-              <div className={`absolute -top-10 -left-10 w-40 h-40 bg-${accentColor}-500/20 rounded-full blur-[60px] animate-pulse`} />
+              <div className={`absolute -top-10 -left-10 w-40 h-40 ${isA ? 'bg-blue-500/20' : 'bg-amber-500/20'} rounded-full blur-[60px] animate-pulse`} />
               <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-purple-500/20 rounded-full blur-[60px] animate-pulse" style={{ animationDelay: '1s' }} />
 
               {/* Animated Centerpiece */}
               <div className="relative mb-6 flex items-center justify-center mt-2">
-                <div className={`absolute inset-[-24px] border-2 border-${accentColor}-500/20 rounded-full animate-[spin_3s_linear_infinite] border-t-${accentColor}-400/80`} />
+                <div className={`absolute inset-[-24px] border-2 ${isA ? 'border-blue-500/20 border-t-blue-400/80' : 'border-amber-500/20 border-t-amber-400/80'} rounded-full animate-[spin_3s_linear_infinite]`} />
                 <div className={`absolute inset-[-12px] border-2 border-purple-500/20 rounded-full animate-[spin_2s_linear_infinite_reverse] border-b-purple-400/80`} />
-                <div className={`h-16 w-16 bg-gradient-to-br from-${accentColor}-600 to-purple-600 rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(168,85,247,0.5)] relative z-10`}>
+                <div className={`h-16 w-16 bg-gradient-to-br ${isA ? 'from-blue-600' : 'from-amber-600'} to-purple-600 rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(168,85,247,0.5)] relative z-10`}>
                   <Sparkles className="w-8 h-8 text-white animate-pulse" />
                 </div>
               </div>
               
               <div className="space-y-1.5 relative z-10">
-                <div className={`text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-${accentColor}-400 to-purple-400 tracking-wide uppercase`}>
+                <div className={`text-lg font-black text-transparent bg-clip-text bg-gradient-to-r ${isA ? 'from-blue-400' : 'from-amber-400'} to-purple-400 tracking-wide uppercase`}>
                   Crafting Masterpiece
                 </div>
                 <div className="text-[11px] text-slate-300/80 font-medium tracking-wide">
@@ -136,12 +136,12 @@ function AdMockup({ testData, type, label, visualPrompt }) {
               <div className="mt-8 flex flex-col items-center gap-2 relative z-10 w-full px-6">
                 <div className="h-1.5 w-full bg-slate-800/80 rounded-full overflow-hidden shadow-inner border border-white/5">
                   <div 
-                    className={`h-full bg-gradient-to-r from-${accentColor}-500 to-purple-500 transition-all duration-1000 ease-linear`}
+                    className={`h-full bg-gradient-to-r ${isA ? 'from-blue-500' : 'from-amber-500'} to-purple-500 transition-all duration-1000 ease-linear`}
                     style={{ width: `${((10 - countdown) / 10) * 100}%` }}
                   />
                 </div>
                 <div className="flex w-full justify-between items-center mt-1">
-                  <div className={`text-[9px] uppercase tracking-[0.2em] text-${accentColor}-400/80 font-bold flex items-center gap-1`}>
+                  <div className={`text-[9px] uppercase tracking-[0.2em] ${isA ? 'text-blue-400/80' : 'text-amber-400/80'} font-bold flex items-center gap-1`}>
                     <Zap size={10} /> Rendering
                   </div>
                   <div className="text-[10px] font-black text-white tracking-wider">
