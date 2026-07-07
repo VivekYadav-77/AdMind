@@ -2,13 +2,28 @@ class ImageQueue {
   constructor() {
     this.queue = [];
     this.isProcessing = false;
+    this.pendingPromises = new Map(); // url -> Promise
   }
 
   enqueue(url) {
-    return new Promise((resolve, reject) => {
+    if (this.pendingPromises.has(url)) {
+      return this.pendingPromises.get(url);
+    }
+
+    const promise = new Promise((resolve, reject) => {
       this.queue.push({ url, resolve, reject });
       this.processQueue();
     });
+
+    this.pendingPromises.set(url, promise);
+    
+    // Clean up from pending on error so it can be retried if needed
+    // (though retryCount usually changes the URL anyway)
+    promise.catch(() => {
+      this.pendingPromises.delete(url);
+    });
+
+    return promise;
   }
 
   async processQueue() {
