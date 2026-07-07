@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { Beaker, Sparkles, Target, Zap, Globe, MoreHorizontal, ThumbsUp, MessageCircle, Share2, ExternalLink, Loader2 } from 'lucide-react'
 
 import { API_BASE_URL } from '../services/api'
-
+import { imageQueue } from '../services/imageQueue'
 // Helper to create a consistent seed for Pollinations from the prompt
 const hashString = (str) => {
   let hash = 0;
@@ -23,6 +23,7 @@ function AdMockup({ testData, type, label, visualPrompt }) {
   const [retryCount, setRetryCount] = React.useState(0);
   const [isLoading, setIsLoading] = React.useState(true);
   const [countdown, setCountdown] = React.useState(null);
+  const [imgSrc, setImgSrc] = React.useState(null);
 
   React.useEffect(() => {
     if (countdown === null) return;
@@ -40,6 +41,29 @@ function AdMockup({ testData, type, label, visualPrompt }) {
     
     return () => clearTimeout(timer);
   }, [countdown]);
+
+  React.useEffect(() => {
+    if (!visualPrompt || countdown !== null) return;
+
+    let isMounted = true;
+    const url = `${API_BASE_URL}/workspaces/images/generate?prompt=${encodeURIComponent(visualPrompt)}&seed=${Math.abs(hashString(visualPrompt + type)) + retryCount}`;
+    
+    imageQueue.enqueue(url)
+      .then(objectUrl => {
+         if (isMounted) {
+            setImgSrc(objectUrl);
+         }
+      })
+      .catch(error => {
+         if (isMounted) {
+            console.error("Image generation failed:", error);
+            setIsLoading(false);
+            setCountdown(10);
+         }
+      });
+      
+    return () => { isMounted = false; };
+  }, [visualPrompt, retryCount, type, countdown]);
 
   return (
     <div className={`relative flex flex-col rounded-2xl border-2 border-${accentColor}-500/30 bg-slate-900 overflow-hidden group hover:border-${accentColor}-500/60 transition-colors shadow-lg`}>
@@ -128,25 +152,27 @@ function AdMockup({ testData, type, label, visualPrompt }) {
             </div>
           )}
 
-          <img 
-            key={`img-${retryCount}`}
-            src={`${API_BASE_URL}/workspaces/images/generate?prompt=${encodeURIComponent(visualPrompt)}&seed=${Math.abs(hashString(visualPrompt + type)) + retryCount}`} 
-            alt="AI Generated Ad Creative" 
-            loading="lazy"
-            className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
-            onError={(e) => {
-              setIsLoading(false);
-              e.target.style.display = 'none';
-              setCountdown(10);
-            }}
-            onLoad={(e) => {
-              setIsLoading(false);
-              e.target.style.display = 'block';
-              if (e.target.nextSibling) {
-                e.target.nextSibling.style.display = 'none';
-              }
-            }}
-          />
+          {imgSrc && (
+            <img 
+              key={`img-${retryCount}`}
+              src={imgSrc}
+              alt="AI Generated Ad Creative" 
+              loading="lazy"
+              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
+              onError={(e) => {
+                setIsLoading(false);
+                e.target.style.display = 'none';
+                setCountdown(10);
+              }}
+              onLoad={(e) => {
+                setIsLoading(false);
+                e.target.style.display = 'block';
+                if (e.target.nextSibling) {
+                  e.target.nextSibling.style.display = 'none';
+                }
+              }}
+            />
+          )}
         </div>
       )}
 
