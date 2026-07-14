@@ -96,8 +96,14 @@ export default function ReportDetail() {
       margin: [10, 10, 10, 10],
       filename: `AdMind_Report_${id}.pdf`,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      html2canvas: { 
+        scale: 2, 
+        useCORS: true,
+        backgroundColor: '#0B0F19',
+        windowWidth: 1200
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
     }
 
     html2pdf().set(opt).from(element).save()

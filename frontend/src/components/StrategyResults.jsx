@@ -173,15 +173,15 @@ export default function StrategyResults({ strategy, jobId }) {
     }
     
     const rows = strategy.recommendations.map(r => [
-      r.priority,
-      r.action,
+      String(r.priority || '').charAt(0).toUpperCase() + String(r.priority || '').slice(1).toLowerCase(),
+      String(r.action || '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
       r.target,
       r.reasoning,
       r.expected_impact
     ].map(escapeCsv).join(','))
     
     const csvContent = [headers.join(','), ...rows].join('\n')
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
     link.setAttribute('download', 'admind_strategy_plan.csv')

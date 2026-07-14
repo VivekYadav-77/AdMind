@@ -1,4 +1,4 @@
-import { History, LayoutDashboard, LogOut, Settings, ChevronDown, Plus, Wrench } from 'lucide-react'
+import { History, LayoutDashboard, LogOut, Settings, ChevronDown, Plus, Wrench, GitCompare } from 'lucide-react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useEffect, useState, useRef } from 'react'
@@ -63,6 +63,7 @@ export default function Layout() {
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
     { name: 'History', path: '/history', icon: History },
     { name: 'AI Tools', path: '/tools', icon: Wrench },
+    { name: 'A/B Tracker', path: '/ab-tracker', icon: GitCompare },
     { name: 'Settings', path: '/settings', icon: Settings }
   ]
 
