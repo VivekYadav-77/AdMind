@@ -215,5 +215,22 @@ export const API = {
       throw new Error('Failed to tear down competitor ad')
     }
     return res.json()
+  },
+
+  addStrategyComment: async (jobId, target, action, content) => {
+    const res = await fetch(apiUrl(`/history/${jobId}/strategy/comments`), {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target, action, content })
+    })
+    if (!res.ok) {
+      let errorMessage = 'Failed to add comment'
+      try {
+        const data = await res.json()
+        errorMessage = data.detail || errorMessage
+      } catch (e) {}
+      throw new Error(errorMessage)
+    }
+    return res.json()
   }
 }

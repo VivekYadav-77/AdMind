@@ -38,6 +38,7 @@ export default function Dashboard() {
   const [error, setError] = useState(null)
   const [waitingForBackend, setWaitingForBackend] = useState(false)
   const [activeTab, setActiveTab] = useState('audit')
+  const [currentJobId, setCurrentJobId] = useState(null)
   
   const reportRef = useRef(null)
 
@@ -49,6 +50,7 @@ export default function Dashboard() {
     setError(null)
     setWaitingForBackend(false)
     setActiveTab('audit')
+    setCurrentJobId(null)
   }
 
   const handleEvent = (event, data) => {
@@ -93,6 +95,7 @@ export default function Dashboard() {
       // Start background job
       const response = await API.analyzeCSV(file)
       const { job_id } = response
+      setCurrentJobId(job_id)
 
       // Consume SSE stream
       const streamRes = await API.streamAnalysis(job_id)
@@ -282,7 +285,7 @@ export default function Dashboard() {
               )}
               {activeTab === 'strategy' && results.strategy && (
                 <motion.div key="strategy" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
-                  <StrategyResults strategy={results.strategy} />
+                  <StrategyResults strategy={results.strategy} jobId={currentJobId} />
                 </motion.div>
               )}
               {activeTab === 'copy' && results.copy && (

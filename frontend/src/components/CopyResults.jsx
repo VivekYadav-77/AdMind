@@ -57,8 +57,14 @@ function AdMockup({ testData, type, label, visualPrompt }) {
       .catch(error => {
          if (isMounted) {
             console.error("Image generation failed:", error);
-            setIsLoading(false);
-            setCountdown(10);
+            if (retryCount >= 1) {
+              // Hard fallback to prevent infinite loading if backend is blocked
+              const fallbackSeed = Math.abs(hashString(visualPrompt + type));
+              setImgSrc(`https://picsum.photos/seed/${fallbackSeed}/800/600`);
+            } else {
+              setIsLoading(false);
+              setCountdown(10);
+            }
          }
       });
       

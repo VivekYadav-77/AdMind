@@ -2,7 +2,7 @@ import json
 import os
 import asyncio
 from pathlib import Path
-from datetime import timedelta
+from datetime import timedelta, datetime
 from typing import Optional
 
 from dotenv import load_dotenv
@@ -483,6 +483,44 @@ async def send_chat_message(
     db.commit()
 
     return {"role": "assistant", "content": reply_text}
+
+
+class CommentRequest(BaseModel):
+    target: str
+    action: str
+    content: str
+
+@app.post("/history/{job_id}/strategy/comments")
+def add_strategy_comment(
+    job_id: int,
+    req: CommentRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    job = db.query(AnalysisJob).filter(AnalysisJob.id == job_id, AnalysisJob.user_id == current_user.id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+
+    from sqlalchemy.orm.attributes import flag_modified
+    
+    if not job.strategy_data or "recommendations" not in job.strategy_data:
+        raise HTTPException(status_code=400, detail="No strategy data available")
+        
+    for rec in job.strategy_data["recommendations"]:
+        if rec.get("target") == req.target and rec.get("action") == req.action:
+            if "comments" not in rec:
+                rec["comments"] = []
+            new_comment = {
+                "content": req.content,
+                "user": current_user.email,
+                "created_at": datetime.utcnow().isoformat()
+            }
+            rec["comments"].append(new_comment)
+            flag_modified(job, "strategy_data")
+            db.commit()
+            return {"status": "ok", "comment": new_comment}
+            
+    raise HTTPException(status_code=404, detail="Recommendation not found")
 
 
 # Tools Endpoints
