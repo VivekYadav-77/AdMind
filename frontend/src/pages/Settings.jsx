@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { User, Shield, Sliders, Cpu, KeyRound, Check, AlertCircle } from 'lucide-react'
+import { User, Shield, Sliders, Cpu, KeyRound, Check, AlertCircle, Briefcase } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 
@@ -26,6 +26,14 @@ export default function Settings() {
 
   const [passwordStatus, setPasswordStatus] = useState(null) // { type: 'success'|'error', message: '' }
   const [settingsSaved, setSettingsSaved] = useState(false)
+  
+  const [branding, setBranding] = useState(() => {
+    return {
+      agencyName: localStorage.getItem('agencyName') || '',
+      logoUrl: localStorage.getItem('logoUrl') || ''
+    }
+  })
+  const [brandingSaved, setBrandingSaved] = useState(false)
 
   const handlePasswordSubmit = (e) => {
     e.preventDefault()
@@ -51,6 +59,15 @@ export default function Settings() {
     setSettingsSaved(true)
     setTimeout(() => {
       setSettingsSaved(false)
+    }, 3000)
+  }
+
+  const handleSaveBranding = () => {
+    localStorage.setItem('agencyName', branding.agencyName)
+    localStorage.setItem('logoUrl', branding.logoUrl)
+    setBrandingSaved(true)
+    setTimeout(() => {
+      setBrandingSaved(false)
     }, 3000)
   }
 
@@ -189,6 +206,56 @@ export default function Settings() {
                   Save Configurations
                 </button>
                 {settingsSaved && (
+                  <motion.span
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="text-emerald-400 font-bold text-sm flex items-center gap-1"
+                  >
+                    <Check size={16} /> Saved Successfully
+                  </motion.span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Section: White-Label Reporting */}
+          <div className="glass-panel rounded-3xl p-8 border-white/10">
+            <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+              <Briefcase size={20} className="text-pink-400" />
+              White-Label Reporting
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Agency Name</label>
+                <input
+                  type="text"
+                  value={branding.agencyName}
+                  onChange={(e) => setBranding(prev => ({ ...prev, agencyName: e.target.value }))}
+                  className="w-full bg-[#111625] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-pink-500/50"
+                  placeholder="e.g., Apex Growth Agency"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-300 mb-1.5">Logo URL</label>
+                <input
+                  type="url"
+                  value={branding.logoUrl}
+                  onChange={(e) => setBranding(prev => ({ ...prev, logoUrl: e.target.value }))}
+                  className="w-full bg-[#111625] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-pink-500/50"
+                  placeholder="https://example.com/logo.png"
+                />
+              </div>
+
+              <div className="flex items-center justify-between border-t border-white/5 pt-6 mt-6">
+                <button
+                  onClick={handleSaveBranding}
+                  className="px-5 py-2.5 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-500 hover:to-rose-500 text-sm font-bold text-white rounded-xl transition-all shadow-[0_0_15px_rgba(225,29,72,0.3)]"
+                >
+                  Save Branding
+                </button>
+                {brandingSaved && (
                   <motion.span
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}

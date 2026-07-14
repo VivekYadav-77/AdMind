@@ -25,6 +25,9 @@ export default function ReportDetail() {
   const [activeTab, setActiveTab] = useState('audit')
   const reportRef = useRef(null)
 
+  const agencyName = localStorage.getItem('agencyName')
+  const logoUrl = localStorage.getItem('logoUrl')
+
   // Chat State
   const [showChat, setShowChat] = useState(false)
   const [chatMessages, setChatMessages] = useState([])
@@ -234,7 +237,19 @@ export default function ReportDetail() {
             })}
           </div>
 
-          <div ref={reportRef} className="bg-transparent min-h-[400px]">
+          <div ref={reportRef} className="bg-transparent min-h-[400px] p-2">
+            {/* White-Label Branding Header */}
+            {(agencyName || logoUrl) && (
+              <div className="flex items-center gap-4 mb-8 pb-6 border-b border-white/10">
+                {logoUrl && (
+                  <img src={logoUrl} alt="Agency Logo" className="h-12 object-contain rounded" crossOrigin="anonymous" />
+                )}
+                {agencyName && (
+                  <h1 className="text-3xl font-bold text-white tracking-wide">{agencyName}</h1>
+                )}
+              </div>
+            )}
+            
             <AnimatePresence mode="wait">
               {activeTab === 'audit' && job.audit_data && (
                 <motion.div key="audit" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>
