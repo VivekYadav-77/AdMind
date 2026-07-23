@@ -50,7 +50,7 @@ export default function UploadZone({ onFileReady }) {
       className="py-12"
     >
       <div className="mx-auto max-w-2xl text-center mb-10">
-        <h1 className="text-4xl md:text-5xl font-serif text-[#FAF4EC] tracking-tight mb-4">
+        <h1 className="text-4xl md:text-5xl font-serif text-textprimary tracking-tight mb-4">
           Uncover the Hidden ROI in Your <span className="text-brand-400 glow-text italic">Ad Campaigns</span>
         </h1>
         <p className="text-lg text-textmuted">
@@ -78,7 +78,7 @@ export default function UploadZone({ onFileReady }) {
             <UploadCloud size={40} strokeWidth={1.5} />
           </div>
           
-          <h3 className="text-xl font-bold text-[#FAF4EC] mb-2">Upload Campaign Data</h3>
+          <h3 className="text-xl font-bold text-textprimary mb-2">Upload Campaign Data</h3>
           <p className="text-textmuted mb-8 max-w-md mx-auto">
             Drag and drop your exported CSV file containing ad performance metrics, or click to browse files.
           </p>
