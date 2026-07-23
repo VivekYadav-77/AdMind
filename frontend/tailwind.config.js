@@ -1,5 +1,6 @@
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
+  darkMode: 'class',
   theme: {
     extend: {
       fontFamily: {
@@ -15,9 +16,14 @@ export default {
           600: '#C26243',
           900: '#542316'
         },
-        darkbg: '#0D0D0B',
-        panel: '#1A1A17',
-        borderwarm: 'rgba(255, 240, 230, 0.08)'
+        bgbase: 'var(--bg-base)',
+        bgpanel: 'var(--bg-panel)',
+        bgpanelhover: 'var(--bg-panel-hover)',
+        bgglass: 'var(--bg-glass)',
+        textprimary: 'var(--text-primary)',
+        textsecondary: 'var(--text-secondary)',
+        textmuted: 'var(--text-muted)',
+        borderwarm: 'var(--border-warm)'
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',

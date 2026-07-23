@@ -38,7 +38,7 @@ export default function History() {
     return (
       <div className="flex flex-col justify-center items-center h-[50vh] gap-4">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-borderwarm border-t-brand-500"></div>
-        <p className="text-[#A39E93] font-medium">Loading history...</p>
+        <p className="text-textmuted font-medium">Loading history...</p>
       </div>
     )
   }
@@ -49,8 +49,8 @@ export default function History() {
         <div className="mx-auto w-16 h-16 bg-brand-500/10 text-brand-400 rounded-2xl flex items-center justify-center mb-4 border border-brand-500/20 shadow-[0_0_15px_rgba(217,119,87,0.1)]">
           <Clock size={32} />
         </div>
-        <h2 className="text-2xl font-serif text-[#FAF4EC]">No Analysis History Yet</h2>
-        <p className="text-[#A39E93] mt-2 text-sm leading-relaxed">
+        <h2 className="text-2xl font-serif text-textprimary">No Analysis History Yet</h2>
+        <p className="text-textmuted mt-2 text-sm leading-relaxed">
           Upload your campaign CSV on the Dashboard to get your first AI-driven marketing audit and start tracking performance!
         </p>
         <button
@@ -91,8 +91,8 @@ export default function History() {
               <TrendingUp size={16} />
             </div>
             <div>
-              <h2 className="text-xl font-serif text-[#FAF4EC]">Advertising Performance Trends</h2>
-              <p className="text-xs text-[#A39E93]">Aggregated historical progress of analysed accounts</p>
+              <h2 className="text-xl font-serif text-textprimary">Advertising Performance Trends</h2>
+              <p className="text-xs text-textmuted">Aggregated historical progress of analysed accounts</p>
             </div>
           </div>
 
@@ -112,12 +112,12 @@ export default function History() {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                 <XAxis 
                   dataKey="date" 
-                  stroke="#8A857A" 
+                  stroke="var(--text-muted)" 
                   fontSize={11} 
                   tickLine={false} 
                 />
                 <YAxis 
-                  stroke="#8A857A" 
+                  stroke="var(--text-muted)" 
                   fontSize={11} 
                   tickLine={false} 
                   tickFormatter={(val) => `$${val}`}
@@ -161,7 +161,7 @@ export default function History() {
 
       {/* History List */}
       <div className="space-y-4">
-        <h3 className="text-xl font-serif text-[#FAF4EC]">Historical Analysis Reports</h3>
+        <h3 className="text-xl font-serif text-textprimary">Historical Analysis Reports</h3>
         <div className="grid gap-4">
           {jobs.map((job) => {
             const roas = job.input_spend > 0 ? (job.input_revenue / job.input_spend) : 0
@@ -177,7 +177,7 @@ export default function History() {
                     <span className="bg-brand-500/10 border border-brand-500/20 text-brand-400 text-[11px] font-bold px-2.5 py-0.5 rounded-lg uppercase tracking-wider">
                       Report #{job.id}
                     </span>
-                    <span className="flex items-center gap-1.5 text-xs text-[#A39E93]">
+                    <span className="flex items-center gap-1.5 text-xs text-textmuted">
                       <Calendar size={13} />
                       {new Date(job.created_at).toLocaleString()}
                     </span>
@@ -200,16 +200,16 @@ export default function History() {
                   </div>
                   
                   <div className="flex flex-wrap gap-x-8 gap-y-2 pt-1">
-                    <p className="text-xs text-[#A39E93]">
-                      Volume: <span className="font-bold text-[#FAF4EC] text-sm">{job.total_rows} rows</span>
+                    <p className="text-xs text-textmuted">
+                      Volume: <span className="font-bold text-textprimary text-sm">{job.total_rows} rows</span>
                     </p>
-                    <p className="text-xs text-[#A39E93]">
-                      Spend: <span className="font-bold text-[#FAF4EC] text-sm">{formatMoney(job.input_spend)}</span>
+                    <p className="text-xs text-textmuted">
+                      Spend: <span className="font-bold text-textprimary text-sm">{formatMoney(job.input_spend)}</span>
                     </p>
-                    <p className="text-xs text-[#A39E93]">
-                      Revenue: <span className="font-bold text-[#FAF4EC] text-sm">{formatMoney(job.input_revenue)}</span>
+                    <p className="text-xs text-textmuted">
+                      Revenue: <span className="font-bold text-textprimary text-sm">{formatMoney(job.input_revenue)}</span>
                     </p>
-                    <p className="text-xs text-[#A39E93]">
+                    <p className="text-xs text-textmuted">
                       ROAS: <span className={clsx(
                         "font-bold text-sm", 
                         roas >= 2 ? "text-emerald-400" : "text-amber-400"
@@ -222,7 +222,7 @@ export default function History() {
                   {job.status === 'complete' ? (
                     <button
                       onClick={() => navigate(`/history/${job.id}`)}
-                      className="w-full md:w-auto px-5 py-2.5 bg-[#1C1C19] hover:bg-[#252522] text-[#FAF4EC] font-medium rounded-xl text-sm transition-all border border-borderwarm hover:border-brand-500/50"
+                      className="w-full md:w-auto px-5 py-2.5 bg-bgpanelhover hover:bg-bgpanel text-textprimary font-medium rounded-xl text-sm transition-all border border-borderwarm hover:border-brand-500/50"
                     >
                       View Report
                     </button>

@@ -84,8 +84,8 @@ export default function Tools() {
               className={clsx(
                 "flex items-center gap-2 rounded-t-xl px-5 py-3 text-sm font-medium transition-all border-b-2",
                 isActive 
-                  ? `border-${tab.color}-500 text-${tab.color}-400 bg-${tab.color}-500/10` 
-                  : "border-transparent text-[#A39E93] hover:bg-white/5 hover:text-[#FAF4EC]"
+                  ? "bg-bgpanelhover border-borderwarm text-brand-400 font-bold shadow-[0_0_15px_rgba(217,119,87,0.1)]" 
+                  : "border-transparent text-textmuted hover:bg-bgpanel hover:text-textprimary"
               )}
             >
               <Icon size={16} />
@@ -106,13 +106,13 @@ export default function Tools() {
           <motion.div key="landing-page" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
             <div className="glass-panel rounded-3xl p-8 border-brand-500/20 shadow-xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-brand-500/10 rounded-full blur-[100px] pointer-events-none" />
-              <h2 className="text-2xl font-serif text-[#FAF4EC] mb-2">CRO Landing Page Auditor</h2>
-              <p className="text-[#A39E93] mb-8 font-medium">Paste your landing page URL. Our AI will analyze the text for conversion rate optimization opportunities.</p>
+              <h2 className="text-2xl font-serif text-textprimary mb-2">CRO Landing Page Auditor</h2>
+              <p className="text-textmuted mb-8 font-medium">Paste your landing page URL. Our AI will analyze the text for conversion rate optimization opportunities.</p>
               
               <form onSubmit={handleLandingAudit} className="flex gap-4">
                 <div className="relative flex-1">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Link2 className="text-slate-500" size={20} />
+                    <Link2 className="text-textmuted" size={20} />
                   </div>
                   <input 
                     type="url" 
@@ -120,7 +120,7 @@ export default function Tools() {
                     placeholder="https://your-landing-page.com" 
                     value={inputUrl}
                     onChange={e => setInputUrl(e.target.value)}
-                    className="w-full bg-[#151513] border border-borderwarm rounded-xl py-3 pl-12 pr-4 text-[#FAF4EC] focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all placeholder:text-[#6A655A]"
+                    className="w-full bg-bgpanel border border-borderwarm rounded-xl py-3 pl-12 pr-4 text-textprimary focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all placeholder:text-textmuted"
                   />
                 </div>
                 <button 
@@ -140,8 +140,8 @@ export default function Tools() {
                       {landingResult.score}
                     </div>
                     <div>
-                      <h3 className="text-xl font-serif text-[#FAF4EC]">CRO Score</h3>
-                      <p className="text-sm text-[#A39E93]">Based on standard conversion principles</p>
+                      <h3 className="text-xl font-serif text-textprimary">CRO Score</h3>
+                      <p className="text-sm text-textmuted">Based on standard conversion principles</p>
                     </div>
                   </div>
                   <div className="prose prose-invert max-w-none">
@@ -157,8 +157,8 @@ export default function Tools() {
           <motion.div key="audience" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
             <div className="glass-panel rounded-3xl p-8 border-emerald-500/20 shadow-xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
-              <h2 className="text-2xl font-serif text-[#FAF4EC] mb-2">AI Audience Builder</h2>
-              <p className="text-[#A39E93] mb-8 font-medium">Describe your product or service. Our AI will build the perfect targeting parameters for Meta and Google.</p>
+              <h2 className="text-2xl font-serif text-textprimary mb-2">AI Audience Builder</h2>
+              <p className="text-textmuted mb-8 font-medium">Describe your product or service. Our AI will build the perfect targeting parameters for Meta and Google.</p>
               
               <form onSubmit={handleAudienceBuild} className="flex flex-col gap-4">
                 <textarea 
@@ -167,7 +167,7 @@ export default function Tools() {
                   placeholder="E.g., We sell organic, ethically-sourced coffee beans directly to consumers who care about fair trade and premium taste." 
                   value={inputDesc}
                   onChange={e => setInputDesc(e.target.value)}
-                  className="w-full bg-[#151513] border border-borderwarm rounded-xl p-4 text-[#FAF4EC] focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all resize-none placeholder:text-[#6A655A]"
+                  className="w-full bg-bgpanel border border-borderwarm rounded-xl p-4 text-textprimary focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all resize-none placeholder:text-textmuted"
                 />
                 <div className="flex justify-end">
                   <button 
@@ -187,7 +187,7 @@ export default function Tools() {
                     <h3 className="text-xl font-black text-blue-400 mb-4 flex items-center gap-2"><CheckCircle2 size={20}/> Meta Ads Targeting</h3>
                     <div className="space-y-4">
                       <div>
-                        <h4 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-2">Interests</h4>
+                        <h4 className="text-sm font-bold text-textmuted uppercase tracking-wider mb-2">Interests</h4>
                         <div className="flex flex-wrap gap-2">
                           {audienceResult.meta.interests.map((t, i) => (
                             <span key={i} className="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-lg text-sm font-medium border border-blue-500/30">{t}</span>
@@ -195,7 +195,7 @@ export default function Tools() {
                         </div>
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-2">Behaviors</h4>
+                        <h4 className="text-sm font-bold text-textmuted uppercase tracking-wider mb-2">Behaviors</h4>
                         <div className="flex flex-wrap gap-2">
                           {audienceResult.meta.behaviors.map((t, i) => (
                             <span key={i} className="bg-purple-500/20 text-purple-300 px-3 py-1 rounded-lg text-sm font-medium border border-purple-500/30">{t}</span>
@@ -209,7 +209,7 @@ export default function Tools() {
                     <h3 className="text-xl font-black text-amber-400 mb-4 flex items-center gap-2"><CheckCircle2 size={20}/> Google Ads Targeting</h3>
                     <div className="space-y-4">
                       <div>
-                        <h4 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-2">In-Market Segments</h4>
+                        <h4 className="text-sm font-bold text-textmuted uppercase tracking-wider mb-2">In-Market Segments</h4>
                         <div className="flex flex-wrap gap-2">
                           {audienceResult.google.in_market.map((t, i) => (
                             <span key={i} className="bg-amber-500/20 text-amber-300 px-3 py-1 rounded-lg text-sm font-medium border border-amber-500/30">{t}</span>
@@ -217,7 +217,7 @@ export default function Tools() {
                         </div>
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-2">Search Keywords</h4>
+                        <h4 className="text-sm font-bold text-textmuted uppercase tracking-wider mb-2">Search Keywords</h4>
                         <div className="flex flex-wrap gap-2">
                           {audienceResult.google.keywords.map((t, i) => (
                             <span key={i} className="bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-lg text-sm font-medium border border-emerald-500/30">{t}</span>
@@ -236,8 +236,8 @@ export default function Tools() {
           <motion.div key="competitor" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
             <div className="glass-panel rounded-3xl p-8 border-amber-500/20 shadow-xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
-              <h2 className="text-2xl font-serif text-[#FAF4EC] mb-2">Competitor Tear-Down</h2>
-              <p className="text-[#A39E93] mb-8 font-medium">Paste a competitor's ad copy. AI will analyze their psychological angle and write 3 counter-ads to steal their traffic.</p>
+              <h2 className="text-2xl font-serif text-textprimary mb-2">Competitor Tear-Down</h2>
+              <p className="text-textmuted mb-8 font-medium">Paste a competitor's ad copy. AI will analyze their psychological angle and write 3 counter-ads to steal their traffic.</p>
               
               <form onSubmit={handleCompetitorTeardown} className="flex flex-col gap-4">
                 <textarea 
@@ -246,7 +246,7 @@ export default function Tools() {
                   placeholder="Paste competitor ad copy here..." 
                   value={inputAd}
                   onChange={e => setInputAd(e.target.value)}
-                  className="w-full bg-[#151513] border border-borderwarm rounded-xl p-4 text-[#FAF4EC] focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 transition-all resize-none placeholder:text-[#6A655A]"
+                  className="w-full bg-bgpanel border border-borderwarm rounded-xl p-4 text-textprimary focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 transition-all resize-none placeholder:text-textmuted"
                 />
                 <div className="flex justify-end">
                   <button 
@@ -264,24 +264,24 @@ export default function Tools() {
                 <div className="mt-10 space-y-6">
                   <div className="bg-amber-500/10 p-6 rounded-2xl border border-amber-500/20">
                     <h3 className="text-lg font-medium text-amber-400 mb-2 uppercase tracking-widest">Their Strategy</h3>
-                    <p className="text-[#E5E0D8]">{competitorResult.analysis}</p>
+                    <p className="text-textsecondary">{competitorResult.analysis}</p>
                   </div>
 
-                  <h3 className="text-2xl font-serif text-[#FAF4EC] mt-8 mb-4">Your Counter-Ads</h3>
+                  <h3 className="text-2xl font-serif text-textprimary mt-8 mb-4">Your Counter-Ads</h3>
                   <div className="grid lg:grid-cols-3 gap-6">
                     {competitorResult.counter_ads.map((ad, i) => (
                       <div key={i} className="card-warm p-6 hover:border-amber-500/30 transition-all flex flex-col h-full">
                         <div className="mb-4">
-                          <span className="text-xs font-bold uppercase tracking-widest text-[#8A857A]">Angle</span>
+                          <span className="text-xs font-bold uppercase tracking-widest text-textmuted">Angle</span>
                           <h4 className="text-lg font-serif text-brand-400">{ad.angle}</h4>
                         </div>
                         <div className="mb-4 flex-1">
-                          <span className="text-xs font-bold uppercase tracking-widest text-[#8A857A] block mb-1">Primary Text</span>
-                          <p className="text-sm text-[#A39E93] italic">"{ad.primary_text}"</p>
+                          <span className="text-xs font-bold uppercase tracking-widest text-textmuted block mb-1">Primary Text</span>
+                          <p className="text-sm text-textmuted italic">"{ad.primary_text}"</p>
                         </div>
                         <div>
-                          <span className="text-xs font-bold uppercase tracking-widest text-[#8A857A] block mb-1">Headline</span>
-                          <p className="text-base font-medium text-[#FAF4EC]">{ad.headline}</p>
+                          <span className="text-xs font-bold uppercase tracking-widest text-textmuted block mb-1">Headline</span>
+                          <p className="text-base font-medium text-textprimary">{ad.headline}</p>
                         </div>
                       </div>
                     ))}

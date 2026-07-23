@@ -101,7 +101,7 @@ export default function ReportDetail() {
     return (
       <div className="flex flex-col justify-center items-center h-[50vh] gap-4">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-800 border-t-blue-500"></div>
-        <p className="text-slate-400 font-medium animate-pulse">Loading report data...</p>
+        <p className="text-textmuted font-medium animate-pulse">Loading report data...</p>
       </div>
     )
   }
@@ -111,7 +111,7 @@ export default function ReportDetail() {
       <div className="space-y-6">
         <button
           onClick={() => navigate('/history')}
-          className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+          className="inline-flex items-center gap-2 text-textmuted hover:text-textprimary transition-colors"
         >
           <ArrowLeft size={16} /> Back to History
         </button>
@@ -149,7 +149,7 @@ export default function ReportDetail() {
         <div className="flex flex-wrap items-center justify-between gap-4 print:hidden">
           <button
             onClick={() => navigate('/history')}
-            className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors group text-sm font-semibold"
+            className="inline-flex items-center gap-2 text-textmuted hover:text-textprimary transition-colors group text-sm font-semibold"
           >
             <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
             Back to History
@@ -162,7 +162,7 @@ export default function ReportDetail() {
                 "inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all border",
                 showChat 
                   ? "bg-purple-600/20 text-purple-400 border-purple-500/30" 
-                  : "bg-white/5 text-slate-300 border-white/10 hover:bg-white/10"
+                  : "bg-bgpanelhover text-textmuted border-borderwarm hover:bg-bgpanel"
               )}
             >
               <MessageSquare size={16} />
@@ -170,7 +170,7 @@ export default function ReportDetail() {
             </button>
             <button
               onClick={downloadPDF}
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-all hover:bg-blue-500 hover:scale-105"
+              className="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_4px_14px_0_rgba(217,119,87,0.39)] transition-all hover:bg-brand-600 hover:scale-105"
             >
               <Download size={16} />
               Download PDF Report
@@ -181,26 +181,26 @@ export default function ReportDetail() {
         {/* Report Info Card */}
         <div className="flex flex-wrap items-center gap-6 rounded-2xl glass-panel p-6 border-white/10 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5 pointer-events-none" />
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 text-white shadow-lg relative z-10">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 text-white shadow-lg relative z-10">
             <BarChart3 size={24} />
           </div>
           <div className="flex-1 relative z-10">
             <div className="flex items-center gap-3 flex-wrap">
-              <h2 className="text-xl font-bold text-white">Report #{job.id} Overview</h2>
-              <span className="flex items-center gap-1.5 text-xs text-slate-400 bg-white/5 border border-white/10 px-2.5 py-1 rounded-lg">
+              <h2 className="text-xl font-bold text-textprimary">Report #{job.id} Overview</h2>
+              <span className="flex items-center gap-1.5 text-xs text-textmuted bg-bgpanelhover border border-borderwarm px-2.5 py-1 rounded-lg">
                 <Calendar size={12} />
                 {new Date(job.created_at).toLocaleString()}
               </span>
             </div>
-            <div className="flex flex-wrap gap-x-8 gap-y-2 mt-3 text-sm text-slate-400">
+            <div className="flex flex-wrap gap-x-8 gap-y-2 mt-3 text-sm text-textmuted">
               <p>
-                Dataset: <span className="font-bold text-slate-200">{job.total_rows} rows</span>
+                Dataset: <span className="font-bold text-textprimary">{job.total_rows} rows</span>
               </p>
               <p>
-                Total Spend: <span className="font-bold text-slate-200">{formatMoney(job.input_spend)}</span>
+                Total Spend: <span className="font-bold text-textprimary">{formatMoney(job.input_spend)}</span>
               </p>
               <p>
-                Total Revenue: <span className="font-bold text-slate-200">{formatMoney(job.input_revenue)}</span>
+                Total Revenue: <span className="font-bold text-textprimary">{formatMoney(job.input_revenue)}</span>
               </p>
             </div>
           </div>
@@ -221,7 +221,7 @@ export default function ReportDetail() {
                     "flex items-center gap-2 rounded-t-xl px-5 py-3 text-sm font-bold transition-all border-b-2",
                     isActive
                       ? `border-${tab.color}-400 text-${tab.color}-400 bg-${tab.color}-500/10`
-                      : "border-transparent text-slate-500 hover:bg-white/5 hover:text-slate-300"
+                      : "border-transparent text-textmuted hover:bg-bgpanelhover hover:text-textprimary"
                   )}
                 >
                   <Icon size={16} />
@@ -231,7 +231,7 @@ export default function ReportDetail() {
             })}
           </div>
 
-          <div ref={reportRef} className="bg-[#0B0F19] text-white min-h-[400px] p-6 rounded-2xl print:p-0">
+          <div ref={reportRef} className="bg-bgbase text-textprimary min-h-[400px] p-6 rounded-2xl print:p-0">
             {/* White-Label Branding Header */}
             {(agencyName || logoUrl) && (
               <div className="flex items-center gap-4 mb-8 pb-6 border-b border-white/10">
@@ -239,7 +239,7 @@ export default function ReportDetail() {
                   <img src={logoUrl} alt="Agency Logo" className="h-12 object-contain rounded" crossOrigin="anonymous" />
                 )}
                 {agencyName && (
-                  <h1 className="text-3xl font-bold text-white tracking-wide">{agencyName}</h1>
+                  <h1 className="text-3xl font-bold text-textprimary tracking-wide">{agencyName}</h1>
                 )}
               </div>
             )}
@@ -272,23 +272,23 @@ export default function ReportDetail() {
             initial={{ opacity: 0, x: 100 }} 
             animate={{ opacity: 1, x: 0 }} 
             exit={{ opacity: 0, x: 100 }}
-            className="w-1/3 flex flex-col h-[calc(100vh-8rem)] sticky top-0 bg-[#0B0F19]/80 backdrop-blur-md border border-white/10 rounded-3xl overflow-hidden shadow-2xl print:hidden"
+            className="w-1/3 flex flex-col h-[calc(100vh-8rem)] sticky top-0 bg-bgglass backdrop-blur-md border border-borderwarm rounded-3xl overflow-hidden shadow-2xl print:hidden"
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-white/5">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-borderwarm bg-bgpanelhover">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-purple-500/20 text-purple-400 rounded-lg">
                   <MessageSquare size={18} />
                 </div>
-                <h3 className="font-bold text-white tracking-wide">AI Assistant</h3>
+                <h3 className="font-bold text-textprimary tracking-wide">AI Assistant</h3>
               </div>
-              <button onClick={() => setShowChat(false)} className="text-slate-400 hover:text-white transition-colors">
+              <button onClick={() => setShowChat(false)} className="text-textmuted hover:text-textprimary transition-colors">
                 <X size={20} />
               </button>
             </div>
             
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
               {chatMessages.length === 0 && (
-                <div className="text-center text-slate-400 my-10">
+                <div className="text-center text-textmuted my-10">
                   <MessageSquare size={32} className="mx-auto mb-3 opacity-20" />
                   <p className="text-sm">Ask me anything about this report!</p>
                   <p className="text-xs mt-1 opacity-70">Example: "Why is Facebook ROAS so low?"</p>
@@ -300,8 +300,8 @@ export default function ReportDetail() {
                   <div className={clsx(
                     "max-w-[85%] rounded-2xl px-5 py-3 text-sm leading-relaxed",
                     msg.role === 'user' 
-                      ? "bg-blue-600 text-white rounded-tr-sm" 
-                      : "bg-white/10 text-slate-200 border border-white/5 rounded-tl-sm prose prose-invert prose-p:leading-relaxed prose-a:text-blue-400 max-w-full"
+                      ? "bg-brand-500 text-white rounded-tr-sm" 
+                      : "bg-bgpanel text-textprimary border border-borderwarm rounded-tl-sm prose prose-invert prose-p:leading-relaxed prose-a:text-blue-400 max-w-full"
                   )}>
                     {msg.role === 'user' ? msg.content : <ReactMarkdown>{msg.content}</ReactMarkdown>}
                   </div>
@@ -310,7 +310,7 @@ export default function ReportDetail() {
               
               {sendingChat && (
                 <div className="flex justify-start">
-                  <div className="bg-white/10 border border-white/5 rounded-2xl rounded-tl-sm px-5 py-3 flex items-center gap-2">
+                  <div className="bg-bgpanel border border-borderwarm rounded-2xl rounded-tl-sm px-5 py-3 flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '0ms' }} />
                     <div className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '150ms' }} />
                     <div className="w-2 h-2 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: '300ms' }} />
@@ -320,19 +320,19 @@ export default function ReportDetail() {
               <div ref={chatEndRef} />
             </div>
 
-            <form onSubmit={handleSendMessage} className="p-4 border-t border-white/10 bg-white/5">
+            <form onSubmit={handleSendMessage} className="p-4 border-t border-borderwarm bg-bgpanelhover">
               <div className="relative flex items-center">
                 <input
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Ask a question..."
-                  className="w-full bg-[#050810] border border-white/10 rounded-xl py-3 pl-4 pr-12 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all"
+                  className="w-full bg-bgbase border border-borderwarm rounded-xl py-3 pl-4 pr-12 text-sm text-textprimary placeholder-textmuted focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all"
                 />
                 <button
                   type="submit"
                   disabled={!newMessage.trim() || sendingChat}
-                  className="absolute right-2 p-2 rounded-lg bg-purple-600 text-white hover:bg-purple-500 disabled:opacity-50 disabled:hover:bg-purple-600 transition-colors"
+                  className="absolute right-2 p-2 rounded-lg bg-brand-500 text-white hover:bg-brand-600 disabled:opacity-50 disabled:hover:bg-brand-500 transition-colors"
                 >
                   <Send size={16} />
                 </button>

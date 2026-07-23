@@ -3,12 +3,34 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --bg-base: #FFFFFF;
+    --bg-panel: #F8F9FA;
+    --bg-panel-hover: #F1F3F5;
+    --text-primary: #2C2825;
+    --text-secondary: #4A453F;
+    --text-muted: #8A857A;
+    --border-warm: rgba(0, 0, 0, 0.08);
+    --bg-glass: rgba(255, 255, 255, 0.85);
+  }
+  
+  .dark {
+    --bg-base: #000000;
+    --bg-panel: #121212;
+    --bg-panel-hover: #1E1E1E;
+    --text-primary: #FAF4EC;
+    --text-secondary: #E5E0D8;
+    --text-muted: #A39E93;
+    --border-warm: rgba(255, 255, 255, 0.08);
+    --bg-glass: rgba(18, 18, 18, 0.7);
+  }
+
   body {
-    @apply font-sans antialiased text-[#E5E0D8] bg-darkbg;
+    @apply font-sans antialiased text-textprimary bg-bgbase transition-colors duration-300;
   }
   
   h1, h2, h3, h4, h5, h6 {
-    @apply font-serif font-normal;
+    @apply font-serif font-normal text-textprimary;
   }
 }
 
@@ -21,23 +43,23 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-[#2A2A27] rounded-full;
+  @apply bg-bgpanelhover rounded-full border border-borderwarm;
 }
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-[#3A3A35];
+  @apply bg-textmuted;
 }
 
 /* Glassmorphism utilities - Warmer, softer */
 .glass {
-  @apply bg-[#151513]/60 backdrop-blur-xl border border-borderwarm shadow-2xl;
+  @apply bg-bgglass backdrop-blur-xl border border-borderwarm shadow-2xl;
 }
 
 .glass-panel {
-  @apply bg-[#151513]/60 backdrop-blur-2xl border border-borderwarm shadow-xl;
+  @apply bg-bgglass backdrop-blur-2xl border border-borderwarm shadow-xl;
 }
 
 .card-warm {
-  @apply bg-[#1C1C19] border border-borderwarm rounded-2xl transition-all hover:border-brand-500/30;
+  @apply bg-bgpanelhover border border-borderwarm rounded-2xl transition-all hover:border-brand-500/30;
 }
 
 .glow-text {
@@ -45,22 +67,14 @@
 }
 
 .btn-primary {
-  @apply bg-brand-500 hover:bg-brand-600 text-[#FAF4EC] px-5 py-2.5 rounded-xl font-medium shadow-[0_4px_14px_0_rgba(217,119,87,0.39)] hover:shadow-[0_6px_20px_rgba(217,119,87,0.23)] hover:-translate-y-0.5 transition-all duration-300;
+  @apply bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl font-medium shadow-[0_4px_14px_0_rgba(217,119,87,0.39)] hover:shadow-[0_6px_20px_rgba(217,119,87,0.23)] hover:-translate-y-0.5 transition-all duration-300;
 }
 
 .btn-secondary {
-  @apply bg-[#1C1C19] hover:bg-[#252522] border border-borderwarm hover:border-brand-500/30 text-[#E5E0D8] px-5 py-2.5 rounded-xl font-medium transition-all duration-300;
+  @apply bg-bgpanelhover hover:bg-bgpanel border border-borderwarm hover:border-brand-500/30 text-textprimary px-5 py-2.5 rounded-xl font-medium transition-all duration-300;
 }
 
-/* Subtle noise texture */
+/* Subtle noise texture removed for glossy look */
 .grain-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  pointer-events: none;
-  z-index: 50;
-  opacity: 0.25;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  display: none;
 }

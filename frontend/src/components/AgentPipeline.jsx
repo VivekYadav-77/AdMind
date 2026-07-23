@@ -51,7 +51,7 @@ export default function AgentPipeline({ agentStatus }) {
                     "flex h-12 w-12 items-center justify-center rounded-xl mb-3 transition-colors duration-500 relative",
                     isDone ? "bg-emerald-500/20 text-emerald-400" :
                     isRunning ? "bg-brand-500/20 text-brand-400" :
-                    "bg-white/10 text-[#A39E93]"
+                    "bg-borderwarm text-textmuted"
                   )}>
                     <Icon size={24} strokeWidth={2} />
                     {isRunning && (
@@ -65,7 +65,7 @@ export default function AgentPipeline({ agentStatus }) {
                   
                   <h3 className={clsx(
                     "font-medium text-center mb-1",
-                    isDone ? "text-[#FAF4EC]" :
+                    isDone ? "text-textprimary" :
                     isRunning ? "text-brand-400 glow-text" :
                     "text-[#8A857A]"
                   )}>

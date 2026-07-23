@@ -197,16 +197,16 @@ export default function Dashboard() {
                 <BarChart3 size={24} aria-hidden="true" />
               </div>
               <div className="flex-1">
-                <h3 className="text-sm font-medium text-[#A39E93]">Dataset Overview</h3>
+                <h3 className="text-sm font-medium text-textmuted">Dataset Overview</h3>
                 <div className="flex gap-6 mt-1">
-                  <p className="text-sm text-[#A39E93]">
-                    <span className="font-bold text-[#FAF4EC] text-base">{csvStats.rows}</span> rows
+                  <p className="text-sm text-textmuted">
+                    Volume: <span className="font-bold text-textprimary text-base">{csvStats.rows}</span> rows
                   </p>
-                  <p className="text-sm text-[#A39E93]">
-                    Spend: <span className="font-bold text-[#FAF4EC] text-base">{formatMoney(csvStats.total_spend)}</span>
+                  <p className="text-sm text-textmuted">
+                    Spend: <span className="font-bold text-textprimary text-base">{formatMoney(csvStats.total_spend)}</span>
                   </p>
-                  <p className="text-sm text-[#A39E93]">
-                    Revenue: <span className="font-bold text-[#FAF4EC] text-base">{formatMoney(csvStats.total_revenue)}</span>
+                  <p className="text-sm text-textmuted">
+                    Revenue: <span className="font-bold text-textprimary text-base">{formatMoney(csvStats.total_revenue)}</span>
                   </p>
                 </div>
               </div>
@@ -254,8 +254,8 @@ export default function Dashboard() {
                     className={clsx(
                       "flex items-center gap-2 rounded-t-xl px-5 py-3 text-sm font-medium transition-all border-b-2",
                       isActive 
-                        ? `border-${tab.color}-500 text-${tab.color}-400 bg-${tab.color}-500/10` 
-                        : "border-transparent text-[#A39E93] hover:bg-white/5 hover:text-[#FAF4EC]"
+                        ? "bg-bgpanelhover border-borderwarm text-brand-400 font-bold shadow-[0_0_15px_rgba(217,119,87,0.1)]" 
+                        : "border-transparent text-textmuted hover:bg-bgpanel hover:text-textprimary"
                     )}
                   >
                     <Icon size={16} />
@@ -298,7 +298,7 @@ export default function Dashboard() {
             {/* Show loader if the active tab's result isn't ready yet */}
             {!results[activeTab] && agentStatus[activeTab === 'audit' ? 'auditor' : activeTab === 'strategy' ? 'strategist' : 'copywriter'] === 'running' && (
               <div className="flex h-64 items-center justify-center">
-                <div className="flex flex-col items-center gap-4 text-[#A39E93]">
+                <div className="flex flex-col items-center gap-4 text-textmuted">
                   <div className="h-8 w-8 animate-spin rounded-full border-4 border-borderwarm border-t-brand-500" />
                   <p className="text-sm font-medium">Analyzing data...</p>
                 </div>

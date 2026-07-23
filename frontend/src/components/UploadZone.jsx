@@ -53,7 +53,7 @@ export default function UploadZone({ onFileReady }) {
         <h1 className="text-4xl md:text-5xl font-serif text-[#FAF4EC] tracking-tight mb-4">
           Uncover the Hidden ROI in Your <span className="text-brand-400 glow-text italic">Ad Campaigns</span>
         </h1>
-        <p className="text-lg text-[#A39E93]">
+        <p className="text-lg text-textmuted">
           Upload your campaign data. Our multi-agent AI pipeline will instantly audit performance, write strategic recommendations, and generate A/B tested ad copy.
         </p>
       </div>
@@ -71,7 +71,7 @@ export default function UploadZone({ onFileReady }) {
           className={`relative rounded-2xl border-2 border-dashed p-12 text-center transition-all duration-300 ${
             isDragging
               ? 'border-brand-400 bg-brand-500/10 scale-[0.99] shadow-[0_0_30px_rgba(217,119,87,0.2)]'
-              : 'border-borderwarm bg-[#151513] hover:border-brand-500/50 hover:bg-[#1C1C19]'
+              : 'border-borderwarm bg-bgpanel hover:border-brand-500/50 hover:bg-bgpanelhover'
           }`}
         >
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-brand-500/10 text-brand-400 mb-6 shadow-inner animate-float border border-brand-500/20">
@@ -79,7 +79,7 @@ export default function UploadZone({ onFileReady }) {
           </div>
           
           <h3 className="text-xl font-bold text-[#FAF4EC] mb-2">Upload Campaign Data</h3>
-          <p className="text-[#A39E93] mb-8 max-w-md mx-auto">
+          <p className="text-textmuted mb-8 max-w-md mx-auto">
             Drag and drop your exported CSV file containing ad performance metrics, or click to browse files.
           </p>
 

@@ -28,7 +28,7 @@ export default function ColdStartLoader({ visible }) {
               </span>
             </div>
             <h2 className="mt-3 text-lg font-serif text-[#FAF4EC]">Starting the analysis engine</h2>
-            <p className="mt-2 text-sm leading-6 text-[#A39E93]">
+            <p className="mt-2 text-sm leading-6 text-textmuted">
               The backend may take a moment to wake up after being idle. Keep this tab open while AdMind connects and starts streaming results.
             </p>
 
