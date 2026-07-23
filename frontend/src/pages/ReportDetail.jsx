@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Calendar, Download, AlertCircle, FileSearch, Lightbulb, PenLine, BarChart3, MessageSquare, Send, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import html2pdf from 'html2pdf.js'
 import ReactMarkdown from 'react-markdown'
 import clsx from 'clsx'
 
@@ -89,24 +88,7 @@ export default function ReportDetail() {
   }
 
   const downloadPDF = () => {
-    const element = reportRef.current
-    if (!element) return
-
-    const opt = {
-      margin: [10, 10, 10, 10],
-      filename: `AdMind_Report_${id}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { 
-        scale: 2, 
-        useCORS: true,
-        backgroundColor: '#0B0F19',
-        windowWidth: 1200
-      },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-    }
-
-    html2pdf().set(opt).from(element).save()
+    window.print()
   }
 
   const tabs = [
@@ -151,14 +133,20 @@ export default function ReportDetail() {
   }
 
   return (
-    <div className="flex gap-6 h-full relative">
+    <div className="flex gap-6 h-full relative print:block" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+      <style>{`
+        @media print {
+          @page { size: landscape; margin: 0; }
+          body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+      `}</style>
       {/* Main Report Area */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className={clsx("space-y-8 pb-12 transition-all duration-300", showChat ? "w-2/3" : "w-full")}
+        className={clsx("space-y-8 pb-12 transition-all duration-300 print:w-full print:space-y-6 print:pb-0", showChat ? "w-2/3" : "w-full")}
       >
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4 print:hidden">
           <button
             onClick={() => navigate('/history')}
             className="inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors group text-sm font-semibold"
@@ -221,7 +209,7 @@ export default function ReportDetail() {
         {/* Tabs and Results Section */}
         <div className="space-y-6">
           {job.audit_data && <CampaignHealthScore audit={job.audit_data} />}
-          <div className="flex border-b border-white/10 gap-2">
+          <div className="flex border-b border-white/10 gap-2 print:hidden">
             {tabs.map((tab) => {
               const Icon = tab.icon
               const isActive = activeTab === tab.id
@@ -243,7 +231,7 @@ export default function ReportDetail() {
             })}
           </div>
 
-          <div ref={reportRef} className="bg-transparent min-h-[400px] p-2">
+          <div ref={reportRef} className="bg-[#0B0F19] text-white min-h-[400px] p-6 rounded-2xl print:p-0">
             {/* White-Label Branding Header */}
             {(agencyName || logoUrl) && (
               <div className="flex items-center gap-4 mb-8 pb-6 border-b border-white/10">
@@ -284,7 +272,7 @@ export default function ReportDetail() {
             initial={{ opacity: 0, x: 100 }} 
             animate={{ opacity: 1, x: 0 }} 
             exit={{ opacity: 0, x: 100 }}
-            className="w-1/3 flex flex-col h-[calc(100vh-8rem)] sticky top-0 bg-[#0B0F19]/80 backdrop-blur-md border border-white/10 rounded-3xl overflow-hidden shadow-2xl"
+            className="w-1/3 flex flex-col h-[calc(100vh-8rem)] sticky top-0 bg-[#0B0F19]/80 backdrop-blur-md border border-white/10 rounded-3xl overflow-hidden shadow-2xl print:hidden"
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-white/5">
               <div className="flex items-center gap-3">

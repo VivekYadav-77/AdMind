@@ -169,9 +169,9 @@ export default function Dashboard() {
   }
 
   const tabs = [
-    { id: 'audit', label: 'Audit', icon: FileSearch, color: 'blue' },
-    { id: 'strategy', label: 'Strategy', icon: Lightbulb, color: 'indigo' },
-    { id: 'copy', label: 'A/B Copy', icon: PenLine, color: 'purple' }
+    { id: 'audit', label: 'Audit', icon: FileSearch, color: 'brand' },
+    { id: 'strategy', label: 'Strategy', icon: Lightbulb, color: 'amber' },
+    { id: 'copy', label: 'A/B Copy', icon: PenLine, color: 'emerald' }
   ]
 
   return (
@@ -191,22 +191,22 @@ export default function Dashboard() {
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="flex flex-wrap items-center gap-4 rounded-2xl glass-panel p-5 border-blue-500/20"
+              className="flex flex-wrap items-center gap-4 rounded-2xl glass-panel p-5 border-borderwarm"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/20 text-blue-400 shadow-inner">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-500/10 text-brand-400 shadow-inner border border-brand-500/20">
                 <BarChart3 size={24} aria-hidden="true" />
               </div>
               <div className="flex-1">
-                <h3 className="text-sm font-medium text-slate-400">Dataset Overview</h3>
+                <h3 className="text-sm font-medium text-[#A39E93]">Dataset Overview</h3>
                 <div className="flex gap-6 mt-1">
-                  <p className="text-sm text-slate-400">
-                    <span className="font-bold text-slate-200 text-base">{csvStats.rows}</span> rows
+                  <p className="text-sm text-[#A39E93]">
+                    <span className="font-bold text-[#FAF4EC] text-base">{csvStats.rows}</span> rows
                   </p>
-                  <p className="text-sm text-slate-400">
-                    Spend: <span className="font-bold text-slate-200 text-base">{formatMoney(csvStats.total_spend)}</span>
+                  <p className="text-sm text-[#A39E93]">
+                    Spend: <span className="font-bold text-[#FAF4EC] text-base">{formatMoney(csvStats.total_spend)}</span>
                   </p>
-                  <p className="text-sm text-slate-400">
-                    Revenue: <span className="font-bold text-slate-200 text-base">{formatMoney(csvStats.total_revenue)}</span>
+                  <p className="text-sm text-[#A39E93]">
+                    Revenue: <span className="font-bold text-[#FAF4EC] text-base">{formatMoney(csvStats.total_revenue)}</span>
                   </p>
                 </div>
               </div>
@@ -252,10 +252,10 @@ export default function Dashboard() {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={clsx(
-                      "flex items-center gap-2 rounded-t-xl px-5 py-3 text-sm font-bold transition-all border-b-2",
+                      "flex items-center gap-2 rounded-t-xl px-5 py-3 text-sm font-medium transition-all border-b-2",
                       isActive 
-                        ? `border-${tab.color}-400 text-${tab.color}-400 bg-${tab.color}-500/10` 
-                        : "border-transparent text-slate-500 hover:bg-white/5 hover:text-slate-300"
+                        ? `border-${tab.color}-500 text-${tab.color}-400 bg-${tab.color}-500/10` 
+                        : "border-transparent text-[#A39E93] hover:bg-white/5 hover:text-[#FAF4EC]"
                     )}
                   >
                     <Icon size={16} />
@@ -268,7 +268,7 @@ export default function Dashboard() {
             {stage === 'done' && (
               <button
                 onClick={downloadPDF}
-                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-all hover:bg-blue-500 hover:scale-105"
+                className="inline-flex items-center gap-2 btn-primary"
               >
                 <Download size={16} />
                 Download Report
@@ -298,8 +298,8 @@ export default function Dashboard() {
             {/* Show loader if the active tab's result isn't ready yet */}
             {!results[activeTab] && agentStatus[activeTab === 'audit' ? 'auditor' : activeTab === 'strategy' ? 'strategist' : 'copywriter'] === 'running' && (
               <div className="flex h-64 items-center justify-center">
-                <div className="flex flex-col items-center gap-4 text-slate-400">
-                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-800 border-t-blue-500" />
+                <div className="flex flex-col items-center gap-4 text-[#A39E93]">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-borderwarm border-t-brand-500" />
                   <p className="text-sm font-medium">Analyzing data...</p>
                 </div>
               </div>
@@ -319,7 +319,7 @@ export default function Dashboard() {
             <button
               type="button"
               onClick={reset}
-              className="inline-flex items-center gap-2 rounded-xl glass-panel px-6 py-3 text-sm font-semibold text-slate-300 shadow-lg transition-all hover:bg-white/10"
+              className="inline-flex items-center gap-2 btn-secondary"
             >
               <RotateCcw size={18} aria-hidden="true" />
               Start New Analysis

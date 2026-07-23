@@ -4,7 +4,11 @@
 
 @layer base {
   body {
-    @apply font-sans antialiased text-slate-200 bg-[#0B0F19];
+    @apply font-sans antialiased text-[#E5E0D8] bg-darkbg;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif font-normal;
   }
 }
 
@@ -17,21 +21,46 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-700 rounded-full;
+  @apply bg-[#2A2A27] rounded-full;
 }
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-slate-600;
+  @apply bg-[#3A3A35];
 }
 
-/* Glassmorphism utilities */
+/* Glassmorphism utilities - Warmer, softer */
 .glass {
-  @apply bg-slate-900/40 backdrop-blur-xl border border-white/10 shadow-2xl;
+  @apply bg-[#151513]/60 backdrop-blur-xl border border-borderwarm shadow-2xl;
 }
 
 .glass-panel {
-  @apply bg-slate-800/40 backdrop-blur-2xl border border-white/5 shadow-xl;
+  @apply bg-[#151513]/60 backdrop-blur-2xl border border-borderwarm shadow-xl;
+}
+
+.card-warm {
+  @apply bg-[#1C1C19] border border-borderwarm rounded-2xl transition-all hover:border-brand-500/30;
 }
 
 .glow-text {
-  text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+  text-shadow: 0 0 20px rgba(217, 119, 87, 0.3);
+}
+
+.btn-primary {
+  @apply bg-brand-500 hover:bg-brand-600 text-[#FAF4EC] px-5 py-2.5 rounded-xl font-medium shadow-[0_4px_14px_0_rgba(217,119,87,0.39)] hover:shadow-[0_6px_20px_rgba(217,119,87,0.23)] hover:-translate-y-0.5 transition-all duration-300;
+}
+
+.btn-secondary {
+  @apply bg-[#1C1C19] hover:bg-[#252522] border border-borderwarm hover:border-brand-500/30 text-[#E5E0D8] px-5 py-2.5 rounded-xl font-medium transition-all duration-300;
+}
+
+/* Subtle noise texture */
+.grain-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0.25;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }

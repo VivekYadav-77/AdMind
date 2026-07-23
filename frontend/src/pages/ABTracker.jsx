@@ -47,12 +47,12 @@ export default function ABTracker() {
     >
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-black text-white tracking-tight">A/B Test Tracker Dashboard</h1>
-          <p className="text-slate-400 mt-2 font-medium">Manage and monitor your active experiments</p>
+          <h1 className="text-3xl font-serif text-[#FAF4EC] tracking-tight">A/B Test Tracker Dashboard</h1>
+          <p className="text-[#A39E93] mt-2 font-medium">Manage and monitor your active experiments</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-all"
+          className="btn-primary flex items-center gap-2"
         >
           <Plus size={20} />
           New Test
@@ -67,48 +67,48 @@ export default function ABTracker() {
             exit={{ opacity: 0, height: 0, mb: 0 }}
             className="overflow-hidden"
           >
-            <div className="glass-panel p-6 rounded-3xl border border-white/10 bg-black/40">
-              <h2 className="text-xl font-bold text-white mb-4">Create New A/B Test</h2>
+            <div className="glass-panel p-6 rounded-3xl border border-borderwarm bg-[#1C1C19]">
+              <h2 className="text-xl font-serif text-[#FAF4EC] mb-4">Create New A/B Test</h2>
               <form onSubmit={handleLaunch} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-300 mb-1">Test Name</label>
+                  <label className="block text-sm font-semibold text-[#E5E0D8] mb-1">Test Name</label>
                   <input
                     type="text"
                     required
                     placeholder='e.g., "Summer Sale FOMO vs Benefit"'
                     value={formData.name}
                     onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50"
+                    className="w-full bg-[#151513] border border-borderwarm rounded-xl py-2.5 px-4 text-[#FAF4EC] focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 placeholder:text-[#6A655A]"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-bold text-slate-300 mb-1">Variant A</label>
+                    <label className="block text-sm font-semibold text-[#E5E0D8] mb-1">Variant A</label>
                     <input
                       type="text"
                       required
                       placeholder='e.g., "Get 20% off before midnight!"'
                       value={formData.variantA}
                       onChange={e => setFormData({ ...formData, variantA: e.target.value })}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50"
+                      className="w-full bg-[#151513] border border-borderwarm rounded-xl py-2.5 px-4 text-[#FAF4EC] focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 placeholder:text-[#6A655A]"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-slate-300 mb-1">Variant B</label>
+                    <label className="block text-sm font-semibold text-[#E5E0D8] mb-1">Variant B</label>
                     <input
                       type="text"
                       required
                       placeholder='e.g., "Upgrade your wardrobe for less"'
                       value={formData.variantB}
                       onChange={e => setFormData({ ...formData, variantB: e.target.value })}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl py-2.5 px-4 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50"
+                      className="w-full bg-[#151513] border border-borderwarm rounded-xl py-2.5 px-4 text-[#FAF4EC] focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 placeholder:text-[#6A655A]"
                     />
                   </div>
                 </div>
                 <div className="flex justify-end pt-2">
                   <button
                     type="submit"
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all"
+                    className="btn-primary flex items-center gap-2"
                   >
                     <PlayCircle size={20} />
                     Launch Test Track
@@ -122,7 +122,7 @@ export default function ABTracker() {
 
       <div className="space-y-6">
         {tests.length === 0 ? (
-          <div className="text-center py-12 text-slate-500">
+          <div className="text-center py-12 text-[#8A857A]">
             <Activity size={48} className="mx-auto mb-4 opacity-50" />
             <p className="text-lg font-medium">No active tests found.</p>
             <p className="text-sm">Click "New Test" to start tracking.</p>
@@ -133,11 +133,11 @@ export default function ABTracker() {
               key={test.id}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="glass-panel p-6 rounded-3xl border border-white/10 bg-black/40 relative overflow-hidden"
+              className="glass-panel p-6 rounded-3xl border border-borderwarm bg-[#1C1C19] relative overflow-hidden"
             >
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <h3 className="text-xl font-bold text-white">{test.name}</h3>
+                  <h3 className="text-xl font-serif text-[#FAF4EC]">{test.name}</h3>
                 </div>
                 <div>
                   {test.status === 'Running' ? (
@@ -159,26 +159,26 @@ export default function ABTracker() {
                 <div className={clsx(
                   "p-5 rounded-2xl border transition-all relative overflow-hidden",
                   test.winner === 'A' 
-                    ? "bg-green-500/10 border-green-500/30" 
+                    ? "bg-emerald-500/10 border-emerald-500/30" 
                     : test.winner 
-                    ? "bg-white/5 border-white/5 opacity-50"
-                    : "bg-white/5 border-white/10"
+                    ? "bg-white/5 border-transparent opacity-50"
+                    : "bg-[#151513] border-borderwarm"
                 )}>
                   {test.winner === 'A' && (
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 rounded-full blur-[20px]" />
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-[20px]" />
                   )}
                   <div className="flex justify-between items-start mb-3 relative z-10">
-                    <span className="text-xs font-black uppercase tracking-widest text-slate-500">Variant A</span>
+                    <span className="text-xs font-bold uppercase tracking-widest text-[#8A857A]">Variant A</span>
                     {test.winner === 'A' && (
-                      <Trophy className="text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]" size={24} />
+                      <Trophy className="text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" size={24} />
                     )}
                   </div>
-                  <p className="text-lg font-medium text-white mb-6 relative z-10">"{test.variantA}"</p>
+                  <p className="text-lg font-medium text-[#FAF4EC] mb-6 relative z-10">"{test.variantA}"</p>
                   
                   {test.status === 'Running' && (
                     <button
                       onClick={() => markWinner(test.id, 'A')}
-                      className="w-full py-2 rounded-xl text-sm font-bold text-white bg-white/10 hover:bg-green-500 hover:text-white transition-all border border-white/10 hover:border-green-500"
+                      className="w-full py-2 rounded-xl text-sm font-semibold text-[#A39E93] bg-[#1C1C19] hover:bg-emerald-500 hover:text-white transition-all border border-borderwarm hover:border-emerald-500"
                     >
                       Mark as Winner
                     </button>
@@ -189,26 +189,26 @@ export default function ABTracker() {
                 <div className={clsx(
                   "p-5 rounded-2xl border transition-all relative overflow-hidden",
                   test.winner === 'B' 
-                    ? "bg-green-500/10 border-green-500/30" 
+                    ? "bg-emerald-500/10 border-emerald-500/30" 
                     : test.winner 
-                    ? "bg-white/5 border-white/5 opacity-50"
-                    : "bg-white/5 border-white/10"
+                    ? "bg-white/5 border-transparent opacity-50"
+                    : "bg-[#151513] border-borderwarm"
                 )}>
                   {test.winner === 'B' && (
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/10 rounded-full blur-[20px]" />
+                    <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-[20px]" />
                   )}
                   <div className="flex justify-between items-start mb-3 relative z-10">
-                    <span className="text-xs font-black uppercase tracking-widest text-slate-500">Variant B</span>
+                    <span className="text-xs font-bold uppercase tracking-widest text-[#8A857A]">Variant B</span>
                     {test.winner === 'B' && (
-                      <Trophy className="text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]" size={24} />
+                      <Trophy className="text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.6)]" size={24} />
                     )}
                   </div>
-                  <p className="text-lg font-medium text-white mb-6 relative z-10">"{test.variantB}"</p>
+                  <p className="text-lg font-medium text-[#FAF4EC] mb-6 relative z-10">"{test.variantB}"</p>
                   
                   {test.status === 'Running' && (
                     <button
                       onClick={() => markWinner(test.id, 'B')}
-                      className="w-full py-2 rounded-xl text-sm font-bold text-white bg-white/10 hover:bg-green-500 hover:text-white transition-all border border-white/10 hover:border-green-500"
+                      className="w-full py-2 rounded-xl text-sm font-semibold text-[#A39E93] bg-[#1C1C19] hover:bg-emerald-500 hover:text-white transition-all border border-borderwarm hover:border-emerald-500"
                     >
                       Mark as Winner
                     </button>

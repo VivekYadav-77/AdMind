@@ -165,11 +165,10 @@ export default function StrategyResults({ strategy, jobId }) {
     const headers = ['Priority', 'Action', 'Target', 'Reasoning', 'Expected Impact']
     const escapeCsv = (str) => {
       if (str === null || str === undefined) return '""'
-      const stringified = String(str)
-      if (stringified.includes(',') || stringified.includes('"') || stringified.includes('\n')) {
-        return `"${stringified.replace(/"/g, '""')}"`
-      }
-      return stringified
+      // Replace newlines, tabs, and carriage returns with spaces to prevent row breaks
+      const stringified = String(str).replace(/[\r\n\t]+/g, ' ').trim()
+      // Always wrap in quotes and escape internal quotes to ensure robust structure
+      return `"${stringified.replace(/"/g, '""')}"`
     }
     
     const rows = strategy.recommendations.map(r => [
@@ -180,7 +179,7 @@ export default function StrategyResults({ strategy, jobId }) {
       r.expected_impact
     ].map(escapeCsv).join(','))
     
-    const csvContent = [headers.join(','), ...rows].join('\n')
+    const csvContent = [headers.map(escapeCsv).join(','), ...rows].join('\n')
     const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)

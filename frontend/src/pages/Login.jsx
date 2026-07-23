@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { LogIn } from 'lucide-react'
+import { LogIn, ArrowRight } from 'lucide-react'
 import { API } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 
@@ -29,46 +29,84 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
-      >
-        <div className="flex flex-col items-center mb-8">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600 font-bold text-white shadow-lg mb-4 text-xl">
-            A
-          </div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Log in to AdMind</h1>
-          <p className="text-slate-500 mt-2">Welcome back to your AI marketing team</p>
+    <div className="flex min-h-screen bg-darkbg text-[#E5E0D8]">
+      <div className="grain-overlay" />
+      
+      {/* Left side - Branding (Hidden on mobile) */}
+      <div className="hidden lg:flex w-1/2 bg-[#151513] border-r border-borderwarm flex-col justify-between p-16 relative overflow-hidden z-10">
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+          <div className="absolute top-[-20%] left-[-20%] w-[70%] h-[70%] rounded-full bg-[#3A2216]/20 blur-[120px]" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-[#4A2518]/20 blur-[100px]" />
         </div>
+        
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-16">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 font-bold text-white shadow-[0_0_15px_rgba(217,119,87,0.4)]">
+              A
+            </div>
+            <span className="text-2xl font-serif tracking-tight text-[#FAF4EC] glow-text">AdMind</span>
+          </div>
+          
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <h1 className="text-5xl font-serif text-[#FAF4EC] leading-tight mb-6">
+              Amplify your <br />
+              <span className="text-brand-500 italic">marketing strategy</span>
+            </h1>
+            <p className="text-lg text-[#A39E93] max-w-md leading-relaxed">
+              Log in to access powerful AI-driven insights, craft tailored audience segments, and outsmart competitor campaigns in seconds.
+            </p>
+          </motion.div>
+        </div>
+        
+        <div className="relative z-10 text-sm text-[#8A857A]">
+          &copy; {new Date().getFullYear()} AdMind Inc. All rights reserved.
+        </div>
+      </div>
 
-        <div className="glass rounded-3xl p-8 shadow-xl shadow-slate-200/50">
+      {/* Right side - Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-16 relative z-10">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md"
+        >
+          <div className="lg:hidden flex items-center gap-3 mb-10">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 font-bold text-white shadow-[0_0_15px_rgba(217,119,87,0.4)]">
+              A
+            </div>
+            <span className="text-2xl font-serif tracking-tight text-[#FAF4EC]">AdMind</span>
+          </div>
+
+          <div className="mb-10">
+            <h2 className="text-3xl font-serif text-[#FAF4EC] mb-2">Welcome back</h2>
+            <p className="text-[#A39E93]">Please enter your details to sign in.</p>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
-              <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600 border border-red-100 font-medium">
+              <div className="rounded-xl bg-red-500/10 p-4 text-sm text-red-400 border border-red-500/20 font-medium">
                 {error}
               </div>
             )}
             
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Email Address</label>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-[#E5E0D8]">Email Address</label>
               <input
                 type="email"
                 required
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 focus:border-blue-500 focus:ring-blue-500 bg-white/50 focus:bg-white transition-colors"
+                className="w-full bg-[#151513] border border-borderwarm rounded-xl px-4 py-3.5 text-[#FAF4EC] focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all placeholder:text-[#6A655A]"
                 placeholder="you@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Password</label>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-[#E5E0D8]">Password</label>
               <input
                 type="password"
                 required
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 focus:border-blue-500 focus:ring-blue-500 bg-white/50 focus:bg-white transition-colors"
+                className="w-full bg-[#151513] border border-borderwarm rounded-xl px-4 py-3.5 text-[#FAF4EC] focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all placeholder:text-[#6A655A]"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -78,24 +116,24 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3.5 text-sm font-bold text-white transition-all hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-600/20 disabled:opacity-50"
+              className="w-full btn-primary flex items-center justify-center gap-2 py-3.5 mt-4 disabled:opacity-70 disabled:hover:translate-y-0"
             >
-              {loading ? 'Logging in...' : (
+              {loading ? 'Signing in...' : (
                 <>
-                  <LogIn size={18} /> Sign In
+                  Sign In <ArrowRight size={18} />
                 </>
               )}
             </button>
           </form>
-        </div>
 
-        <p className="text-center text-sm text-slate-500 mt-8 font-medium">
-          Don't have an account?{' '}
-          <Link to="/signup" className="text-blue-600 hover:text-blue-700 hover:underline">
-            Create an account
-          </Link>
-        </p>
-      </motion.div>
+          <p className="text-center text-sm text-[#A39E93] mt-10">
+            Don't have an account?{' '}
+            <Link to="/signup" className="text-brand-400 hover:text-brand-300 font-medium transition-colors">
+              Create an account
+            </Link>
+          </p>
+        </motion.div>
+      </div>
     </div>
   )
 }
