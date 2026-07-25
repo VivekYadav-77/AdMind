@@ -5,23 +5,38 @@ const AuthContext = createContext(null)
 export const AuthProvider = ({ children }) => {
   const savedToken = localStorage.getItem('token')
   const initialToken = savedToken && savedToken !== 'undefined' && savedToken !== 'null' ? savedToken : null
+  const decodeToken = (tokenStr) => {
+    try {
+      if (!tokenStr) return null;
+      const base64Url = tokenStr.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(atob(base64));
+      return { email: payload.sub, ...payload };
+    } catch (e) {
+      return null;
+    }
+  }
+
   const [token, setToken] = useState(initialToken)
   const [isAuthenticated, setIsAuthenticated] = useState(!!initialToken)
+  const [user, setUser] = useState(decodeToken(initialToken))
 
   const login = (newToken) => {
     localStorage.setItem('token', newToken)
     setToken(newToken)
     setIsAuthenticated(true)
+    setUser(decodeToken(newToken))
   }
 
   const logout = () => {
     localStorage.removeItem('token')
     setToken(null)
     setIsAuthenticated(false)
+    setUser(null)
   }
 
   return (
-    <AuthContext.Provider value={{ token, isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ token, isAuthenticated, user, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

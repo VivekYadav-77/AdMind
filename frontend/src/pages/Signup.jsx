@@ -35,8 +35,8 @@ export default function Signup() {
       {/* Left side - Branding (Hidden on mobile) */}
       <div className="hidden lg:flex w-1/2 bg-bgpanel border-r border-borderwarm flex-col justify-between p-16 relative overflow-hidden z-10">
         <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-          <div className="absolute top-[-20%] left-[-20%] w-[70%] h-[70%] rounded-full bg-[#3A2216]/20 blur-[120px]" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-[#4A2518]/20 blur-[100px]" />
+          <div className="absolute top-[-20%] left-[-20%] w-[70%] h-[70%] rounded-full bg-brand-500/20 blur-[120px]" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full bg-amber-500/20 blur-[100px]" />
         </div>
         
         <div className="relative z-10">
@@ -113,7 +113,9 @@ export default function Signup() {
               />
             </div>
 
-            <button
+            <motion.button
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.95 }}
               type="submit"
               disabled={loading}
               className="w-full btn-primary flex items-center justify-center gap-2 py-3.5 mt-4 disabled:opacity-70 disabled:hover:translate-y-0"
@@ -123,7 +125,7 @@ export default function Signup() {
                   Sign Up <ArrowRight size={18} />
                 </>
               )}
-            </button>
+            </motion.button>
           </form>
 
           <p className="text-center text-sm text-textmuted mt-10">

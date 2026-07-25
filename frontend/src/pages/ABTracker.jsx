@@ -1,16 +1,23 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Trophy, Activity, CheckCircle2, PlayCircle } from 'lucide-react'
 import clsx from 'clsx'
 
 export default function ABTracker() {
-  const [tests, setTests] = useState([])
+  const [tests, setTests] = useState(() => {
+    const saved = localStorage.getItem('ab_tests')
+    return saved ? JSON.parse(saved) : []
+  })
   const [showForm, setShowForm] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     variantA: '',
     variantB: ''
   })
+
+  useEffect(() => {
+    localStorage.setItem('ab_tests', JSON.stringify(tests))
+  }, [tests])
 
   const handleLaunch = (e) => {
     e.preventDefault()
@@ -50,13 +57,15 @@ export default function ABTracker() {
           <h1 className="text-3xl font-serif text-textprimary tracking-tight">A/B Test Tracker Dashboard</h1>
           <p className="text-textmuted mt-2 font-medium">Manage and monitor your active experiments</p>
         </div>
-        <button
+        <motion.button
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => setShowForm(!showForm)}
           className="btn-primary flex items-center gap-2"
         >
           <Plus size={20} />
           New Test
-        </button>
+        </motion.button>
       </div>
 
       <AnimatePresence>
@@ -106,13 +115,15 @@ export default function ABTracker() {
                   </div>
                 </div>
                 <div className="flex justify-end pt-2">
-                  <button
+                  <motion.button
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.95 }}
                     type="submit"
                     className="btn-primary flex items-center gap-2"
                   >
                     <PlayCircle size={20} />
                     Launch Test Track
-                  </button>
+                  </motion.button>
                 </div>
               </form>
             </div>
@@ -122,10 +133,14 @@ export default function ABTracker() {
 
       <div className="space-y-6">
         {tests.length === 0 ? (
-          <div className="text-center py-12 text-textmuted">
-            <Activity size={48} className="mx-auto mb-4 opacity-50" />
-            <p className="text-lg font-medium">No active tests found.</p>
-            <p className="text-sm">Click "New Test" to start tracking.</p>
+          <div className="text-center py-16 glass-panel rounded-3xl p-8 border-borderwarm max-w-lg mx-auto">
+            <div className="mx-auto w-16 h-16 bg-brand-500/10 text-brand-400 rounded-2xl flex items-center justify-center mb-4 border border-brand-500/20 shadow-[0_0_15px_rgba(217,119,87,0.1)]">
+              <Activity size={32} />
+            </div>
+            <h2 className="text-2xl font-serif text-textprimary">No Active Tests Found</h2>
+            <p className="text-textmuted mt-2 text-sm leading-relaxed">
+              Click "New Test" above to start tracking your first A/B experiment and monitor which variants perform better.
+            </p>
           </div>
         ) : (
           tests.map(test => (
@@ -176,12 +191,14 @@ export default function ABTracker() {
                   <p className="text-lg font-medium text-textprimary mb-6 relative z-10">"{test.variantA}"</p>
                   
                   {test.status === 'Running' && (
-                    <button
+                    <motion.button
+                      whileHover={{ y: -2 }}
+                      whileTap={{ scale: 0.95 }}
                       onClick={() => markWinner(test.id, 'A')}
                       className="w-full py-2 rounded-xl text-sm font-semibold text-[#A39E93] bg-[#1C1C19] hover:bg-emerald-500 hover:text-white transition-all border border-borderwarm hover:border-emerald-500"
                     >
                       Mark as Winner
-                    </button>
+                    </motion.button>
                   )}
                 </div>
 
@@ -206,12 +223,14 @@ export default function ABTracker() {
                   <p className="text-lg font-medium text-textprimary mb-6 relative z-10">"{test.variantB}"</p>
                   
                   {test.status === 'Running' && (
-                    <button
+                    <motion.button
+                      whileHover={{ y: -2 }}
+                      whileTap={{ scale: 0.95 }}
                       onClick={() => markWinner(test.id, 'B')}
                       className="w-full py-2 rounded-xl text-sm font-semibold text-[#A39E93] bg-[#1C1C19] hover:bg-emerald-500 hover:text-white transition-all border border-borderwarm hover:border-emerald-500"
                     >
                       Mark as Winner
-                    </button>
+                    </motion.button>
                   )}
                 </div>
               </div>

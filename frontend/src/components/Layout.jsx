@@ -1,25 +1,24 @@
-import { History, LayoutDashboard, LogOut, Settings, ChevronDown, Plus, Wrench, GitCompare, Moon, Sun } from 'lucide-react'
+import { History, LayoutDashboard, LogOut, Settings, ChevronDown, Plus, Wrench, GitCompare, Moon, Sun, User as UserIcon } from 'lucide-react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { useEffect, useState, useRef } from 'react'
-import { API } from '../services/api'
+import { useWorkspace } from '../context/WorkspaceContext'
+import { useEffect, useState } from 'react'
 import clsx from 'clsx'
+import { motion } from 'framer-motion'
+import Modal from './ui/Modal'
 
 export default function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { logout } = useAuth()
+  const { logout, user } = useAuth()
+  const { workspaces, activeWorkspace, changeWorkspace, createWorkspace } = useWorkspace()
 
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
-  }
+  const [showWsDropdown, setShowWsDropdown] = useState(false)
+  const [showUserDropdown, setShowUserDropdown] = useState(false)
+  const [showNewWsModal, setShowNewWsModal] = useState(false)
+  const [newWsName, setNewWsName] = useState('')
+  const [isSubmittingWs, setIsSubmittingWs] = useState(false)
 
-  const [workspaces, setWorkspaces] = useState([])
-  const [activeWorkspaceId, setActiveWorkspaceId] = useState(
-    localStorage.getItem('activeWorkspaceId') || null
-  )
-  const [showDropdown, setShowDropdown] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('theme')
     if (saved) return saved === 'dark'
@@ -36,43 +35,26 @@ export default function Layout() {
     }
   }, [isDarkMode])
 
-  useEffect(() => {
-    async function loadWorkspaces() {
-      try {
-        const data = await API.getWorkspaces()
-        setWorkspaces(data)
-        if (data.length > 0 && !activeWorkspaceId) {
-          handleWorkspaceChange(data[0].id)
-        }
-      } catch (e) {
-        console.error("Failed to load workspaces", e)
-      }
-    }
-    loadWorkspaces()
-  }, [])
-
-  const handleWorkspaceChange = (id) => {
-    setActiveWorkspaceId(id)
-    localStorage.setItem('activeWorkspaceId', id.toString())
-    setShowDropdown(false)
-    // Optional: reload the page or trigger a context update to refresh data
-    window.location.reload()
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
   }
 
-  const handleNewWorkspace = async () => {
-    const name = prompt("Enter new workspace name:")
-    if (name) {
-      try {
-        const newWs = await API.createWorkspace(name)
-        setWorkspaces([...workspaces, newWs])
-        handleWorkspaceChange(newWs.id)
-      } catch (e) {
-        alert("Failed to create workspace")
-      }
+  const handleCreateWorkspace = async (e) => {
+    e.preventDefault()
+    if (!newWsName.trim()) return
+    setIsSubmittingWs(true)
+    try {
+      await createWorkspace(newWsName)
+      setShowNewWsModal(false)
+      setNewWsName('')
+      setShowWsDropdown(false)
+    } catch (err) {
+      // Toast is handled in context
+    } finally {
+      setIsSubmittingWs(false)
     }
   }
-
-  const activeWorkspace = workspaces.find(w => w.id.toString() === activeWorkspaceId?.toString())
 
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
@@ -82,24 +64,19 @@ export default function Layout() {
     { name: 'Settings', path: '/settings', icon: Settings }
   ]
 
+  const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : 'U'
+
   return (
     <div className="flex min-h-screen bg-bgbase text-textprimary font-sans selection:bg-brand-500/30 transition-colors duration-300" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
       <div className="grain-overlay print:hidden" />
-      {/* Background gradients */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0 print:hidden">
-        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-brand-500/10 dark:bg-brand-900/40 blur-[120px]" />
-        <div className="absolute top-[20%] -right-[10%] w-[40%] h-[40%] rounded-full bg-brand-400/10 dark:bg-[#4A2518]/30 blur-[120px]" />
-      </div>
-
       {/* Sidebar */}
-      <aside className="w-64 flex-shrink-0 flex flex-col glass m-4 rounded-3xl z-10 relative overflow-hidden shadow-2xl border border-borderwarm print:hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-bgpanelhover/50 to-transparent pointer-events-none" />
-        <div className="flex h-24 items-center px-8 border-b border-borderwarm relative z-10">
+      <aside className="w-64 flex-shrink-0 flex flex-col bg-bgpanel border-r border-borderwarm z-10 relative print:hidden">
+        <div className="flex h-20 items-center px-6 border-b border-borderwarm relative z-10">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 font-bold text-white shadow-[0_0_15px_rgba(217,119,87,0.4)]">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 font-bold text-white shadow-sm">
               A
             </div>
-            <span className="text-2xl font-serif tracking-tight text-textprimary glow-text">AdMind</span>
+            <span className="text-xl font-bold tracking-tight text-textprimary">AdMind</span>
           </div>
         </div>
         
@@ -113,100 +90,141 @@ export default function Layout() {
                 key={item.name}
                 to={item.path}
                 className={clsx(
-                  "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300",
+                  "group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300",
                   isActive
-                    ? "bg-brand-500/10 text-brand-500 dark:text-brand-400 border-l-2 border-brand-500 shadow-[0_0_15px_rgba(217,119,87,0.05)]"
+                    ? "bg-brand-500/10 text-brand-600 dark:text-brand-400 font-semibold"
                     : "text-textmuted hover:bg-bgpanelhover hover:text-textprimary"
                 )}
               >
-                <item.icon size={18} className={clsx(isActive ? "text-brand-500 dark:text-brand-400" : "text-textmuted")} />
+                <item.icon size={18} className={clsx(isActive ? "text-brand-600 dark:text-brand-400" : "text-textmuted group-hover:text-textprimary transition-colors")} />
                 {item.name}
               </Link>
             )
           })}
         </nav>
-
-        <div className="p-4 border-t border-borderwarm relative z-10 flex flex-col gap-2">
-          <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-textmuted hover:bg-bgpanelhover hover:text-textprimary transition-all duration-300 group"
-          >
-            {isDarkMode ? (
-              <Sun size={18} className="text-textmuted group-hover:text-brand-400 transition-colors" />
-            ) : (
-              <Moon size={18} className="text-textmuted group-hover:text-brand-500 transition-colors" />
-            )}
-            {isDarkMode ? 'Light Mode' : 'Dark Mode'}
-          </button>
-          <button
-            onClick={handleLogout}
-            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-textmuted hover:bg-red-500/10 hover:text-red-500 dark:hover:text-red-400 transition-all duration-300 group"
-          >
-            <LogOut size={18} className="text-textmuted group-hover:text-red-500 dark:group-hover:text-red-400 transition-colors" />
-            Logout
-          </button>
-        </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden z-10 print:h-auto print:overflow-visible print:block">
-        <header className="h-24 flex items-center justify-between px-10 shrink-0 print:hidden">
-          <h1 className="text-2xl font-serif text-textprimary tracking-tight">
-            {location.pathname === '/' 
-              ? 'Campaign Dashboard' 
-              : location.pathname.startsWith('/history/')
-              ? 'Detailed Analysis Report'
-              : location.pathname === '/history'
-              ? 'Analysis History'
-              : location.pathname.startsWith('/tools')
-              ? 'AI Marketing Tools'
-              : location.pathname === '/settings'
-              ? 'System Settings'
-              : 'Overview'}
-          </h1>
+      <main className="flex-1 flex flex-col h-screen overflow-hidden z-10 print:h-auto print:overflow-visible print:block bg-bgbase">
+        <header className="h-20 flex items-center justify-between px-8 shrink-0 print:hidden relative z-50 border-b border-borderwarm bg-bgpanel/50 backdrop-blur-sm">
+          {/* Logo / Left space if needed (we removed title here) */}
+          <div className="flex-1"></div>
           
-          <div className="relative">
-            <button 
-              onClick={() => setShowDropdown(!showDropdown)}
-              className="flex items-center gap-2 bg-bgpanelhover hover:bg-bgpanel border border-borderwarm px-4 py-2.5 rounded-xl text-sm font-medium text-textprimary transition-colors"
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className="p-2.5 rounded-xl bg-bgpanelhover hover:bg-bgpanel border border-borderwarm text-textmuted hover:text-textprimary transition-all duration-300"
+              title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             >
-              {activeWorkspace ? activeWorkspace.name : 'Loading...'}
-              <ChevronDown size={16} className="text-textmuted" />
+              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
             </button>
-            
-            {showDropdown && (
-              <div className="absolute right-0 mt-2 w-56 bg-bgpanel border border-borderwarm rounded-2xl shadow-xl overflow-hidden z-50">
-                <div className="p-2 space-y-1">
-                  {workspaces.map(ws => (
+
+            <div className="relative">
+              <button 
+                onClick={() => { setShowWsDropdown(!showWsDropdown); setShowUserDropdown(false) }}
+                className="flex items-center gap-2 bg-bgpanelhover hover:bg-bgpanel border border-borderwarm px-4 py-2.5 rounded-xl text-sm font-medium text-textprimary transition-colors"
+              >
+                {activeWorkspace ? activeWorkspace.name : 'Loading...'}
+                <ChevronDown size={16} className="text-textmuted" />
+              </button>
+              
+              {showWsDropdown && (
+                <div className="absolute right-0 mt-2 w-56 bg-bgpanel border border-borderwarm rounded-2xl shadow-xl overflow-hidden z-50">
+                  <div className="p-2 space-y-1">
+                    {workspaces.map(ws => (
+                      <button
+                        key={ws.id}
+                        onClick={() => {
+                          changeWorkspace(ws.id)
+                          setShowWsDropdown(false)
+                        }}
+                        className={clsx(
+                          "w-full text-left px-4 py-2.5 rounded-xl text-sm transition-colors",
+                          activeWorkspace?.id === ws.id
+                            ? "bg-brand-500/10 text-brand-600 dark:text-brand-400 font-medium" 
+                            : "text-textmuted hover:bg-bgpanelhover"
+                        )}
+                      >
+                        {ws.name}
+                      </button>
+                    ))}
+                    <div className="h-px bg-borderwarm my-2" />
                     <button
-                      key={ws.id}
-                      onClick={() => handleWorkspaceChange(ws.id)}
-                      className={clsx(
-                        "w-full text-left px-4 py-2.5 rounded-xl text-sm transition-colors",
-                        activeWorkspaceId?.toString() === ws.id.toString() 
-                          ? "bg-brand-500/10 text-brand-600 dark:text-brand-400 font-medium" 
-                          : "text-textmuted hover:bg-bgpanelhover"
-                      )}
+                      onClick={() => setShowNewWsModal(true)}
+                      className="w-full flex items-center gap-2 text-left px-4 py-2.5 rounded-xl text-sm text-textmuted hover:bg-bgpanelhover transition-colors"
                     >
-                      {ws.name}
+                      <Plus size={16} /> New Workspace
                     </button>
-                  ))}
-                  <div className="h-px bg-borderwarm my-2" />
-                  <button
-                    onClick={handleNewWorkspace}
-                    className="w-full flex items-center gap-2 text-left px-4 py-2.5 rounded-xl text-sm text-textmuted hover:bg-bgpanelhover transition-colors"
-                  >
-                    <Plus size={16} /> New Workspace
-                  </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+
+            <div className="relative">
+              <motion.button
+                whileHover={{ y: -1 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => { setShowUserDropdown(!showUserDropdown); setShowWsDropdown(false) }}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-bgpanel border border-borderwarm font-bold text-textprimary hover:bg-bgpanelhover transition-colors"
+              >
+                {userInitial}
+              </motion.button>
+              {showUserDropdown && (
+                <div className="absolute right-0 mt-2 w-56 bg-bgpanel border border-borderwarm rounded-2xl shadow-xl overflow-hidden z-50">
+                  <div className="p-4 border-b border-borderwarm">
+                    <p className="text-sm font-bold text-textprimary truncate">{user?.email || 'User'}</p>
+                  </div>
+                  <div className="p-2">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 text-left px-4 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-500/10 transition-colors font-medium"
+                    >
+                      <LogOut size={16} /> Logout
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </header>
-        <div className="p-10 pt-0 max-w-7xl mx-auto w-full h-full overflow-auto print:p-0 print:h-auto print:overflow-visible print:max-w-none print:block">
+
+        <div className="p-8 max-w-7xl mx-auto w-full h-full overflow-auto print:p-0 print:h-auto print:overflow-visible print:max-w-none print:block">
           <Outlet />
         </div>
       </main>
+
+      <Modal isOpen={showNewWsModal} onClose={() => setShowNewWsModal(false)} title="Create Workspace">
+        <form onSubmit={handleCreateWorkspace} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-textsecondary mb-1">Workspace Name</label>
+            <input
+              type="text"
+              required
+              autoFocus
+              value={newWsName}
+              onChange={(e) => setNewWsName(e.target.value)}
+              placeholder="e.g. Apex Agency"
+              className="w-full bg-bgbase border border-borderwarm rounded-xl px-4 py-3 text-sm text-textprimary focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50"
+            />
+          </div>
+          <div className="pt-2 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setShowNewWsModal(false)}
+              className="px-4 py-2 text-sm font-medium text-textmuted hover:text-textprimary"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmittingWs || !newWsName.trim()}
+              className="btn-primary"
+            >
+              {isSubmittingWs ? 'Creating...' : 'Create Workspace'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
 }

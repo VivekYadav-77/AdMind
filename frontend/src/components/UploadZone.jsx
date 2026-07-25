@@ -3,10 +3,12 @@ import { FileUp, Sparkles, UploadCloud } from 'lucide-react'
 import { useCallback, useState } from 'react'
 
 import { API_BASE_URL } from '../services/api'
+import { useToast } from '../context/ToastContext'
 
 export default function UploadZone({ onFileReady }) {
   const [isDragging, setIsDragging] = useState(false)
   const [isProcessingDemo, setIsProcessingDemo] = useState(false)
+  const { showToast } = useToast()
 
   const handleDrop = useCallback(
     (e) => {
@@ -16,17 +18,23 @@ export default function UploadZone({ onFileReady }) {
       if (file && file.name.endsWith('.csv')) {
         onFileReady(file)
       } else {
-        alert('Please upload a valid CSV file.')
+        showToast('error', 'Please upload a valid CSV file.')
       }
     },
-    [onFileReady]
+    [onFileReady, showToast]
   )
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0]
     if (file) {
-      onFileReady(file)
+      if (file.name.endsWith('.csv')) {
+        onFileReady(file)
+      } else {
+        showToast('error', 'Please upload a valid CSV file.')
+      }
     }
+    // reset input so the same file can be selected again if needed
+    e.target.value = null
   }
 
   const loadSampleData = async () => {
@@ -38,7 +46,7 @@ export default function UploadZone({ onFileReady }) {
       const file = new File([blob], 'sample_data.csv', { type: 'text/csv' })
       onFileReady(file)
     } catch (err) {
-      alert('Could not load sample data. Is the backend running?')
+      showToast('error', 'Could not load sample data. Is the backend running?')
       setIsProcessingDemo(false)
     }
   }
@@ -49,18 +57,16 @@ export default function UploadZone({ onFileReady }) {
       animate={{ opacity: 1, scale: 1 }}
       className="py-12"
     >
-      <div className="mx-auto max-w-2xl text-center mb-10">
-        <h1 className="text-4xl md:text-5xl font-serif text-textprimary tracking-tight mb-4">
-          Uncover the Hidden ROI in Your <span className="text-brand-400 glow-text italic">Ad Campaigns</span>
+      <div className="mx-auto max-w-2xl text-center mb-10 mt-8">
+        <h1 className="text-4xl md:text-5xl font-bold text-textprimary tracking-tight mb-4">
+          Uncover the Hidden ROI in Your <span className="text-brand-500">Ad Campaigns</span>
         </h1>
         <p className="text-lg text-textmuted">
           Upload your campaign data. Our multi-agent AI pipeline will instantly audit performance, write strategic recommendations, and generate A/B tested ad copy.
         </p>
       </div>
 
-      <div className="mx-auto max-w-3xl glass rounded-3xl p-2 relative overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-r from-brand-400/10 via-amber-400/10 to-brand-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-        
+      <div className="mx-auto max-w-3xl bg-bgpanel rounded-2xl border border-borderwarm shadow-sm p-8">
         <div
           onDragOver={(e) => {
             e.preventDefault()
@@ -68,14 +74,14 @@ export default function UploadZone({ onFileReady }) {
           }}
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
-          className={`relative rounded-2xl border-2 border-dashed p-12 text-center transition-all duration-300 ${
+          className={`relative rounded-xl border-2 border-dashed p-12 text-center transition-all duration-200 ${
             isDragging
-              ? 'border-brand-400 bg-brand-500/10 scale-[0.99] shadow-[0_0_30px_rgba(217,119,87,0.2)]'
-              : 'border-borderwarm bg-bgpanel hover:border-brand-500/50 hover:bg-bgpanelhover'
+              ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10 scale-[0.99]'
+              : 'border-borderwarm hover:border-brand-500/50'
           }`}
         >
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-brand-500/10 text-brand-400 mb-6 shadow-inner animate-float border border-brand-500/20">
-            <UploadCloud size={40} strokeWidth={1.5} />
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-brand-50 dark:bg-brand-500/10 text-brand-500 mb-6">
+            <UploadCloud size={32} strokeWidth={2} />
           </div>
           
           <h3 className="text-xl font-bold text-textprimary mb-2">Upload Campaign Data</h3>

@@ -53,12 +53,14 @@ export default function History() {
         <p className="text-textmuted mt-2 text-sm leading-relaxed">
           Upload your campaign CSV on the Dashboard to get your first AI-driven marketing audit and start tracking performance!
         </p>
-        <button
+        <motion.button
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => navigate('/')}
           className="mt-6 inline-flex items-center gap-2 btn-primary"
         >
           Go to Dashboard
-        </button>
+        </motion.button>
       </div>
     )
   }
@@ -78,7 +80,11 @@ export default function History() {
 
   return (
     <div className="space-y-8 pb-16">
-      
+      <div className="mb-8">
+        <h1 className="text-3xl font-serif text-textprimary tracking-tight mb-2">Analysis History</h1>
+        <p className="text-textmuted font-medium">Review your past campaign audits</p>
+      </div>
+
       {showChart && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -124,11 +130,13 @@ export default function History() {
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#111625',
-                    borderColor: 'rgba(255,255,255,0.1)',
+                    backgroundColor: 'var(--bg-panel)',
+                    borderColor: 'var(--border-warm)',
                     borderRadius: '12px',
-                    color: '#e2e8f0'
+                    color: 'var(--text-primary)'
                   }}
+                  itemStyle={{ color: 'var(--text-primary)' }}
+                  labelStyle={{ color: 'var(--text-muted)' }}
                   formatter={(value, name) => [formatMoney(value), name]}
                 />
                 <Legend 

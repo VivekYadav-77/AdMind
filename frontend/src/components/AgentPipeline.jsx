@@ -37,7 +37,7 @@ export default function AgentPipeline({ agentStatus }) {
                     "relative flex min-h-[100px] flex-col items-center justify-center p-5 rounded-2xl border transition-all duration-500",
                     isDone && "bg-emerald-500/10 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.1)]",
                     isRunning && "bg-brand-500/10 border-brand-500/40 shadow-[0_0_25px_rgba(217,119,87,0.2)] z-10",
-                    isIdle && "bg-white/5 border-borderwarm opacity-50"
+                    isIdle && "bg-bgpanel border-borderwarm opacity-50"
                   )}
                 >
                   {isRunning && (

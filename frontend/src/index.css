@@ -4,25 +4,25 @@
 
 @layer base {
   :root {
-    --bg-base: #FFFFFF;
-    --bg-panel: #F8F9FA;
-    --bg-panel-hover: #F1F3F5;
-    --text-primary: #2C2825;
-    --text-secondary: #4A453F;
-    --text-muted: #8A857A;
+    --bg-base: #FAFAFA;
+    --bg-panel: #FFFFFF;
+    --bg-panel-hover: #F4F4F5;
+    --text-primary: #18181B;
+    --text-secondary: #3F3F46;
+    --text-muted: #71717A;
     --border-warm: rgba(0, 0, 0, 0.08);
-    --bg-glass: rgba(255, 255, 255, 0.85);
+    --bg-glass: rgba(255, 255, 255, 0.95);
   }
   
   .dark {
-    --bg-base: #000000;
-    --bg-panel: #121212;
-    --bg-panel-hover: #1E1E1E;
-    --text-primary: #FAF4EC;
-    --text-secondary: #E5E0D8;
-    --text-muted: #A39E93;
-    --border-warm: rgba(255, 255, 255, 0.08);
-    --bg-glass: rgba(18, 18, 18, 0.7);
+    --bg-base: #09090B;
+    --bg-panel: #18181B;
+    --bg-panel-hover: #27272A;
+    --text-primary: #FAFAFA;
+    --text-secondary: #E4E4E7;
+    --text-muted: #A1A1AA;
+    --border-warm: rgba(255, 255, 255, 0.1);
+    --bg-glass: rgba(24, 24, 24, 0.95);
   }
 
   body {
@@ -49,29 +49,29 @@
   @apply bg-textmuted;
 }
 
-/* Glassmorphism utilities - Warmer, softer */
+/* Panel utilities - Clean, solid */
 .glass {
-  @apply bg-bgglass backdrop-blur-xl border border-borderwarm shadow-2xl;
+  @apply bg-bgpanel border border-borderwarm shadow-lg;
 }
 
 .glass-panel {
-  @apply bg-bgglass backdrop-blur-2xl border border-borderwarm shadow-xl;
+  @apply bg-bgpanel border border-borderwarm shadow-md;
 }
 
 .card-warm {
-  @apply bg-bgpanelhover border border-borderwarm rounded-2xl transition-all hover:border-brand-500/30;
+  @apply bg-bgpanel border border-borderwarm rounded-2xl transition-all hover:border-brand-500/50 hover:shadow-md;
 }
 
 .glow-text {
-  text-shadow: 0 0 20px rgba(217, 119, 87, 0.3);
+  /* Removed glow for cleaner typography */
 }
 
 .btn-primary {
-  @apply bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl font-medium shadow-[0_4px_14px_0_rgba(217,119,87,0.39)] hover:shadow-[0_6px_20px_rgba(217,119,87,0.23)] hover:-translate-y-0.5 transition-all duration-300;
+  @apply bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm hover:shadow transition-all duration-200 active:scale-[0.98];
 }
 
 .btn-secondary {
-  @apply bg-bgpanelhover hover:bg-bgpanel border border-borderwarm hover:border-brand-500/30 text-textprimary px-5 py-2.5 rounded-xl font-medium transition-all duration-300;
+  @apply bg-bgpanelhover hover:bg-borderwarm border border-borderwarm text-textprimary px-5 py-2.5 rounded-xl font-medium transition-all duration-200 active:scale-[0.98];
 }
 
 /* Subtle noise texture removed for glossy look */

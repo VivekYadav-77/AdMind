@@ -10,6 +10,7 @@ import AuditResults from '../components/AuditResults'
 import CampaignHealthScore from '../components/CampaignHealthScore'
 import StrategyResults from '../components/StrategyResults'
 import CopyResults from '../components/CopyResults'
+import TabBar from '../components/ui/TabBar'
 
 function formatMoney(value) {
   return `$${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
@@ -209,26 +210,12 @@ export default function ReportDetail() {
         {/* Tabs and Results Section */}
         <div className="space-y-6">
           {job.audit_data && <CampaignHealthScore audit={job.audit_data} />}
-          <div className="flex border-b border-white/10 gap-2 print:hidden">
-            {tabs.map((tab) => {
-              const Icon = tab.icon
-              const isActive = activeTab === tab.id
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={clsx(
-                    "flex items-center gap-2 rounded-t-xl px-5 py-3 text-sm font-bold transition-all border-b-2",
-                    isActive
-                      ? `border-${tab.color}-400 text-${tab.color}-400 bg-${tab.color}-500/10`
-                      : "border-transparent text-textmuted hover:bg-bgpanelhover hover:text-textprimary"
-                  )}
-                >
-                  <Icon size={16} />
-                  {tab.label}
-                </button>
-              )
-            })}
+          <div className="print:hidden">
+            <TabBar 
+              tabs={tabs} 
+              activeTab={activeTab} 
+              onChange={(id) => setActiveTab(id)} 
+            />
           </div>
 
           <div ref={reportRef} className="bg-bgbase text-textprimary min-h-[400px] p-6 rounded-2xl print:p-0">

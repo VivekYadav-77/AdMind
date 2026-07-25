@@ -87,6 +87,17 @@ export const API = {
     const formData = new FormData()
     formData.append('file', file)
     
+    // Add configs from localStorage if available
+    const wasteAlert = localStorage.getItem('threshold_wasteAlert')
+    const minRoas = localStorage.getItem('threshold_minRoas')
+    const aiModel = localStorage.getItem('ai_model')
+    const aiTemp = localStorage.getItem('ai_temperature')
+    
+    if (wasteAlert) formData.append('wasteAlertPercent', wasteAlert)
+    if (minRoas) formData.append('minRoasTarget', minRoas)
+    if (aiModel) formData.append('aiModel', aiModel)
+    if (aiTemp) formData.append('aiTemperature', aiTemp)
+    
     const res = await fetch(apiUrl('/analyze'), { 
       method: 'POST', 
       headers: getAuthHeaders(),

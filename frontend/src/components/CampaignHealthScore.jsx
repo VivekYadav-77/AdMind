@@ -1,8 +1,16 @@
 import { motion } from 'framer-motion'
 import { Activity } from 'lucide-react'
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts'
+import { useEffect, useState } from 'react'
 
 export default function CampaignHealthScore({ audit }) {
+  const [minRoas, setMinRoas] = useState(2.5)
+
+  useEffect(() => {
+    const saved = localStorage.getItem('threshold_minRoas')
+    if (saved) setMinRoas(parseFloat(saved))
+  }, [])
+
   if (!audit || !audit.total_spend) return null
 
   const inefficientSpend = audit.inefficient_spend !== undefined ? audit.inefficient_spend : (audit.wasted_spend || 0)
@@ -11,7 +19,7 @@ export default function CampaignHealthScore({ audit }) {
   
   let score = 0
   score += Math.min(50, efficiency * 50)
-  score += Math.min(50, (roas / 3) * 50)
+  score += Math.min(50, (roas / minRoas) * 50)
   
   const finalScore = Math.round(score)
   let grade = 'D'
@@ -33,9 +41,9 @@ export default function CampaignHealthScore({ audit }) {
       initial={{ opacity: 0, scale: 0.95, y: 10 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
       transition={{ duration: 0.5, type: 'spring' }}
-      className="glass-panel border-white/10 p-6 lg:px-10 rounded-[2rem] relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:shadow-[0_8px_40px_rgba(255,255,255,0.05)] transition-all mb-8"
+      className="glass-panel border-borderwarm bg-bgpanelhover p-6 lg:px-10 rounded-[2rem] relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 shadow-lg hover:shadow-xl transition-all mb-8"
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-black/20 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-black/5 pointer-events-none" />
       
       {/* Decorative Blur */}
       <div 
@@ -44,19 +52,19 @@ export default function CampaignHealthScore({ audit }) {
       />
 
       <div className="flex items-center gap-5 z-10 w-full md:w-auto">
-        <div className="p-4 rounded-2xl bg-black/40 border border-white/5 shadow-inner backdrop-blur-md">
+        <div className="p-4 rounded-2xl bg-bgpanel border border-borderwarm shadow-inner backdrop-blur-md">
           <Activity size={28} style={{ color }} />
         </div>
         <div>
-          <h3 className="text-2xl font-black text-white tracking-tight">Campaign Health Score</h3>
-          <p className="text-slate-400 text-sm mt-1 font-medium">AI generated score based on ROAS & Efficiency</p>
+          <h3 className="text-2xl font-black text-textprimary tracking-tight">Campaign Health Score</h3>
+          <p className="text-textmuted text-sm mt-1 font-medium">AI generated score based on ROAS & Efficiency</p>
         </div>
       </div>
       
       <div className="flex items-center gap-6 z-10 w-full md:w-auto justify-end">
         <div className="text-right">
-          <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1">Total Score</p>
-          <p className="text-3xl font-black text-white">{finalScore}<span className="text-lg text-slate-500">/100</span></p>
+          <p className="text-[10px] uppercase tracking-widest text-textmuted font-bold mb-1">Total Score</p>
+          <p className="text-3xl font-black text-textprimary">{finalScore}<span className="text-lg text-textmuted">/100</span></p>
         </div>
         
         <div className="relative w-28 h-28 flex items-center justify-center">
@@ -73,7 +81,7 @@ export default function CampaignHealthScore({ audit }) {
                 cornerRadius={10}
               >
                 <Cell fill={color} style={{ filter: `drop-shadow(0 0 10px ${color})` }} />
-                <Cell fill="rgba(255,255,255,0.05)" />
+                <Cell fill="rgba(150,150,150,0.05)" />
               </Pie>
             </PieChart>
           </ResponsiveContainer>

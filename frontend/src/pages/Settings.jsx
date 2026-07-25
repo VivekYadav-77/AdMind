@@ -13,16 +13,16 @@ export default function Settings() {
     confirmPassword: ''
   })
   
-  const [aiSettings, setAiSettings] = useState({
-    model: 'gemini-1.5-pro',
-    temperature: 0.2,
+  const [aiSettings, setAiSettings] = useState(() => ({
+    model: localStorage.getItem('ai_model') || 'gemini-1.5-pro',
+    temperature: parseFloat(localStorage.getItem('ai_temperature')) || 0.2,
     maxTokens: 2048
-  })
+  }))
 
-  const [thresholds, setThresholds] = useState({
-    wasteAlertPercent: 15,
-    minRoasTarget: 2.5
-  })
+  const [thresholds, setThresholds] = useState(() => ({
+    wasteAlertPercent: parseInt(localStorage.getItem('threshold_wasteAlert')) || 15,
+    minRoasTarget: parseFloat(localStorage.getItem('threshold_minRoas')) || 2.5
+  }))
 
   const [passwordStatus, setPasswordStatus] = useState(null) // { type: 'success'|'error', message: '' }
   const [settingsSaved, setSettingsSaved] = useState(false)
@@ -56,6 +56,10 @@ export default function Settings() {
   }
 
   const handleSaveSettings = () => {
+    localStorage.setItem('ai_model', aiSettings.model)
+    localStorage.setItem('ai_temperature', aiSettings.temperature.toString())
+    localStorage.setItem('threshold_wasteAlert', thresholds.wasteAlertPercent.toString())
+    localStorage.setItem('threshold_minRoas', thresholds.minRoasTarget.toString())
     setSettingsSaved(true)
     setTimeout(() => {
       setSettingsSaved(false)
@@ -77,20 +81,24 @@ export default function Settings() {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-8 pb-16"
     >
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-textprimary tracking-tight mb-2">System Settings</h1>
+        <p className="text-textmuted font-medium">Configure your AdMind experience</p>
+      </div>
+
       <div className="grid md:grid-cols-3 gap-8">
         
         {/* Left side: Profile & Account Information */}
         <div className="md:col-span-1 space-y-6">
-          <div className="glass-panel rounded-3xl p-6 border-borderwarm relative overflow-hidden flex flex-col items-center text-center">
-            <div className="absolute inset-0 bg-gradient-to-b from-brand-500/5 to-transparent pointer-events-none" />
+          <div className="bg-bgpanel rounded-2xl p-6 border border-borderwarm shadow-sm flex flex-col items-center text-center">
             <div className="relative mb-4">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-brand-400 to-amber-500 flex items-center justify-center text-white text-3xl font-bold shadow-[0_0_20px_rgba(217,119,87,0.3)]">
+              <div className="h-20 w-20 rounded-full bg-brand-50 dark:bg-brand-500/10 flex items-center justify-center text-brand-500 text-3xl font-bold shadow-sm border border-brand-100 dark:border-brand-500/20">
                 {user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
               </div>
-              <div className="absolute bottom-0 right-0 h-5 w-5 bg-emerald-500 rounded-full border-4 border-bgpanel shadow-md" />
+              <div className="absolute bottom-0 right-0 h-5 w-5 bg-emerald-500 rounded-full border-4 border-bgpanel" />
             </div>
             
-            <h2 className="text-xl font-serif text-textprimary tracking-tight">{user?.email || 'User Account'}</h2>
+            <h2 className="text-xl font-bold text-textprimary tracking-tight">{user?.email || 'User Account'}</h2>
             <p className="text-sm text-textmuted mt-1">Enterprise Developer</p>
             
             <div className="mt-6 pt-6 border-t border-borderwarm w-full space-y-3 text-left text-sm">
@@ -111,7 +119,7 @@ export default function Settings() {
             </div>
           </div>
 
-          <div className="glass-panel rounded-3xl p-6 border-borderwarm">
+          <div className="bg-bgpanel rounded-2xl p-6 border border-borderwarm shadow-sm">
             <h3 className="text-base font-bold text-textprimary mb-4 flex items-center gap-2">
               <Shield size={16} className="text-emerald-400" />
               Security Information
@@ -126,8 +134,8 @@ export default function Settings() {
         <div className="md:col-span-2 space-y-6">
           
           {/* Section: AI Configurations */}
-          <div className="glass-panel rounded-3xl p-8 border-borderwarm">
-            <h3 className="text-lg font-serif text-textprimary mb-6 flex items-center gap-2">
+          <div className="bg-bgpanel rounded-2xl p-8 border border-borderwarm shadow-sm">
+            <h3 className="text-lg font-bold text-textprimary mb-6 flex items-center gap-2">
               <Cpu size={20} className="text-amber-400" />
               AI Analysis Configurations
             </h3>
@@ -138,7 +146,7 @@ export default function Settings() {
                 <select
                   value={aiSettings.model}
                   onChange={(e) => setAiSettings(prev => ({ ...prev, model: e.target.value }))}
-                  className="w-full bg-bgpanel border border-borderwarm rounded-xl px-4 py-3 text-sm text-textprimary focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50"
+                  className="w-full bg-bgbase border border-borderwarm rounded-xl px-4 py-3 text-sm text-textprimary focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all"
                 >
                   <option value="gemini-1.5-flash">Gemini 1.5 Flash (Default - High Speed)</option>
                   <option value="gemini-1.5-pro">Gemini 1.5 Pro (Precision Analytics)</option>
@@ -173,7 +181,7 @@ export default function Settings() {
                       max="50"
                       value={thresholds.wasteAlertPercent}
                       onChange={(e) => setThresholds(prev => ({ ...prev, wasteAlertPercent: parseInt(e.target.value) || 0 }))}
-                      className="w-full bg-bgpanel border border-borderwarm rounded-xl px-4 py-2.5 text-sm text-textprimary focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50"
+                      className="w-full bg-bgbase border border-borderwarm rounded-xl px-4 py-2.5 text-sm text-textprimary focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all"
                     />
                     <span className="text-textmuted font-bold text-sm">%</span>
                   </div>
@@ -190,7 +198,7 @@ export default function Settings() {
                       max="10"
                       value={thresholds.minRoasTarget}
                       onChange={(e) => setThresholds(prev => ({ ...prev, minRoasTarget: parseFloat(e.target.value) || 0 }))}
-                      className="w-full bg-bgpanel border border-borderwarm rounded-xl px-4 py-2.5 text-sm text-textprimary focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50"
+                      className="w-full bg-bgbase border border-borderwarm rounded-xl px-4 py-2.5 text-sm text-textprimary focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all"
                     />
                     <span className="text-textmuted font-bold text-sm">x</span>
                   </div>
@@ -199,12 +207,14 @@ export default function Settings() {
               </div>
 
               <div className="flex items-center justify-between border-t border-borderwarm pt-6">
-                <button
+                <motion.button
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={handleSaveSettings}
                   className="btn-primary flex items-center gap-2"
                 >
                   Save Configurations
-                </button>
+                </motion.button>
                 {settingsSaved && (
                   <motion.span
                     initial={{ opacity: 0, scale: 0.9 }}
@@ -219,8 +229,8 @@ export default function Settings() {
           </div>
 
           {/* Section: White-Label Reporting */}
-          <div className="glass-panel rounded-3xl p-8 border-borderwarm">
-            <h3 className="text-lg font-serif text-textprimary mb-6 flex items-center gap-2">
+          <div className="bg-bgpanel rounded-2xl p-8 border border-borderwarm shadow-sm">
+            <h3 className="text-lg font-bold text-textprimary mb-6 flex items-center gap-2">
               <Briefcase size={20} className="text-emerald-400" />
               White-Label Reporting
             </h3>
@@ -232,7 +242,7 @@ export default function Settings() {
                   type="text"
                   value={branding.agencyName}
                   onChange={(e) => setBranding(prev => ({ ...prev, agencyName: e.target.value }))}
-                  className="w-full bg-bgpanel border border-borderwarm rounded-xl px-4 py-2.5 text-sm text-textprimary focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
+                  className="w-full bg-bgbase border border-borderwarm rounded-xl px-4 py-2.5 text-sm text-textprimary focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
                   placeholder="e.g., Apex Growth Agency"
                 />
               </div>
@@ -243,18 +253,20 @@ export default function Settings() {
                   type="url"
                   value={branding.logoUrl}
                   onChange={(e) => setBranding(prev => ({ ...prev, logoUrl: e.target.value }))}
-                  className="w-full bg-bgpanel border border-borderwarm rounded-xl px-4 py-2.5 text-sm text-textprimary focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50"
+                  className="w-full bg-bgbase border border-borderwarm rounded-xl px-4 py-2.5 text-sm text-textprimary focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
                   placeholder="https://example.com/logo.png"
                 />
               </div>
 
               <div className="flex items-center justify-between border-t border-borderwarm pt-6 mt-6">
-                <button
+                <motion.button
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={handleSaveBranding}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-sm font-medium text-white rounded-xl transition-all shadow-[0_4px_14px_0_rgba(16,185,129,0.39)]"
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold text-white rounded-xl shadow-sm hover:shadow transition-all duration-200 active:scale-[0.98]"
                 >
                   Save Branding
-                </button>
+                </motion.button>
                 {brandingSaved && (
                   <motion.span
                     initial={{ opacity: 0, scale: 0.9 }}
@@ -269,8 +281,8 @@ export default function Settings() {
           </div>
 
           {/* Section: Change Password */}
-          <div className="glass-panel rounded-3xl p-8 border-borderwarm">
-            <h3 className="text-lg font-serif text-textprimary mb-6 flex items-center gap-2">
+          <div className="bg-bgpanel rounded-2xl p-8 border border-borderwarm shadow-sm">
+            <h3 className="text-lg font-bold text-textprimary mb-6 flex items-center gap-2">
               <KeyRound size={20} className="text-brand-400" />
               Update Account Password
             </h3>
@@ -299,7 +311,7 @@ export default function Settings() {
                   type="password"
                   value={passwordForm.currentPassword}
                   onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
-                  className="w-full bg-bgpanel border border-borderwarm rounded-xl px-4 py-2.5 text-sm text-textprimary focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50"
+                  className="w-full bg-bgbase border border-borderwarm rounded-xl px-4 py-2.5 text-sm text-textprimary focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all"
                   placeholder="••••••••"
                 />
               </div>
@@ -311,7 +323,7 @@ export default function Settings() {
                     type="password"
                     value={passwordForm.newPassword}
                     onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
-                    className="w-full bg-bgpanel border border-borderwarm rounded-xl px-4 py-2.5 text-sm text-textprimary focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50"
+                    className="w-full bg-bgbase border border-borderwarm rounded-xl px-4 py-2.5 text-sm text-textprimary focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all"
                     placeholder="Minimum 6 characters"
                   />
                 </div>
@@ -321,19 +333,21 @@ export default function Settings() {
                     type="password"
                     value={passwordForm.confirmPassword}
                     onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                    className="w-full bg-bgpanel border border-borderwarm rounded-xl px-4 py-2.5 text-sm text-textprimary focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50"
+                    className="w-full bg-bgbase border border-borderwarm rounded-xl px-4 py-2.5 text-sm text-textprimary focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all"
                     placeholder="Confirm new password"
                   />
                 </div>
               </div>
 
               <div className="pt-4 border-t border-borderwarm">
-                <button
+                <motion.button
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.95 }}
                   type="submit"
                   className="btn-primary"
                 >
                   Update Credentials
-                </button>
+                </motion.button>
               </div>
             </form>
           </div>

@@ -18,14 +18,14 @@ function actionClass(action) {
   if (action === 'increase_budget') return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.3)]'
   if (action === 'test_new_copy' || action === 'test') return 'bg-blue-500/20 text-blue-400 border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.3)]'
   if (action === 'restructure') return 'bg-amber-500/20 text-amber-400 border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
-  return 'bg-white/10 text-slate-300 border-white/20'
+  return 'bg-bgpanelhover text-textsecondary border-borderwarm'
 }
 
 function getPriorityData(priority) {
   const p = String(priority).toLowerCase()
-  if (p === 'high' || p === '1') return { color: 'red', label: 'High Priority', Icon: Zap, bg: 'from-red-900/30 to-black/40', shadow: 'rgba(239,68,68,0.5)' }
-  if (p === 'medium' || p === '2') return { color: 'amber', label: 'Medium Priority', Icon: Target, bg: 'from-amber-900/30 to-black/40', shadow: 'rgba(245,158,11,0.5)' }
-  return { color: 'emerald', label: 'Low Priority', Icon: Gauge, bg: 'from-emerald-900/30 to-black/40', shadow: 'rgba(16,185,129,0.5)' }
+  if (p === 'high' || p === '1') return { color: 'red', label: 'High Priority', Icon: Zap, bg: 'from-red-900/10 to-bgpanel', shadow: 'rgba(239,68,68,0.5)' }
+  if (p === 'medium' || p === '2') return { color: 'amber', label: 'Medium Priority', Icon: Target, bg: 'from-amber-900/10 to-bgpanel', shadow: 'rgba(245,158,11,0.5)' }
+  return { color: 'emerald', label: 'Low Priority', Icon: Gauge, bg: 'from-emerald-900/10 to-bgpanel', shadow: 'rgba(16,185,129,0.5)' }
 }
 
 const containerVariants = {
@@ -73,7 +73,7 @@ function RecommendationCard({ item, index, groupKey, getPriorityData, actionIcon
     <motion.article 
       whileHover={{ scale: 1.01 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-      className={`group relative rounded-3xl border border-white/10 bg-gradient-to-br ${bg} p-6 shadow-xl hover:shadow-[0_8px_30px_rgba(255,255,255,0.08)] hover:border-white/20 transition-all overflow-hidden backdrop-blur-xl flex flex-col`}
+      className={`group relative rounded-3xl border border-borderwarm bg-gradient-to-br ${bg} p-6 shadow-lg hover:shadow-xl hover:border-brand-500/30 transition-all overflow-hidden backdrop-blur-xl flex flex-col`}
     >
       <div className={`absolute left-0 top-0 bottom-0 w-2 bg-${color}-500/50 group-hover:bg-${color}-400 transition-all`} style={{ boxShadow: `0 0 15px ${shadow}` }} />
       
@@ -83,21 +83,21 @@ function RecommendationCard({ item, index, groupKey, getPriorityData, actionIcon
             <span className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-black uppercase tracking-widest ${actionClass(item.action)}`}>
               <ActionIcon size={14} /> {item.action.replace(/_/g, ' ')}
             </span>
-            <h3 className="text-xl font-black text-white truncate">{item.target}</h3>
+            <h3 className="text-xl font-black text-textprimary truncate">{item.target}</h3>
           </div>
           
-          <p className="text-[15px] leading-relaxed text-slate-300 font-medium">{item.reasoning}</p>
+          <p className="text-[15px] leading-relaxed text-textsecondary font-medium">{item.reasoning}</p>
         </div>
         
-        <div className="md:w-80 shrink-0 rounded-2xl bg-black/50 p-5 border border-white/5 shadow-inner">
+        <div className="md:w-80 shrink-0 rounded-2xl bg-bgpanel p-5 border border-borderwarm shadow-inner">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Expected Impact</p>
+            <p className="text-[10px] font-black uppercase tracking-widest text-textmuted">Expected Impact</p>
             <div className={`w-2.5 h-2.5 rounded-full bg-${color}-500`} style={{ boxShadow: `0 0 8px ${shadow}` }} />
           </div>
-          <p className="text-[15px] font-bold text-slate-200 leading-snug mb-4">{item.expected_impact}</p>
+          <p className="text-[15px] font-bold text-textsecondary leading-snug mb-4">{item.expected_impact}</p>
           <button 
             onClick={() => setShowComments(!showComments)}
-            className="flex items-center gap-1.5 text-xs font-bold text-indigo-400 hover:text-indigo-300 transition-colors bg-indigo-500/10 px-3 py-1.5 rounded-lg border border-indigo-500/20 w-max"
+            className="flex items-center gap-1.5 text-xs font-bold text-brand-400 hover:text-brand-300 transition-colors bg-brand-500/10 px-3 py-1.5 rounded-lg border border-brand-500/20 w-max"
           >
             <MessageSquare size={14} />
             {comments.length} Comments
@@ -111,20 +111,20 @@ function RecommendationCard({ item, index, groupKey, getPriorityData, actionIcon
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="w-full mt-6 border-t border-white/10 pt-6 ml-4 pr-4"
+            className="w-full mt-6 border-t border-borderwarm pt-6 ml-4 pr-4"
           >
             <div className="space-y-3 mb-4">
               {comments.map((c, i) => (
-                <div key={i} className="bg-white/5 rounded-xl p-3 border border-white/5">
+                <div key={i} className="bg-bgpanelhover rounded-xl p-3 border border-borderwarm">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-bold text-slate-300">{c.user}</span>
-                    <span className="text-xs text-slate-500">{new Date(c.created_at).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })}</span>
+                    <span className="text-sm font-bold text-textsecondary">{c.user}</span>
+                    <span className="text-xs text-textmuted">{new Date(c.created_at).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })}</span>
                   </div>
-                  <p className="text-sm text-slate-400">{c.content}</p>
+                  <p className="text-sm text-textmuted">{c.content}</p>
                 </div>
               ))}
               {comments.length === 0 && (
-                <p className="text-sm text-slate-500 text-center italic">No comments yet. Be the first!</p>
+                <p className="text-sm text-textmuted text-center italic">No comments yet. Be the first!</p>
               )}
             </div>
             
@@ -136,12 +136,12 @@ function RecommendationCard({ item, index, groupKey, getPriorityData, actionIcon
                   onChange={(e) => setNewComment(e.target.value)}
                   placeholder="Type a comment..."
                   disabled={isSubmitting}
-                  className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 placeholder:text-slate-600"
+                  className="flex-1 bg-bgpanel border border-borderwarm rounded-xl px-4 py-2 text-sm text-textprimary focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 placeholder:text-textmuted"
                 />
                 <button
                   type="submit"
                   disabled={isSubmitting || !newComment.trim()}
-                  className="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:hover:bg-indigo-600 text-white p-2.5 rounded-xl transition-colors flex items-center justify-center"
+                  className="bg-brand-600 hover:bg-brand-500 disabled:opacity-50 disabled:hover:bg-brand-600 text-white p-2.5 rounded-xl transition-colors flex items-center justify-center"
                 >
                   <Send size={16} />
                 </button>
@@ -218,25 +218,25 @@ export default function StrategyResults({ strategy, jobId }) {
       animate="show"
       className="py-4"
     >
-      <div className="glass-panel rounded-[2.5rem] p-6 lg:p-10 border-white/10 relative overflow-hidden shadow-2xl backdrop-blur-2xl bg-black/40">
+      <div className="glass-panel rounded-[2.5rem] p-6 lg:p-10 border-borderwarm relative overflow-hidden shadow-2xl backdrop-blur-2xl bg-bgpanel">
         {/* Subtle background glow */}
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-brand-500/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
 
         <motion.div variants={itemVariants} className="flex items-center justify-between gap-5 mb-10 flex-wrap">
           <div className="flex items-center gap-5">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/30 to-purple-500/30 text-indigo-300 shadow-[0_0_30px_rgba(79,70,229,0.3)] border border-indigo-400/20 backdrop-blur-md">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-500/30 to-amber-500/30 text-brand-400 shadow-lg border border-brand-400/20 backdrop-blur-md">
               <Lightbulb size={28} aria-hidden="true" />
             </div>
             <div>
-              <h2 className="text-3xl font-black text-white tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">Strategy Recommendations</h2>
-              <p className="text-slate-400 text-sm mt-1 font-medium">Actionable insights to optimize your campaigns</p>
+              <h2 className="text-3xl font-black text-textprimary tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-textprimary to-textmuted">Strategy Recommendations</h2>
+              <p className="text-textmuted text-sm mt-1 font-medium">Actionable insights to optimize your campaigns</p>
             </div>
           </div>
           
           <button 
             onClick={handleExportCSV}
-            className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-400 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:shadow-[0_0_30px_rgba(99,102,241,0.6)]"
+            className="flex items-center gap-2 btn-primary px-5 py-2.5 rounded-xl font-bold transition-all"
           >
             <Download size={18} />
             <span>Export to CSV</span>
@@ -247,33 +247,33 @@ export default function StrategyResults({ strategy, jobId }) {
           {/* AI Strategist Summary */}
           <motion.div 
             variants={itemVariants}
-            className="lg:col-span-2 relative rounded-3xl bg-gradient-to-r from-indigo-900/30 to-blue-900/30 border border-indigo-400/20 p-8 text-[15px] leading-relaxed text-indigo-50 shadow-[0_0_30px_rgba(79,70,229,0.15)] backdrop-blur-xl overflow-hidden group flex flex-col justify-center"
+            className="lg:col-span-2 relative rounded-3xl bg-gradient-to-r from-brand-900/10 to-amber-900/10 border border-brand-400/20 p-8 text-[15px] leading-relaxed text-textprimary shadow-lg backdrop-blur-xl overflow-hidden group flex flex-col justify-center"
           >
-            <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500 group-hover:shadow-[0_0_20px_#6366f1] transition-all" />
+            <div className="absolute top-0 left-0 w-1 h-full bg-brand-500 group-hover:shadow-[0_0_20px_var(--brand-500)] transition-all" />
             <div className="flex items-start gap-4">
-              <div className="p-2 bg-indigo-500/20 rounded-xl text-indigo-400 shadow-inner">
+              <div className="p-2 bg-brand-500/20 rounded-xl text-brand-400 shadow-inner">
                 <Bot size={20} />
               </div>
               <div>
-                <span className="font-bold text-indigo-400 uppercase tracking-widest text-xs mb-2 block">AI Strategist Summary</span>
-                <p className="font-medium text-slate-200">{strategy.summary}</p>
+                <span className="font-bold text-brand-400 uppercase tracking-widest text-xs mb-2 block">AI Strategist Summary</span>
+                <p className="font-medium text-textsecondary">{strategy.summary}</p>
               </div>
             </div>
           </motion.div>
 
           {/* Action Distribution Radar Chart */}
-          <motion.div variants={itemVariants} className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-lg flex flex-col items-center backdrop-blur-lg">
-            <h3 className="text-xs font-black text-slate-300 w-full text-center mb-2 uppercase tracking-widest">Strategic Focus</h3>
+          <motion.div variants={itemVariants} className="rounded-3xl border border-borderwarm bg-bgpanelhover p-6 shadow-lg flex flex-col items-center backdrop-blur-lg">
+            <h3 className="text-xs font-black text-textsecondary w-full text-center mb-2 uppercase tracking-widest">Strategic Focus</h3>
             <div className="w-full h-48">
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
-                  <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 'bold' }} />
+                  <PolarGrid stroke="var(--border-warm)" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--text-muted)', fontSize: 10, fontWeight: 'bold' }} />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', backdropFilter: 'blur(10px)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '12px' }}
-                    itemStyle={{ color: '#818cf8', fontWeight: 'bold' }}
+                    contentStyle={{ backgroundColor: 'var(--bg-panel)', backdropFilter: 'blur(10px)', borderColor: 'var(--border-warm)', borderRadius: '12px' }}
+                    itemStyle={{ color: 'var(--brand-400)', fontWeight: 'bold' }}
                   />
-                  <Radar name="Actions" dataKey="count" stroke="#818cf8" fill="#6366f1" fillOpacity={0.4} />
+                  <Radar name="Actions" dataKey="count" stroke="var(--brand-400)" fill="var(--brand-500)" fillOpacity={0.4} />
                 </RadarChart>
               </ResponsiveContainer>
             </div>
@@ -293,8 +293,8 @@ export default function StrategyResults({ strategy, jobId }) {
                   <div className={`p-3 rounded-xl bg-${color}-500/20 border border-${color}-500/30`} style={{ boxShadow: `0 0 15px ${shadow}` }}>
                     <Icon size={20} className={`text-${color}-400`} />
                   </div>
-                  <h3 className="text-xl font-black text-white tracking-widest uppercase">{label}</h3>
-                  <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent ml-4" />
+                  <h3 className="text-xl font-black text-textprimary tracking-widest uppercase">{label}</h3>
+                  <div className="h-px flex-1 bg-gradient-to-r from-borderwarm to-transparent ml-4" />
                 </div>
                 
                 <div className="grid gap-5">

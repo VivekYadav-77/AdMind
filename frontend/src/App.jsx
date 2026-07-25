@@ -10,6 +10,8 @@ import ReportDetail from './pages/ReportDetail'
 import Settings from './pages/Settings'
 import ABTracker from './pages/ABTracker'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { ToastProvider } from './context/ToastContext'
+import { WorkspaceProvider } from './context/WorkspaceContext'
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth()
@@ -21,27 +23,31 @@ function ProtectedRoute({ children }) {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          
-          <Route path="/" element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }>
-            <Route index element={<Dashboard />} />
-            <Route path="history" element={<History />} />
-            <Route path="history/:id" element={<ReportDetail />} />
-            <Route path="tools" element={<Tools />} />
-            <Route path="ab-tracker" element={<ABTracker />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="*" element={<Dashboard />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    <ToastProvider>
+      <AuthProvider>
+        <WorkspaceProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<Dashboard />} />
+                <Route path="history" element={<History />} />
+                <Route path="history/:id" element={<ReportDetail />} />
+                <Route path="tools" element={<Tools />} />
+                <Route path="ab-tracker" element={<ABTracker />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="*" element={<Dashboard />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        </WorkspaceProvider>
+      </AuthProvider>
+    </ToastProvider>
   )
 }

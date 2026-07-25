@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Users, Swords, Loader2, Link2, FileText, ArrowRight, CheckCircle2 } from 'lucide-react'
 import clsx from 'clsx'
 import { API } from '../services/api'
+import TabBar from '../components/ui/TabBar'
 
 export default function Tools() {
   const [activeTab, setActiveTab] = useState('landing-page')
@@ -73,27 +74,16 @@ export default function Tools() {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-8 pb-12"
     >
-      <div className="flex gap-4 border-b border-white/10 pb-4">
-        {tabs.map((tab) => {
-          const Icon = tab.icon
-          const isActive = activeTab === tab.id
-          return (
-            <button
-              key={tab.id}
-              onClick={() => { setActiveTab(tab.id); setError(null) }}
-              className={clsx(
-                "flex items-center gap-2 rounded-t-xl px-5 py-3 text-sm font-medium transition-all border-b-2",
-                isActive 
-                  ? "bg-bgpanelhover border-borderwarm text-brand-400 font-bold shadow-[0_0_15px_rgba(217,119,87,0.1)]" 
-                  : "border-transparent text-textmuted hover:bg-bgpanel hover:text-textprimary"
-              )}
-            >
-              <Icon size={16} />
-              {tab.label}
-            </button>
-          )
-        })}
+      <div className="mb-8">
+        <h1 className="text-3xl font-serif text-textprimary tracking-tight mb-2">AI Marketing Tools</h1>
+        <p className="text-textmuted font-medium">Standalone AI utilities for your ad operations</p>
       </div>
+
+      <TabBar 
+        tabs={tabs} 
+        activeTab={activeTab} 
+        onChange={(id) => { setActiveTab(id); setError(null); }} 
+      />
 
       {error && (
         <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-red-400 font-semibold shadow-lg">
@@ -123,14 +113,16 @@ export default function Tools() {
                     className="w-full bg-bgpanel border border-borderwarm rounded-xl py-3 pl-12 pr-4 text-textprimary focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all placeholder:text-textmuted"
                   />
                 </div>
-                <button 
+                <motion.button 
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.95 }}
                   type="submit" 
                   disabled={loading}
                   className="btn-primary flex items-center gap-2"
                 >
                   {loading ? <Loader2 size={20} className="animate-spin" /> : <Search size={20} />}
                   Audit Page
-                </button>
+                </motion.button>
               </form>
 
               {landingResult && (
@@ -170,14 +162,16 @@ export default function Tools() {
                   className="w-full bg-bgpanel border border-borderwarm rounded-xl p-4 text-textprimary focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all resize-none placeholder:text-textmuted"
                 />
                 <div className="flex justify-end">
-                  <button 
+                  <motion.button 
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.95 }}
                     type="submit" 
                     disabled={loading}
-                    className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white px-6 py-3 rounded-xl font-medium flex items-center gap-2 shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] transition-all hover:-translate-y-0.5"
+                    className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white px-6 py-3 rounded-xl font-medium flex items-center gap-2 shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] transition-all"
                   >
                     {loading ? <Loader2 size={20} className="animate-spin" /> : <Users size={20} />}
                     Build Audience
-                  </button>
+                  </motion.button>
                 </div>
               </form>
 
@@ -249,14 +243,16 @@ export default function Tools() {
                   className="w-full bg-bgpanel border border-borderwarm rounded-xl p-4 text-textprimary focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 transition-all resize-none placeholder:text-textmuted"
                 />
                 <div className="flex justify-end">
-                  <button 
+                  <motion.button 
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.95 }}
                     type="submit" 
                     disabled={loading}
-                    className="bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white px-6 py-3 rounded-xl font-medium flex items-center gap-2 shadow-[0_4px_14px_0_rgba(245,158,11,0.39)] transition-all hover:-translate-y-0.5"
+                    className="bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white px-6 py-3 rounded-xl font-medium flex items-center gap-2 shadow-[0_4px_14px_0_rgba(245,158,11,0.39)] transition-all"
                   >
                     {loading ? <Loader2 size={20} className="animate-spin" /> : <Swords size={20} />}
                     Analyze & Counter
-                  </button>
+                  </motion.button>
                 </div>
               </form>
 

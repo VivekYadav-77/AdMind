@@ -28,7 +28,7 @@ export default function HistoricalTrends() {
 
   if (loading) {
     return (
-      <div className="flex h-48 items-center justify-center rounded-[2.5rem] border border-white/10 bg-black/20 backdrop-blur-lg">
+      <div className="flex h-48 items-center justify-center rounded-[2.5rem] border border-borderwarm bg-bgpanel backdrop-blur-lg">
         <Loader2 className="animate-spin text-indigo-400" size={32} />
       </div>
     )
@@ -45,7 +45,7 @@ export default function HistoricalTrends() {
 
   if (data.length < 2) {
     return (
-      <div className="flex h-48 items-center justify-center rounded-[2.5rem] border border-white/10 bg-black/20 backdrop-blur-lg text-slate-400">
+      <div className="flex h-48 items-center justify-center rounded-[2.5rem] border border-borderwarm bg-bgpanel backdrop-blur-lg text-textmuted">
         <div className="text-center">
           <TrendingUp className="mx-auto mb-2 opacity-50" size={24} />
           <p className="font-semibold text-sm">Not enough data</p>
@@ -61,7 +61,7 @@ export default function HistoricalTrends() {
       animate={{ opacity: 1, y: 0 }}
       className="py-4 w-full"
     >
-      <div className="glass-panel rounded-[2.5rem] p-6 lg:p-10 border-white/10 relative overflow-hidden shadow-2xl backdrop-blur-2xl bg-black/40">
+      <div className="glass-panel rounded-[2.5rem] p-6 lg:p-10 border-borderwarm relative overflow-hidden shadow-2xl backdrop-blur-2xl bg-bgpanelhover">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
         
         <div className="flex items-center gap-5 mb-10">
@@ -69,8 +69,8 @@ export default function HistoricalTrends() {
             <TrendingUp size={28} aria-hidden="true" />
           </div>
           <div>
-            <h2 className="text-3xl font-black text-white tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">Campaign Health Trends</h2>
-            <p className="text-slate-400 text-sm mt-1 font-medium">Historical progression of your ad account efficiency</p>
+            <h2 className="text-3xl font-black text-textprimary tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-textprimary to-textmuted">Campaign Health Trends</h2>
+            <p className="text-textmuted text-sm mt-1 font-medium">Historical progression of your ad account efficiency</p>
           </div>
         </div>
 
@@ -87,26 +87,26 @@ export default function HistoricalTrends() {
                   <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-warm)" vertical={false} />
               <XAxis 
                 dataKey="date" 
-                stroke="#64748b" 
-                tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} 
+                stroke="var(--text-muted)" 
+                tick={{ fill: 'var(--text-muted)', fontSize: 12, fontWeight: 600 }} 
                 axisLine={false} 
                 tickLine={false} 
                 dy={10} 
               />
               <YAxis 
-                stroke="#64748b" 
-                tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} 
+                stroke="var(--text-muted)" 
+                tick={{ fill: 'var(--text-muted)', fontSize: 12, fontWeight: 600 }} 
                 axisLine={false} 
                 tickLine={false} 
                 dx={-10}
               />
               <Tooltip 
-                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(12px)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '16px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }}
-                itemStyle={{ fontWeight: '900', fontSize: '14px' }}
-                labelStyle={{ color: '#94a3b8', marginBottom: '8px', fontWeight: 'bold', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+                contentStyle={{ backgroundColor: 'var(--bg-panel)', backdropFilter: 'blur(12px)', borderColor: 'var(--border-warm)', borderRadius: '16px', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)' }}
+                itemStyle={{ fontWeight: '900', fontSize: '14px', color: 'var(--text-primary)' }}
+                labelStyle={{ color: 'var(--text-muted)', marginBottom: '8px', fontWeight: 'bold', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}
               />
               <Area 
                 type="monotone" 
