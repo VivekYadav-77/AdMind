@@ -1,0 +1,313 @@
+import { AlertCircle, BarChart3, Download, FileSearch, Lightbulb, PenLine, RotateCcw } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import html2pdf from 'html2pdf.js'
+
+import AgentPipeline from '../components/AgentPipeline'
+import AuditResults from '../components/AuditResults'
+import CampaignHealthScore from '../components/CampaignHealthScore'
+import ColdStartLoader from '../components/ColdStartLoader'
+import CopyResults from '../components/CopyResults'
+import StrategyResults from '../components/StrategyResults'
+import HistoricalTrends from '../components/HistoricalTrends'
+import UploadZone from '../components/UploadZone'
+import TabBar from '../components/ui/TabBar'
+import { API } from '../services/api'
+import clsx from 'clsx'
+
+const initialAgentStatus = {
+  auditor: 'idle',
+  strategist: 'idle',
+  copywriter: 'idle'
+}
+
+const initialResults = {
+  audit: null,
+  strategy: null,
+  copy: null
+}
+
+function formatMoney(value) {
+  return `$${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+}
+
+export default function Analyze() {
+  const [stage, setStage] = useState('upload')
+  const [agentStatus, setAgentStatus] = useState(initialAgentStatus)
+  const [results, setResults] = useState(initialResults)
+  const [csvStats, setCsvStats] = useState(null)
+  const [error, setError] = useState(null)
+  const [waitingForBackend, setWaitingForBackend] = useState(false)
+  const [activeTab, setActiveTab] = useState('audit')
+  const [currentJobId, setCurrentJobId] = useState(null)
+  
+  const reportRef = useRef(null)
+
+  const reset = () => {
+    setStage('upload')
+    setAgentStatus(initialAgentStatus)
+    setResults(initialResults)
+    setCsvStats(null)
+    setError(null)
+    setWaitingForBackend(false)
+    setActiveTab('audit')
+    setCurrentJobId(null)
+  }
+
+  const handleEvent = (event, data) => {
+    switch (event) {
+      case 'csv_parsed':
+        setWaitingForBackend(false)
+        setCsvStats(data)
+        break
+      case 'agent_start':
+        setWaitingForBackend(false)
+        setAgentStatus((prev) => ({ ...prev, [data.agent]: 'running' }))
+        break
+      case 'agent_done': {
+        const resultKey = data.agent === 'auditor' ? 'audit' : data.agent === 'strategist' ? 'strategy' : 'copy'
+        setAgentStatus((prev) => ({ ...prev, [data.agent]: 'done' }))
+        setResults((prev) => ({ ...prev, [resultKey]: data.result }))
+        break
+      }
+      case 'complete':
+        setStage('done')
+        break
+      case 'error':
+        setError(data.message || 'Analysis failed')
+        setStage('error')
+        break
+      default:
+        break
+    }
+  }
+
+  const runAnalysis = async (file) => {
+    // Let the backend handle CSV validation to support column aliases
+
+    setStage('running')
+    setAgentStatus(initialAgentStatus)
+    setResults(initialResults)
+    setCsvStats(null)
+    setError(null)
+    setWaitingForBackend(true)
+
+    try {
+      // Start background job
+      const response = await API.analyzeCSV(file)
+      const { job_id } = response
+      setCurrentJobId(job_id)
+
+      // Consume SSE stream
+      const streamRes = await API.streamAnalysis(job_id)
+      if (!streamRes.ok || !streamRes.body) {
+        throw new Error('Could not connect to analysis stream')
+      }
+
+      const reader = streamRes.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const chunks = buffer.split('\n\n')
+        buffer = chunks.pop() || ''
+
+        for (const chunk of chunks) {
+          const line = chunk.split('\n').find((item) => item.startsWith('data: '))
+          if (!line) continue
+          const payload = JSON.parse(line.replace('data: ', ''))
+          handleEvent(payload.event, payload.data)
+        }
+      }
+
+      // Fallback: If the stream closes but we missed events (e.g. buffering or reconnect), 
+      // fetch the final job state and trigger UI updates manually.
+      try {
+        const finalJob = await API.getJobDetails(job_id)
+        if (finalJob.status === 'complete') {
+          if (finalJob.total_rows > 0) {
+            handleEvent('csv_parsed', {
+              rows: finalJob.total_rows,
+              total_spend: finalJob.input_spend,
+              total_revenue: finalJob.input_revenue
+            })
+          }
+          if (finalJob.audit_data) handleEvent('agent_done', { agent: 'auditor', result: finalJob.audit_data })
+          if (finalJob.strategy_data) handleEvent('agent_done', { agent: 'strategist', result: finalJob.strategy_data })
+          if (finalJob.copy_data) handleEvent('agent_done', { agent: 'copywriter', result: finalJob.copy_data })
+          handleEvent('complete', null)
+        } else if (finalJob.status === 'error') {
+          handleEvent('error', { message: finalJob.error_message || 'Analysis failed' })
+        }
+      } catch (err) {
+        console.error('Failed to fetch final job status:', err)
+      }
+
+    } catch (caught) {
+      setWaitingForBackend(false)
+      setError(caught.message)
+      setStage('error')
+    }
+  }
+
+  const downloadPDF = () => {
+    const element = reportRef.current
+    if (!element) return
+
+    const opt = {
+      margin: [10, 10, 10, 10], // top, left, bottom, right in mm
+      filename: 'AdMind_Report.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }
+
+    html2pdf().set(opt).from(element).save()
+  }
+
+  const tabs = [
+    { id: 'audit', label: 'Audit', icon: FileSearch, color: 'brand' },
+    { id: 'strategy', label: 'Strategy', icon: Lightbulb, color: 'amber' },
+    { id: 'copy', label: 'A/B Copy', icon: PenLine, color: 'emerald' }
+  ]
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-8 pb-12"
+    >
+      <div className="mb-2">
+        <h1 className="text-3xl font-serif text-textprimary tracking-tight mb-2">Run Analysis</h1>
+        <p className="text-textmuted font-medium">Upload your campaign data to get started</p>
+      </div>
+      
+      <AnimatePresence mode="wait">
+        {stage === 'upload' && (
+          <motion.div key="upload" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            <UploadZone onFileReady={runAnalysis} />
+          </motion.div>
+        )}
+
+        {stage === 'running' && (
+          <motion.div key="running" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
+            <ColdStartLoader visible={waitingForBackend} />
+            <AgentPipeline agentStatus={agentStatus} />
+            
+            {csvStats && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex flex-wrap items-center gap-4 rounded-2xl bg-bgpanel shadow-sm border border-borderwarm p-5"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 dark:bg-brand-500/10 text-brand-500 border border-brand-100 dark:border-brand-500/20">
+                  <BarChart3 size={24} aria-hidden="true" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-medium text-textmuted">Dataset Overview</h3>
+                  <div className="flex gap-6 mt-1">
+                    <p className="text-sm text-textmuted">
+                      Volume: <span className="font-bold text-textprimary text-base">{csvStats.rows}</span> rows
+                    </p>
+                    <p className="text-sm text-textmuted">
+                      Spend: <span className="font-bold text-textprimary text-base">{formatMoney(csvStats.total_spend)}</span>
+                    </p>
+                    <p className="text-sm text-textmuted">
+                      Revenue: <span className="font-bold text-textprimary text-base">{formatMoney(csvStats.total_revenue)}</span>
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
+
+        {stage === 'error' && (
+          <motion.div 
+            key="error"
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+            className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6 shadow-[0_0_15px_rgba(239,68,68,0.1)]"
+          >
+            <div className="flex items-start gap-3 text-red-400">
+              <AlertCircle size={24} aria-hidden="true" />
+              <div>
+                <h2 className="font-semibold text-lg">Analysis Failed</h2>
+                <p className="mt-1 text-sm text-red-300">{error}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={reset}
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 px-5 py-2.5 text-sm font-semibold transition-all border border-red-500/30"
+            >
+              <RotateCcw size={16} aria-hidden="true" />
+              Try Again
+            </button>
+          </motion.div>
+        )}
+
+        {stage === 'done' && (
+          <motion.div key="done" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">
+            {results.audit && <CampaignHealthScore audit={results.audit} />}
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <TabBar 
+                  tabs={tabs} 
+                  activeTab={activeTab} 
+                  onChange={(id) => setActiveTab(id)} 
+                />
+              </div>
+              
+              <button
+                onClick={downloadPDF}
+                className="inline-flex items-center gap-2 btn-primary"
+              >
+                <Download size={16} />
+                Download Report
+              </button>
+            </div>
+
+            <div ref={reportRef} className="bg-transparent min-h-[500px] p-2">
+              <AnimatePresence mode="wait">
+                {activeTab === 'audit' && results.audit && (
+                  <motion.div key="audit" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
+                    <AuditResults audit={results.audit} />
+                  </motion.div>
+                )}
+                {activeTab === 'strategy' && results.strategy && (
+                  <motion.div key="strategy" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
+                    <StrategyResults strategy={results.strategy} jobId={currentJobId} />
+                  </motion.div>
+                )}
+                {activeTab === 'copy' && results.copy && (
+                  <motion.div key="copy" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
+                    <CopyResults copy={results.copy} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="space-y-12 mt-12 border-t border-white/10 pt-12">
+              <HistoricalTrends />
+              
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={reset}
+                  className="inline-flex items-center gap-2 btn-secondary"
+                >
+                  <RotateCcw size={18} aria-hidden="true" />
+                  Start New Analysis
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  )
+}

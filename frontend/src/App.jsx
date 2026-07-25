@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom'
 
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
+import Analyze from './pages/Analyze'
 import History from './pages/History'
 import Tools from './pages/Tools'
 import Login from './pages/Login'
@@ -10,6 +11,8 @@ import ReportDetail from './pages/ReportDetail'
 import Settings from './pages/Settings'
 import TestTracker from './pages/TestTracker'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { ToastProvider } from './context/ToastContext'
+import { WorkspaceProvider } from './context/WorkspaceContext'
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth()

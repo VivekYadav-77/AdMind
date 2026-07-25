@@ -3,8 +3,34 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --bg-base: #FAFAFA;
+    --bg-panel: #FFFFFF;
+    --bg-panel-hover: #F4F4F5;
+    --text-primary: #18181B;
+    --text-secondary: #3F3F46;
+    --text-muted: #71717A;
+    --border-warm: rgba(0, 0, 0, 0.08);
+    --bg-glass: rgba(255, 255, 255, 0.95);
+  }
+  
+  .dark {
+    --bg-base: #09090B;
+    --bg-panel: #18181B;
+    --bg-panel-hover: #27272A;
+    --text-primary: #FAFAFA;
+    --text-secondary: #E4E4E7;
+    --text-muted: #A1A1AA;
+    --border-warm: rgba(255, 255, 255, 0.1);
+    --bg-glass: rgba(24, 24, 24, 0.95);
+  }
+
   body {
-    @apply font-sans antialiased text-slate-200 bg-[#0B0F19];
+    @apply font-sans antialiased text-textprimary bg-bgbase transition-colors duration-300;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif font-normal text-textprimary;
   }
 }
 
@@ -17,21 +43,38 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-700 rounded-full;
+  @apply bg-bgpanelhover rounded-full border border-borderwarm;
 }
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-slate-600;
+  @apply bg-textmuted;
 }
 
-/* Glassmorphism utilities */
+/* Panel utilities - Clean, solid */
 .glass {
-  @apply bg-slate-900/40 backdrop-blur-xl border border-white/10 shadow-2xl;
+  @apply bg-bgpanel border border-borderwarm shadow-lg;
 }
 
 .glass-panel {
-  @apply bg-slate-800/40 backdrop-blur-2xl border border-white/5 shadow-xl;
+  @apply bg-bgpanel border border-borderwarm shadow-md;
+}
+
+.card-warm {
+  @apply bg-bgpanel border border-borderwarm rounded-2xl transition-all hover:border-brand-500/50 hover:shadow-md;
 }
 
 .glow-text {
-  text-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+  /* Removed glow for cleaner typography */
+}
+
+.btn-primary {
+  @apply bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm hover:shadow transition-all duration-200 active:scale-[0.98];
+}
+
+.btn-secondary {
+  @apply bg-bgpanelhover hover:bg-borderwarm border border-borderwarm text-textprimary px-5 py-2.5 rounded-xl font-medium transition-all duration-200 active:scale-[0.98];
+}
+
+/* Subtle noise texture removed for glossy look */
+.grain-overlay {
+  display: none;
 }

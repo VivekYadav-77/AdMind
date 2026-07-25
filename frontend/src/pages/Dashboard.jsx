@@ -1,33 +1,20 @@
-import { AlertCircle, BarChart3, Download, FileSearch, Lightbulb, PenLine, RotateCcw } from 'lucide-react'
-import { useRef, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import html2pdf from 'html2pdf.js'
-
-import AgentPipeline from '../components/AgentPipeline'
-import AuditResults from '../components/AuditResults'
-import CampaignHealthScore from '../components/CampaignHealthScore'
-import ColdStartLoader from '../components/ColdStartLoader'
-import CopyResults from '../components/CopyResults'
-import StrategyResults from '../components/StrategyResults'
-import HistoricalTrends from '../components/HistoricalTrends'
-import UploadZone from '../components/UploadZone'
-import { API } from '../services/api'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { 
+  BarChart3, Zap, ArrowRight, LayoutDashboard, Search, Users, Swords, 
+  GitCompare, History as HistoryIcon, Target, TrendingUp, Clock, CheckCircle2,
+  AlertTriangle, DollarSign
+} from 'lucide-react'
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import clsx from 'clsx'
 
-const initialAgentStatus = {
-  auditor: 'idle',
-  strategist: 'idle',
-  copywriter: 'idle'
-}
-
-const initialResults = {
-  audit: null,
-  strategy: null,
-  copy: null
-}
+import { useAuth } from '../context/AuthContext'
+import { useWorkspace } from '../context/WorkspaceContext'
+import { API } from '../services/api'
 
 function formatMoney(value) {
-  return `$${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+  return `$${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`
 }
 
 export default function Dashboard() {
@@ -97,65 +84,75 @@ export default function Dashboard() {
       const { job_id } = response
       setJobId(job_id)
 
-      // Consume SSE stream
-      const streamRes = await API.streamAnalysis(job_id)
-      if (!streamRes.ok || !streamRes.body) {
-        throw new Error('Could not connect to analysis stream')
-      }
+  const [loading, setLoading] = useState(true)
+  const [trends, setTrends] = useState([])
+  const [recentJobs, setRecentJobs] = useState([])
+  const [stats, setStats] = useState({
+    totalAnalyses: 0,
+    latestRoas: 0,
+    totalSpend: 0,
+    avgEfficiency: 0
+  })
 
-      const reader = streamRes.body.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
+  // A/B tests
+  const [abTests, setAbTests] = useState([])
 
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        buffer += decoder.decode(value, { stream: true })
-        const chunks = buffer.split('\n\n')
-        buffer = chunks.pop() || ''
-
-        for (const chunk of chunks) {
-          const line = chunk.split('\n').find((item) => item.startsWith('data: '))
-          if (!line) continue
-          const payload = JSON.parse(line.replace('data: ', ''))
-          handleEvent(payload.event, payload.data)
-        }
-      }
-
-      // Fallback: If the stream closes but we missed events (e.g. buffering or reconnect), 
-      // fetch the final job state and trigger UI updates manually.
+  useEffect(() => {
+    async function fetchDashboardData() {
+      setLoading(true)
       try {
-        const finalJob = await API.getJobDetails(job_id)
-        if (finalJob.status === 'complete') {
-          if (finalJob.total_rows > 0) {
-            handleEvent('csv_parsed', {
-              rows: finalJob.total_rows,
-              total_spend: finalJob.input_spend,
-              total_revenue: finalJob.input_revenue
-            })
-          }
-          if (finalJob.audit_data) handleEvent('agent_done', { agent: 'auditor', result: finalJob.audit_data })
-          if (finalJob.strategy_data) handleEvent('agent_done', { agent: 'strategist', result: finalJob.strategy_data })
-          if (finalJob.copy_data) handleEvent('agent_done', { agent: 'copywriter', result: finalJob.copy_data })
-          handleEvent('complete', null)
-        } else if (finalJob.status === 'error') {
-          handleEvent('error', { message: finalJob.error_message || 'Analysis failed' })
+        const [historyData, trendsData] = await Promise.all([
+          API.getHistory(1, 5),
+          API.getTrends()
+        ])
+
+        const jobs = historyData.items || []
+        setRecentJobs(jobs)
+        setTrends(trendsData || [])
+
+        // Calculate stats
+        const totalSpend = jobs.reduce((sum, job) => sum + (job.input_spend || 0), 0)
+        
+        let latestRoas = 0
+        let avgEfficiency = 0
+        if (trendsData && trendsData.length > 0) {
+          latestRoas = trendsData[trendsData.length - 1].roas
+          const totalEfficiency = trendsData.reduce((sum, t) => sum + t.efficiency, 0)
+          avgEfficiency = Math.round(totalEfficiency / trendsData.length)
         }
+
+        setStats({
+          totalAnalyses: historyData.total || 0,
+          latestRoas,
+          totalSpend,
+          avgEfficiency
+        })
+        
+        // Local AB tests
+        const savedTests = localStorage.getItem('ab_tests')
+        if (savedTests) {
+          setAbTests(JSON.parse(savedTests))
+        }
+
       } catch (err) {
-        console.error('Failed to fetch final job status:', err)
+        console.error("Failed to load dashboard data", err)
+      } finally {
+        setLoading(false)
       }
-
-    } catch (caught) {
-      setWaitingForBackend(false)
-      setError(caught.message)
-      setStage('error')
     }
-  }
+    
+    // add small delay so token is ready
+    setTimeout(() => {
+      fetchDashboardData()
+    }, 100)
+  }, [activeWorkspace])
 
-  const downloadPDF = () => {
-    const element = reportRef.current
-    if (!element) return
+  // Process chart data for sparkline
+  const chartData = [...trends].map(t => ({
+    date: t.date,
+    ROAS: t.roas,
+    Efficiency: t.efficiency
+  }))
 
     // Inject White-Label Branding
     const agencyName = localStorage.getItem('agencyName')
@@ -190,11 +187,7 @@ export default function Dashboard() {
     })
   }
 
-  const tabs = [
-    { id: 'audit', label: 'Audit', icon: FileSearch, color: 'blue' },
-    { id: 'strategy', label: 'Strategy', icon: Lightbulb, color: 'indigo' },
-    { id: 'copy', label: 'A/B Copy', icon: PenLine, color: 'purple' }
-  ]
+  const runningAbTests = abTests.filter(t => t.status === 'Running')
 
   return (
     <motion.div 
@@ -202,99 +195,113 @@ export default function Dashboard() {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-8 pb-12"
     >
-      {stage === 'upload' && <UploadZone onFileReady={runAnalysis} />}
-
-      {(stage === 'running' || stage === 'done' || stage === 'error') && (
-        <div className="space-y-6">
-          <ColdStartLoader visible={waitingForBackend && stage === 'running'} />
-          <AgentPipeline agentStatus={agentStatus} />
-          
-          {csvStats && (
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="flex flex-wrap items-center gap-4 rounded-2xl glass-panel p-5 border-blue-500/20"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/20 text-blue-400 shadow-inner">
-                <BarChart3 size={24} aria-hidden="true" />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-sm font-medium text-slate-400">Dataset Overview</h3>
-                <div className="flex gap-6 mt-1">
-                  <p className="text-sm text-slate-400">
-                    <span className="font-bold text-slate-200 text-base">{csvStats.rows}</span> rows
-                  </p>
-                  <p className="text-sm text-slate-400">
-                    Spend: <span className="font-bold text-slate-200 text-base">{formatMoney(csvStats.total_spend)}</span>
-                  </p>
-                  <p className="text-sm text-slate-400">
-                    Revenue: <span className="font-bold text-slate-200 text-base">{formatMoney(csvStats.total_revenue)}</span>
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          )}
+      {/* Hero */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <p className="text-brand-500 font-semibold mb-1 text-sm">{activeWorkspace?.name || 'Your Workspace'}</p>
+          <h1 className="text-3xl font-serif text-textprimary tracking-tight mb-2">
+            {getGreeting()}, <span className="capitalize">{firstName}</span>
+          </h1>
+          <p className="text-textmuted font-medium">Here's what's happening with your campaigns today.</p>
         </div>
-      )}
-
-      {stage === 'error' && (
-        <motion.div 
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6 shadow-[0_0_15px_rgba(239,68,68,0.1)]"
+        <button
+          onClick={() => navigate('/analyze')}
+          className="inline-flex items-center gap-2 btn-primary"
         >
-          <div className="flex items-start gap-3 text-red-400">
-            <AlertCircle size={24} aria-hidden="true" />
+          <Zap size={18} />
+          Run New Analysis
+        </button>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <motion.div initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} transition={{delay: 0.1}} className="card-warm p-5">
+          <div className="flex items-start justify-between">
             <div>
-              <h2 className="font-semibold text-lg">Analysis Failed</h2>
-              <p className="mt-1 text-sm text-red-300">{error}</p>
+              <p className="text-sm font-medium text-textmuted mb-1">Total Analyses</p>
+              <h3 className="text-2xl font-bold text-textprimary">{stats.totalAnalyses}</h3>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center border border-blue-500/20">
+              <HistoryIcon size={20} />
             </div>
           </div>
-          <button
-            type="button"
-            onClick={reset}
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500/30 px-5 py-2.5 text-sm font-semibold transition-all border border-red-500/30"
-          >
-            <RotateCcw size={16} aria-hidden="true" />
-            Try Again
-          </button>
         </motion.div>
-      )}
 
-      {/* Results Section with Tabs and PDF Export */}
-      {(results.audit || results.strategy || results.copy) && (
-        <div className="mt-12 space-y-6">
-          {results.audit && <CampaignHealthScore audit={results.audit} />}
-          <div className="flex items-center justify-between border-b border-white/10 pb-4">
-            <div className="flex gap-2">
-              {tabs.map((tab) => {
-                const Icon = tab.icon
-                const isActive = activeTab === tab.id
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={clsx(
-                      "flex items-center gap-2 rounded-t-xl px-5 py-3 text-sm font-bold transition-all border-b-2",
-                      isActive 
-                        ? `border-${tab.color}-400 text-${tab.color}-400 bg-${tab.color}-500/10` 
-                        : "border-transparent text-slate-500 hover:bg-white/5 hover:text-slate-300"
-                    )}
-                  >
-                    <Icon size={16} />
-                    {tab.label}
-                  </button>
-                )
-              })}
+        <motion.div initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} transition={{delay: 0.15}} className="card-warm p-5">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-textmuted mb-1">Latest ROAS</p>
+              <h3 className="text-2xl font-bold text-textprimary">{stats.latestRoas.toFixed(2)}x</h3>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center border border-emerald-500/20">
+              <TrendingUp size={20} />
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} transition={{delay: 0.2}} className="card-warm p-5">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-textmuted mb-1">Spend Analyzed</p>
+              <h3 className="text-2xl font-bold text-textprimary">{formatMoney(stats.totalSpend)}</h3>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center border border-amber-500/20">
+              <DollarSign size={20} />
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div initial={{opacity: 0, y: 10}} animate={{opacity: 1, y: 0}} transition={{delay: 0.25}} className="card-warm p-5">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-textmuted mb-1">Avg Efficiency</p>
+              <h3 className="text-2xl font-bold text-textprimary">{stats.avgEfficiency}%</h3>
+            </div>
+            <div className="h-10 w-10 rounded-xl bg-purple-500/10 text-purple-500 flex items-center justify-center border border-purple-500/20">
+              <Target size={20} />
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Column: Sparkline + Recent Jobs */}
+        <div className="lg:col-span-2 space-y-8">
+          
+          {/* Trend Chart */}
+          <div className="card-warm p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-serif font-bold text-textprimary">Performance Trend</h2>
             </div>
             
-            {stage === 'done' && (
-              <button
-                onClick={downloadPDF}
-                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-all hover:bg-blue-500 hover:scale-105"
-              >
-                <Download size={16} />
-                Download Report
-              </button>
+            {!showChart ? (
+              <div className="h-64 flex flex-col items-center justify-center text-center bg-bgbase rounded-xl border border-dashed border-borderwarm p-6">
+                <BarChart3 size={32} className="text-textmuted mb-3 opacity-50" />
+                <h3 className="text-textprimary font-medium mb-1">No data available yet</h3>
+                <p className="text-sm text-textmuted max-w-sm">Run your first campaign analysis to see your ROAS and efficiency trends here.</p>
+                <button onClick={() => navigate('/analyze')} className="mt-4 text-sm font-medium text-brand-500 hover:text-brand-600">Run Analysis →</button>
+              </div>
+            ) : (
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="colorROAS" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                    <XAxis dataKey="date" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} />
+                    <YAxis stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}x`} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-warm)', borderRadius: '12px' }}
+                      itemStyle={{ color: 'var(--text-primary)' }}
+                    />
+                    <Area type="monotone" dataKey="ROAS" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorROAS)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
             )}
           </div>
 
@@ -317,38 +324,118 @@ export default function Dashboard() {
               )}
             </AnimatePresence>
             
-            {/* Show loader if the active tab's result isn't ready yet */}
-            {!results[activeTab] && agentStatus[activeTab === 'audit' ? 'auditor' : activeTab === 'strategy' ? 'strategist' : 'copywriter'] === 'running' && (
-              <div className="flex h-64 items-center justify-center">
-                <div className="flex flex-col items-center gap-4 text-slate-400">
-                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-800 border-t-blue-500" />
-                  <p className="text-sm font-medium">Analyzing data...</p>
-                </div>
+            {recentJobs.length === 0 ? (
+              <p className="text-sm text-textmuted py-4 text-center">No analyses found.</p>
+            ) : (
+              <div className="space-y-3">
+                {recentJobs.map(job => {
+                  const roas = job.input_spend > 0 ? (job.input_revenue / job.input_spend) : 0
+                  return (
+                    <div key={job.id} className="flex items-center justify-between p-4 rounded-xl bg-bgbase border border-borderwarm hover:border-brand-500/30 transition-colors group">
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 rounded-lg bg-bgpanel border border-borderwarm flex items-center justify-center shadow-sm">
+                          {job.status === 'complete' ? <CheckCircle2 size={18} className="text-emerald-500" /> :
+                           job.status === 'processing' ? <Clock size={18} className="text-amber-500" /> :
+                           <AlertTriangle size={18} className="text-red-500" />}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-semibold text-textprimary text-sm">Report #{job.id}</span>
+                            <span className="text-xs text-textmuted">{new Date(job.created_at).toLocaleDateString()}</span>
+                          </div>
+                          <div className="flex gap-4 text-xs">
+                            <span className="text-textmuted">Spend: <strong className="text-textprimary">{formatMoney(job.input_spend)}</strong></span>
+                            <span className="text-textmuted">ROAS: <strong className={roas >= 2 ? 'text-emerald-500' : 'text-textprimary'}>{roas.toFixed(2)}x</strong></span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <button 
+                        onClick={() => navigate(job.status === 'complete' ? `/history/${job.id}` : '#')}
+                        disabled={job.status !== 'complete'}
+                        className="opacity-0 group-hover:opacity-100 px-4 py-2 bg-bgpanel text-textprimary text-xs font-semibold rounded-lg border border-borderwarm hover:border-brand-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        View
+                      </button>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>
-        </div>
-      )}
 
-      {stage === 'done' && (
-        <div className="space-y-12 mt-12 border-t border-white/10 pt-12">
-          <HistoricalTrends />
-          
-          <motion.section 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="text-center"
-          >
-            <button
-              type="button"
-              onClick={reset}
-              className="inline-flex items-center gap-2 rounded-xl glass-panel px-6 py-3 text-sm font-semibold text-slate-300 shadow-lg transition-all hover:bg-white/10"
-            >
-              <RotateCcw size={18} aria-hidden="true" />
-              Start New Analysis
-            </button>
-          </motion.section>
         </div>
-      )}
+
+        {/* Right Column: Quick Actions + A/B Widget */}
+        <div className="space-y-8">
+          
+          {/* Quick Actions */}
+          <div className="card-warm p-6">
+            <h2 className="text-lg font-serif font-bold text-textprimary mb-4">Quick Actions</h2>
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={() => navigate('/analyze')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-brand-500/5 border border-borderwarm hover:border-brand-500/30 transition-colors gap-2 text-center group">
+                <Zap size={20} className="text-brand-500 group-hover:scale-110 transition-transform" />
+                <span className="text-xs font-medium text-textprimary">Run Analysis</span>
+              </button>
+              
+              <button onClick={() => navigate('/tools')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-emerald-500/5 border border-borderwarm hover:border-emerald-500/30 transition-colors gap-2 text-center group">
+                <Search size={20} className="text-emerald-500 group-hover:scale-110 transition-transform" />
+                <span className="text-xs font-medium text-textprimary">Landing Audit</span>
+              </button>
+
+              <button onClick={() => navigate('/tools')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-blue-500/5 border border-borderwarm hover:border-blue-500/30 transition-colors gap-2 text-center group">
+                <Users size={20} className="text-blue-500 group-hover:scale-110 transition-transform" />
+                <span className="text-xs font-medium text-textprimary">Build Audience</span>
+              </button>
+
+              <button onClick={() => navigate('/ab-tracker')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-purple-500/5 border border-borderwarm hover:border-purple-500/30 transition-colors gap-2 text-center group">
+                <GitCompare size={20} className="text-purple-500 group-hover:scale-110 transition-transform" />
+                <span className="text-xs font-medium text-textprimary">A/B Tracker</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Active A/B Tests */}
+          <div className="card-warm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-serif font-bold text-textprimary">Active A/B Tests</h2>
+              <span className="bg-brand-500/10 text-brand-500 text-xs font-bold px-2 py-1 rounded-md">
+                {runningAbTests.length} Running
+              </span>
+            </div>
+            
+            {runningAbTests.length === 0 ? (
+              <div className="text-center py-6 px-4 bg-bgbase rounded-xl border border-dashed border-borderwarm">
+                <GitCompare size={24} className="mx-auto text-textmuted mb-2 opacity-50" />
+                <p className="text-sm text-textmuted">No active tests.</p>
+                <button onClick={() => navigate('/ab-tracker')} className="mt-2 text-xs font-medium text-brand-500 hover:text-brand-600">Start a Test →</button>
+              </div>
+            ) : (
+              <div className="space-y-3 mb-4">
+                {runningAbTests.slice(0, 3).map(test => (
+                  <div key={test.id} className="p-3 bg-bgbase rounded-lg border border-borderwarm text-sm">
+                    <div className="font-semibold text-textprimary truncate">{test.name}</div>
+                    <div className="text-xs text-textmuted flex items-center gap-2 mt-1">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                      Gathering data...
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {runningAbTests.length > 0 && (
+              <button 
+                onClick={() => navigate('/ab-tracker')} 
+                className="w-full py-2.5 text-sm font-medium text-textprimary bg-bgbase hover:bg-bgpanelhover rounded-xl border border-borderwarm transition-colors"
+              >
+                Manage Tests
+              </button>
+            )}
+          </div>
+
+        </div>
+      </div>
     </motion.div>
   )
 }

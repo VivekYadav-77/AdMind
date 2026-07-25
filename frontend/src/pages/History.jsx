@@ -37,28 +37,30 @@ export default function History() {
   if (loading) {
     return (
       <div className="flex flex-col justify-center items-center h-[50vh] gap-4">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-800 border-t-blue-500"></div>
-        <p className="text-slate-400 font-medium">Loading history...</p>
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-borderwarm border-t-brand-500"></div>
+        <p className="text-textmuted font-medium">Loading history...</p>
       </div>
     )
   }
 
   if (jobs.length === 0) {
     return (
-      <div className="text-center py-16 glass-panel rounded-3xl p-8 border-white/10 max-w-lg mx-auto">
-        <div className="mx-auto w-16 h-16 bg-blue-500/10 text-blue-400 rounded-2xl flex items-center justify-center mb-4 border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.1)]">
+      <div className="text-center py-16 glass-panel rounded-3xl p-8 border-borderwarm max-w-lg mx-auto">
+        <div className="mx-auto w-16 h-16 bg-brand-500/10 text-brand-400 rounded-2xl flex items-center justify-center mb-4 border border-brand-500/20 shadow-[0_0_15px_rgba(217,119,87,0.1)]">
           <Clock size={32} />
         </div>
-        <h2 className="text-xl font-bold text-white">No Analysis History Yet</h2>
-        <p className="text-slate-400 mt-2 text-sm leading-relaxed">
+        <h2 className="text-2xl font-serif text-textprimary">No Analysis History Yet</h2>
+        <p className="text-textmuted mt-2 text-sm leading-relaxed">
           Upload your campaign CSV on the Dashboard to get your first AI-driven marketing audit and start tracking performance!
         </p>
-        <button
+        <motion.button
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.95 }}
           onClick={() => navigate('/')}
-          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-blue-500 transition-colors shadow-lg shadow-blue-500/20"
+          className="mt-6 inline-flex items-center gap-2 btn-primary"
         >
           Go to Dashboard
-        </button>
+        </motion.button>
       </div>
     )
   }
@@ -78,22 +80,25 @@ export default function History() {
 
   return (
     <div className="space-y-8 pb-16">
-      
-      {/* Aggregated Trends Chart Section */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-serif text-textprimary tracking-tight mb-2">Analysis History</h1>
+        <p className="text-textmuted font-medium">Review your past campaign audits</p>
+      </div>
+
       {showChart && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-panel rounded-3xl p-6 border-white/10 relative overflow-hidden"
+          className="glass-panel rounded-3xl p-6 border-borderwarm relative overflow-hidden"
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-b from-brand-500/5 to-transparent pointer-events-none" />
           <div className="flex items-center gap-2.5 mb-6">
-            <div className="h-8 w-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center border border-blue-500/30">
+            <div className="h-8 w-8 rounded-lg bg-brand-500/10 text-brand-400 flex items-center justify-center border border-brand-500/20">
               <TrendingUp size={16} />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-white">Advertising Performance Trends</h2>
-              <p className="text-xs text-slate-400">Aggregated historical progress of analysed accounts</p>
+              <h2 className="text-xl font-serif text-textprimary">Advertising Performance Trends</h2>
+              <p className="text-xs text-textmuted">Aggregated historical progress of analysed accounts</p>
             </div>
           </div>
 
@@ -106,30 +111,32 @@ export default function History() {
                     <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                   </linearGradient>
                   <linearGradient id="colorSpend" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#D97757" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="#D97757" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                 <XAxis 
                   dataKey="date" 
-                  stroke="#64748b" 
+                  stroke="var(--text-muted)" 
                   fontSize={11} 
                   tickLine={false} 
                 />
                 <YAxis 
-                  stroke="#64748b" 
+                  stroke="var(--text-muted)" 
                   fontSize={11} 
                   tickLine={false} 
                   tickFormatter={(val) => `$${val}`}
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#111625',
-                    borderColor: 'rgba(255,255,255,0.1)',
+                    backgroundColor: 'var(--bg-panel)',
+                    borderColor: 'var(--border-warm)',
                     borderRadius: '12px',
-                    color: '#e2e8f0'
+                    color: 'var(--text-primary)'
                   }}
+                  itemStyle={{ color: 'var(--text-primary)' }}
+                  labelStyle={{ color: 'var(--text-muted)' }}
                   formatter={(value, name) => [formatMoney(value), name]}
                 />
                 <Legend 
@@ -149,7 +156,7 @@ export default function History() {
                 <Area 
                   type="monotone" 
                   dataKey="Spend" 
-                  stroke="#3b82f6" 
+                  stroke="#D97757" 
                   strokeWidth={2}
                   fillOpacity={1} 
                   fill="url(#colorSpend)" 
@@ -162,7 +169,7 @@ export default function History() {
 
       {/* History List */}
       <div className="space-y-4">
-        <h3 className="text-lg font-bold text-white">Historical Analysis Reports</h3>
+        <h3 className="text-xl font-serif text-textprimary">Historical Analysis Reports</h3>
         <div className="grid gap-4">
           {jobs.map((job) => {
             const roas = job.input_spend > 0 ? (job.input_revenue / job.input_spend) : 0
@@ -171,14 +178,14 @@ export default function History() {
               <motion.div
                 whileHover={{ y: -2 }}
                 key={job.id}
-                className="glass-panel rounded-2xl p-6 border-white/10 transition-all flex flex-col md:flex-row md:items-center justify-between gap-6"
+                className="glass-panel rounded-2xl p-6 border-borderwarm transition-all flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-brand-500/30"
               >
                 <div className="flex-1 space-y-3">
                   <div className="flex flex-wrap items-center gap-3">
-                    <span className="bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[11px] font-bold px-2.5 py-0.5 rounded-lg uppercase tracking-wider">
+                    <span className="bg-brand-500/10 border border-brand-500/20 text-brand-400 text-[11px] font-bold px-2.5 py-0.5 rounded-lg uppercase tracking-wider">
                       Report #{job.id}
                     </span>
-                    <span className="flex items-center gap-1.5 text-xs text-slate-400">
+                    <span className="flex items-center gap-1.5 text-xs text-textmuted">
                       <Calendar size={13} />
                       {new Date(job.created_at).toLocaleString()}
                     </span>
@@ -201,16 +208,16 @@ export default function History() {
                   </div>
                   
                   <div className="flex flex-wrap gap-x-8 gap-y-2 pt-1">
-                    <p className="text-xs text-slate-400">
-                      Volume: <span className="font-bold text-slate-200 text-sm">{job.total_rows} rows</span>
+                    <p className="text-xs text-textmuted">
+                      Volume: <span className="font-bold text-textprimary text-sm">{job.total_rows} rows</span>
                     </p>
-                    <p className="text-xs text-slate-400">
-                      Spend: <span className="font-bold text-slate-200 text-sm">{formatMoney(job.input_spend)}</span>
+                    <p className="text-xs text-textmuted">
+                      Spend: <span className="font-bold text-textprimary text-sm">{formatMoney(job.input_spend)}</span>
                     </p>
-                    <p className="text-xs text-slate-400">
-                      Revenue: <span className="font-bold text-slate-200 text-sm">{formatMoney(job.input_revenue)}</span>
+                    <p className="text-xs text-textmuted">
+                      Revenue: <span className="font-bold text-textprimary text-sm">{formatMoney(job.input_revenue)}</span>
                     </p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-textmuted">
                       ROAS: <span className={clsx(
                         "font-bold text-sm", 
                         roas >= 2 ? "text-emerald-400" : "text-amber-400"
@@ -223,14 +230,14 @@ export default function History() {
                   {job.status === 'complete' ? (
                     <button
                       onClick={() => navigate(`/history/${job.id}`)}
-                      className="w-full md:w-auto px-5 py-2.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 font-semibold rounded-xl text-sm transition-all border border-blue-500/30 hover:scale-105"
+                      className="w-full md:w-auto px-5 py-2.5 bg-bgpanelhover hover:bg-bgpanel text-textprimary font-medium rounded-xl text-sm transition-all border border-borderwarm hover:border-brand-500/50"
                     >
                       View Report
                     </button>
                   ) : (
                     <button
                       disabled
-                      className="w-full md:w-auto px-5 py-2.5 bg-white/5 text-slate-500 font-semibold rounded-xl text-sm border border-white/5 cursor-not-allowed"
+                      className="w-full md:w-auto px-5 py-2.5 bg-white/5 text-[#6A655A] font-medium rounded-xl text-sm border border-transparent cursor-not-allowed"
                     >
                       Unavailable
                     </button>

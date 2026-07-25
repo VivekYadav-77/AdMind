@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Users, Swords, Loader2, Link2, FileText, ArrowRight, CheckCircle2 } from 'lucide-react'
 import clsx from 'clsx'
 import { API } from '../services/api'
+import TabBar from '../components/ui/TabBar'
 
 export default function Tools() {
   const [activeTab, setActiveTab] = useState('landing-page')
@@ -62,9 +63,9 @@ export default function Tools() {
   }
 
   const tabs = [
-    { id: 'landing-page', label: 'Landing Page Auditor', icon: Search, color: 'blue' },
+    { id: 'landing-page', label: 'Landing Page Auditor', icon: Search, color: 'brand' },
     { id: 'audience', label: 'Audience Builder', icon: Users, color: 'emerald' },
-    { id: 'competitor', label: 'Competitor Teardown', icon: Swords, color: 'rose' }
+    { id: 'competitor', label: 'Competitor Teardown', icon: Swords, color: 'amber' }
   ]
 
   return (
@@ -73,27 +74,16 @@ export default function Tools() {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-8 pb-12"
     >
-      <div className="flex gap-4 border-b border-white/10 pb-4">
-        {tabs.map((tab) => {
-          const Icon = tab.icon
-          const isActive = activeTab === tab.id
-          return (
-            <button
-              key={tab.id}
-              onClick={() => { setActiveTab(tab.id); setError(null) }}
-              className={clsx(
-                "flex items-center gap-2 rounded-t-xl px-5 py-3 text-sm font-bold transition-all border-b-2",
-                isActive 
-                  ? `border-${tab.color}-400 text-${tab.color}-400 bg-${tab.color}-500/10` 
-                  : "border-transparent text-slate-500 hover:bg-white/5 hover:text-slate-300"
-              )}
-            >
-              <Icon size={16} />
-              {tab.label}
-            </button>
-          )
-        })}
+      <div className="mb-8">
+        <h1 className="text-3xl font-serif text-textprimary tracking-tight mb-2">AI Marketing Tools</h1>
+        <p className="text-textmuted font-medium">Standalone AI utilities for your ad operations</p>
       </div>
+
+      <TabBar 
+        tabs={tabs} 
+        activeTab={activeTab} 
+        onChange={(id) => { setActiveTab(id); setError(null); }} 
+      />
 
       {error && (
         <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-red-400 font-semibold shadow-lg">
@@ -104,15 +94,15 @@ export default function Tools() {
       <AnimatePresence mode="wait">
         {activeTab === 'landing-page' && (
           <motion.div key="landing-page" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
-            <div className="glass-panel rounded-3xl p-8 border-blue-500/20 shadow-xl bg-black/40 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-blue-500/10 rounded-full blur-[100px] pointer-events-none" />
-              <h2 className="text-2xl font-black text-white mb-2">CRO Landing Page Auditor</h2>
-              <p className="text-slate-400 mb-8 font-medium">Paste your landing page URL. Our AI will analyze the text for conversion rate optimization opportunities.</p>
+            <div className="glass-panel rounded-3xl p-8 border-brand-500/20 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-brand-500/10 rounded-full blur-[100px] pointer-events-none" />
+              <h2 className="text-2xl font-serif text-textprimary mb-2">CRO Landing Page Auditor</h2>
+              <p className="text-textmuted mb-8 font-medium">Paste your landing page URL. Our AI will analyze the text for conversion rate optimization opportunities.</p>
               
               <form onSubmit={handleLandingAudit} className="flex gap-4">
                 <div className="relative flex-1">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Link2 className="text-slate-500" size={20} />
+                    <Link2 className="text-textmuted" size={20} />
                   </div>
                   <input 
                     type="url" 
@@ -120,28 +110,30 @@ export default function Tools() {
                     placeholder="https://your-landing-page.com" 
                     value={inputUrl}
                     onChange={e => setInputUrl(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
+                    className="w-full bg-bgpanel border border-borderwarm rounded-xl py-3 pl-12 pr-4 text-textprimary focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all placeholder:text-textmuted"
                   />
                 </div>
-                <button 
+                <motion.button 
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.95 }}
                   type="submit" 
                   disabled={loading}
-                  className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-all"
+                  className="btn-primary flex items-center gap-2"
                 >
                   {loading ? <Loader2 size={20} className="animate-spin" /> : <Search size={20} />}
                   Audit Page
-                </button>
+                </motion.button>
               </form>
 
               {landingResult && (
-                <div className="mt-10 p-6 bg-white/5 rounded-2xl border border-white/10">
+                <div className="mt-10 p-6 bg-[#1C1C19] rounded-2xl border border-borderwarm">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="h-16 w-16 rounded-2xl bg-blue-500/20 flex items-center justify-center border border-blue-500/30 text-blue-400 font-black text-2xl">
+                    <div className="h-16 w-16 rounded-2xl bg-brand-500/20 flex items-center justify-center border border-brand-500/30 text-brand-400 font-serif text-3xl">
                       {landingResult.score}
                     </div>
                     <div>
-                      <h3 className="text-xl font-bold text-white">CRO Score</h3>
-                      <p className="text-sm text-slate-400">Based on standard conversion principles</p>
+                      <h3 className="text-xl font-serif text-textprimary">CRO Score</h3>
+                      <p className="text-sm text-textmuted">Based on standard conversion principles</p>
                     </div>
                   </div>
                   <div className="prose prose-invert max-w-none">
@@ -155,10 +147,10 @@ export default function Tools() {
 
         {activeTab === 'audience' && (
           <motion.div key="audience" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
-            <div className="glass-panel rounded-3xl p-8 border-emerald-500/20 shadow-xl bg-black/40 relative overflow-hidden">
+            <div className="glass-panel rounded-3xl p-8 border-emerald-500/20 shadow-xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
-              <h2 className="text-2xl font-black text-white mb-2">AI Audience Builder</h2>
-              <p className="text-slate-400 mb-8 font-medium">Describe your product or service. Our AI will build the perfect targeting parameters for Meta and Google.</p>
+              <h2 className="text-2xl font-serif text-textprimary mb-2">AI Audience Builder</h2>
+              <p className="text-textmuted mb-8 font-medium">Describe your product or service. Our AI will build the perfect targeting parameters for Meta and Google.</p>
               
               <form onSubmit={handleAudienceBuild} className="flex flex-col gap-4">
                 <textarea 
@@ -167,17 +159,19 @@ export default function Tools() {
                   placeholder="E.g., We sell organic, ethically-sourced coffee beans directly to consumers who care about fair trade and premium taste." 
                   value={inputDesc}
                   onChange={e => setInputDesc(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all resize-none"
+                  className="w-full bg-bgpanel border border-borderwarm rounded-xl p-4 text-textprimary focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all resize-none placeholder:text-textmuted"
                 />
                 <div className="flex justify-end">
-                  <button 
+                  <motion.button 
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.95 }}
                     type="submit" 
                     disabled={loading}
-                    className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.4)] transition-all"
+                    className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white px-6 py-3 rounded-xl font-medium flex items-center gap-2 shadow-[0_4px_14px_0_rgba(16,185,129,0.39)] transition-all"
                   >
                     {loading ? <Loader2 size={20} className="animate-spin" /> : <Users size={20} />}
                     Build Audience
-                  </button>
+                  </motion.button>
                 </div>
               </form>
 
@@ -187,7 +181,7 @@ export default function Tools() {
                     <h3 className="text-xl font-black text-blue-400 mb-4 flex items-center gap-2"><CheckCircle2 size={20}/> Meta Ads Targeting</h3>
                     <div className="space-y-4">
                       <div>
-                        <h4 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-2">Interests</h4>
+                        <h4 className="text-sm font-bold text-textmuted uppercase tracking-wider mb-2">Interests</h4>
                         <div className="flex flex-wrap gap-2">
                           {audienceResult.meta.interests.map((t, i) => (
                             <span key={i} className="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-lg text-sm font-medium border border-blue-500/30">{t}</span>
@@ -195,7 +189,7 @@ export default function Tools() {
                         </div>
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-2">Behaviors</h4>
+                        <h4 className="text-sm font-bold text-textmuted uppercase tracking-wider mb-2">Behaviors</h4>
                         <div className="flex flex-wrap gap-2">
                           {audienceResult.meta.behaviors.map((t, i) => (
                             <span key={i} className="bg-purple-500/20 text-purple-300 px-3 py-1 rounded-lg text-sm font-medium border border-purple-500/30">{t}</span>
@@ -209,7 +203,7 @@ export default function Tools() {
                     <h3 className="text-xl font-black text-amber-400 mb-4 flex items-center gap-2"><CheckCircle2 size={20}/> Google Ads Targeting</h3>
                     <div className="space-y-4">
                       <div>
-                        <h4 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-2">In-Market Segments</h4>
+                        <h4 className="text-sm font-bold text-textmuted uppercase tracking-wider mb-2">In-Market Segments</h4>
                         <div className="flex flex-wrap gap-2">
                           {audienceResult.google.in_market.map((t, i) => (
                             <span key={i} className="bg-amber-500/20 text-amber-300 px-3 py-1 rounded-lg text-sm font-medium border border-amber-500/30">{t}</span>
@@ -217,7 +211,7 @@ export default function Tools() {
                         </div>
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-slate-300 uppercase tracking-wider mb-2">Search Keywords</h4>
+                        <h4 className="text-sm font-bold text-textmuted uppercase tracking-wider mb-2">Search Keywords</h4>
                         <div className="flex flex-wrap gap-2">
                           {audienceResult.google.keywords.map((t, i) => (
                             <span key={i} className="bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-lg text-sm font-medium border border-emerald-500/30">{t}</span>
@@ -234,10 +228,10 @@ export default function Tools() {
 
         {activeTab === 'competitor' && (
           <motion.div key="competitor" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
-            <div className="glass-panel rounded-3xl p-8 border-rose-500/20 shadow-xl bg-black/40 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-rose-500/10 rounded-full blur-[100px] pointer-events-none" />
-              <h2 className="text-2xl font-black text-white mb-2">Competitor Tear-Down</h2>
-              <p className="text-slate-400 mb-8 font-medium">Paste a competitor's ad copy. AI will analyze their psychological angle and write 3 counter-ads to steal their traffic.</p>
+            <div className="glass-panel rounded-3xl p-8 border-amber-500/20 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
+              <h2 className="text-2xl font-serif text-textprimary mb-2">Competitor Tear-Down</h2>
+              <p className="text-textmuted mb-8 font-medium">Paste a competitor's ad copy. AI will analyze their psychological angle and write 3 counter-ads to steal their traffic.</p>
               
               <form onSubmit={handleCompetitorTeardown} className="flex flex-col gap-4">
                 <textarea 
@@ -246,42 +240,44 @@ export default function Tools() {
                   placeholder="Paste competitor ad copy here..." 
                   value={inputAd}
                   onChange={e => setInputAd(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white focus:outline-none focus:border-rose-500/50 focus:ring-1 focus:ring-rose-500/50 transition-all resize-none"
+                  className="w-full bg-bgpanel border border-borderwarm rounded-xl p-4 text-textprimary focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50 transition-all resize-none placeholder:text-textmuted"
                 />
                 <div className="flex justify-end">
-                  <button 
+                  <motion.button 
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.95 }}
                     type="submit" 
                     disabled={loading}
-                    className="bg-rose-600 hover:bg-rose-500 disabled:opacity-50 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(225,29,72,0.4)] transition-all"
+                    className="bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white px-6 py-3 rounded-xl font-medium flex items-center gap-2 shadow-[0_4px_14px_0_rgba(245,158,11,0.39)] transition-all"
                   >
                     {loading ? <Loader2 size={20} className="animate-spin" /> : <Swords size={20} />}
                     Analyze & Counter
-                  </button>
+                  </motion.button>
                 </div>
               </form>
 
               {competitorResult && (
                 <div className="mt-10 space-y-6">
-                  <div className="bg-rose-500/10 p-6 rounded-2xl border border-rose-500/20">
-                    <h3 className="text-lg font-black text-rose-400 mb-2 uppercase tracking-widest">Their Strategy</h3>
-                    <p className="text-slate-200 font-medium">{competitorResult.analysis}</p>
+                  <div className="bg-amber-500/10 p-6 rounded-2xl border border-amber-500/20">
+                    <h3 className="text-lg font-medium text-amber-400 mb-2 uppercase tracking-widest">Their Strategy</h3>
+                    <p className="text-textsecondary">{competitorResult.analysis}</p>
                   </div>
 
-                  <h3 className="text-2xl font-black text-white mt-8 mb-4">Your Counter-Ads</h3>
+                  <h3 className="text-2xl font-serif text-textprimary mt-8 mb-4">Your Counter-Ads</h3>
                   <div className="grid lg:grid-cols-3 gap-6">
                     {competitorResult.counter_ads.map((ad, i) => (
-                      <div key={i} className="bg-white/5 p-6 rounded-2xl border border-white/10 hover:border-white/30 transition-all shadow-lg flex flex-col h-full">
+                      <div key={i} className="card-warm p-6 hover:border-amber-500/30 transition-all flex flex-col h-full">
                         <div className="mb-4">
-                          <span className="text-xs font-black uppercase tracking-widest text-slate-500">Angle</span>
-                          <h4 className="text-lg font-bold text-blue-400">{ad.angle}</h4>
+                          <span className="text-xs font-bold uppercase tracking-widest text-textmuted">Angle</span>
+                          <h4 className="text-lg font-serif text-brand-400">{ad.angle}</h4>
                         </div>
                         <div className="mb-4 flex-1">
-                          <span className="text-xs font-black uppercase tracking-widest text-slate-500 block mb-1">Primary Text</span>
-                          <p className="text-sm text-slate-300 italic">"{ad.primary_text}"</p>
+                          <span className="text-xs font-bold uppercase tracking-widest text-textmuted block mb-1">Primary Text</span>
+                          <p className="text-sm text-textmuted italic">"{ad.primary_text}"</p>
                         </div>
                         <div>
-                          <span className="text-xs font-black uppercase tracking-widest text-slate-500 block mb-1">Headline</span>
-                          <p className="text-base font-bold text-white">{ad.headline}</p>
+                          <span className="text-xs font-bold uppercase tracking-widest text-textmuted block mb-1">Headline</span>
+                          <p className="text-base font-medium text-textprimary">{ad.headline}</p>
                         </div>
                       </div>
                     ))}
