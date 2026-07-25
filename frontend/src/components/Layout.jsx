@@ -1,4 +1,4 @@
-import { History, LayoutDashboard, LogOut, Settings, ChevronDown, Plus, Wrench, GitCompare, Moon, Sun, User as UserIcon } from 'lucide-react'
+import { History, LayoutDashboard, LogOut, Settings, ChevronDown, Plus, Wrench, GitCompare, Moon, Sun, User as UserIcon, Zap } from 'lucide-react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useWorkspace } from '../context/WorkspaceContext'
@@ -58,6 +58,7 @@ export default function Layout() {
 
   const navItems = [
     { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+    { name: 'Analyze', path: '/analyze', icon: Zap },
     { name: 'History', path: '/history', icon: History },
     { name: 'AI Tools', path: '/tools', icon: Wrench },
     { name: 'A/B Tracker', path: '/ab-tracker', icon: GitCompare },
