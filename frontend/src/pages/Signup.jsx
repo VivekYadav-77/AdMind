@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { UserPlus, ArrowRight } from 'lucide-react'
 import { API } from '../services/api'
 import { useAuth } from '../context/AuthContext'
+import AnimatedBackground from '../components/AnimatedBackground'
 
 export default function Signup() {
   const [email, setEmail] = useState('')
@@ -30,6 +31,7 @@ export default function Signup() {
 
   return (
     <div className="flex min-h-screen bg-bgbase text-textprimary">
+      <AnimatedBackground density="full" showKite={true} />
       <div className="grain-overlay" />
       
       {/* Left side - Branding (Hidden on mobile) */}

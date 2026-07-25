@@ -1,4 +1,4 @@
-import { History, LayoutDashboard, LogOut, Settings, ChevronDown, Plus, Wrench, FlaskConical } from 'lucide-react'
+import { History, LayoutDashboard, LogOut, Settings, ChevronDown, Plus, Wrench, FlaskConical, Zap, Sun, Moon } from 'lucide-react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useWorkspace } from '../context/WorkspaceContext'
@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import clsx from 'clsx'
 import { motion } from 'framer-motion'
 import Modal from './ui/Modal'
+import AnimatedBackground from './AnimatedBackground'
 
 export default function Layout() {
   const location = useLocation()
@@ -69,6 +70,7 @@ export default function Layout() {
 
   return (
     <div className="flex min-h-screen bg-bgbase text-textprimary font-sans selection:bg-brand-500/30 transition-colors duration-300" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+      <AnimatedBackground density="low" showKite={false} />
       <div className="grain-overlay print:hidden" />
       {/* Sidebar */}
       <aside className="w-64 flex-shrink-0 flex flex-col bg-bgpanel border-r border-borderwarm z-10 relative print:hidden">

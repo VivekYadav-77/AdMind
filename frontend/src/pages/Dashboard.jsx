@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { 
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import clsx from 'clsx'
+import html2pdf from 'html2pdf.js'
 
 import { useAuth } from '../context/AuthContext'
 import { useWorkspace } from '../context/WorkspaceContext'
@@ -18,72 +19,18 @@ function formatMoney(value) {
 }
 
 export default function Dashboard() {
-  const [stage, setStage] = useState('upload')
-  const [agentStatus, setAgentStatus] = useState(initialAgentStatus)
-  const [results, setResults] = useState(initialResults)
-  const [csvStats, setCsvStats] = useState(null)
-  const [error, setError] = useState(null)
-  const [waitingForBackend, setWaitingForBackend] = useState(false)
-  const [activeTab, setActiveTab] = useState('audit')
-  const [jobId, setJobId] = useState(null)
+  const { user } = useAuth()
+  const { activeWorkspace } = useWorkspace()
   
+  const firstName = user?.email?.split('@')[0] || 'User'
+  const getGreeting = () => {
+    const hour = new Date().getHours()
+    if (hour < 12) return 'Good morning'
+    if (hour < 18) return 'Good afternoon'
+    return 'Good evening'
+  }
+
   const reportRef = useRef(null)
-
-  const reset = () => {
-    setStage('upload')
-    setAgentStatus(initialAgentStatus)
-    setResults(initialResults)
-    setCsvStats(null)
-    setError(null)
-    setWaitingForBackend(false)
-    setActiveTab('audit')
-    setJobId(null)
-  }
-
-  const handleEvent = (event, data) => {
-    switch (event) {
-      case 'csv_parsed':
-        setWaitingForBackend(false)
-        setCsvStats(data)
-        break
-      case 'agent_start':
-        setWaitingForBackend(false)
-        setAgentStatus((prev) => ({ ...prev, [data.agent]: 'running' }))
-        break
-      case 'agent_done': {
-        const resultKey = data.agent === 'auditor' ? 'audit' : data.agent === 'strategist' ? 'strategy' : 'copy'
-        setAgentStatus((prev) => ({ ...prev, [data.agent]: 'done' }))
-        setResults((prev) => ({ ...prev, [resultKey]: data.result }))
-        break
-      }
-      case 'complete':
-        setStage('done')
-        break
-      case 'error':
-        setError(data.message || 'Analysis failed')
-        setStage('error')
-        break
-      default:
-        break
-    }
-  }
-
-  const runAnalysis = async (file) => {
-    // Let the backend handle CSV validation to support column aliases
-
-    setStage('running')
-    setAgentStatus(initialAgentStatus)
-    setResults(initialResults)
-    setCsvStats(null)
-    setError(null)
-    setWaitingForBackend(true)
-
-    try {
-      // Start background job
-      const response = await API.analyzeCSV(file)
-      const { job_id } = response
-      setJobId(job_id)
-
   const [loading, setLoading] = useState(true)
   const [trends, setTrends] = useState([])
   const [recentJobs, setRecentJobs] = useState([])
@@ -154,9 +101,14 @@ export default function Dashboard() {
     Efficiency: t.efficiency
   }))
 
-    // Inject White-Label Branding
-    const agencyName = localStorage.getItem('agencyName')
-    const logoUrl = localStorage.getItem('logoUrl')
+  const exportReportAsPDF = () => {
+    try {
+      const element = reportRef.current
+      if (!element) return
+
+      // Inject White-Label Branding
+      const agencyName = localStorage.getItem('agencyName')
+      const logoUrl = localStorage.getItem('logoUrl')
     
     let brandingDiv = null
     if (agencyName || logoUrl) {
@@ -185,6 +137,9 @@ export default function Dashboard() {
         element.removeChild(brandingDiv)
       }
     })
+    } catch (error) {
+      console.error("Failed to generate PDF:", error)
+    }
   }
 
   const runningAbTests = abTests.filter(t => t.status === 'Running')

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Shield, Cpu, KeyRound, Check, AlertCircle, Briefcase, Wifi, WifiOff } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
@@ -23,10 +23,7 @@ export default function Settings() {
     minRoasTarget: parseFloat(localStorage.getItem('threshold_minRoas')) || 2.5
   }))
 
-  const [branding, setBranding] = useState({
-    agencyName: localStorage.getItem('agencyName') || '',
-    logoUrl: localStorage.getItem('logoUrl') || ''
-  })
+
 
   const [passwordStatus, setPasswordStatus] = useState(null) // { type: 'success'|'error', message: '' }
   const [settingsSaved, setSettingsSaved] = useState(false)
@@ -284,7 +281,7 @@ export default function Settings() {
                   className="btn-primary flex items-center gap-2"
                 >
                   Save Configurations
-                </motion.button>
+                </button>
                 {settingsSaved && (
                   <motion.span
                     initial={{ opacity: 0, scale: 0.9 }}
