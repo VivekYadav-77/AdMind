@@ -1,9 +1,10 @@
-import { Calendar, CheckCircle2, Clock, BarChart3, TrendingUp, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { Calendar, CheckCircle2, Clock, BarChart3, TrendingUp, AlertTriangle, ChevronLeft, ChevronRight, Download } from 'lucide-react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { motion } from 'framer-motion'
 import clsx from 'clsx'
+import html2pdf from 'html2pdf.js'
 
 import { API } from '../services/api'
 
@@ -17,6 +18,48 @@ export default function History() {
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
+  const reportRef = useRef(null)
+
+  const exportReportAsPDF = () => {
+    try {
+      const element = reportRef.current
+      if (!element) return
+
+      // Inject White-Label Branding
+      const agencyName = localStorage.getItem('agencyName')
+      const logoUrl = localStorage.getItem('logoUrl')
+    
+    let brandingDiv = null
+    if (agencyName || logoUrl) {
+      brandingDiv = document.createElement('div')
+      brandingDiv.className = 'flex items-center gap-4 mb-8 p-6 bg-slate-900 rounded-2xl border border-white/10'
+      if (logoUrl) {
+        brandingDiv.innerHTML += `<img src="${logoUrl}" alt="Logo" class="h-12 w-auto object-contain rounded" crossorigin="anonymous" />`
+      }
+      if (agencyName) {
+        brandingDiv.innerHTML += `<h2 class="text-2xl font-bold text-white">${agencyName}</h2>`
+      }
+      element.insertBefore(brandingDiv, element.firstChild)
+    }
+
+    const opt = {
+      margin: [10, 10, 10, 10], // top, left, bottom, right in mm
+      filename: 'AdMind_History_Report.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }
+
+    html2pdf().set(opt).from(element).save().then(() => {
+      // Clean up branding div after PDF is generated
+      if (brandingDiv) {
+        element.removeChild(brandingDiv)
+      }
+    })
+    } catch (error) {
+      console.error("Failed to generate PDF:", error)
+    }
+  }
 
   useEffect(() => {
     async function fetchHistory() {
@@ -79,10 +122,21 @@ export default function History() {
   const showChart = chartData.length >= 2
 
   return (
-    <div className="space-y-8 pb-16">
-      <div className="mb-8">
-        <h1 className="text-3xl font-serif text-textprimary tracking-tight mb-2">Analysis History</h1>
-        <p className="text-textmuted font-medium">Review your past campaign audits</p>
+    <div className="space-y-8 pb-16" ref={reportRef}>
+      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-serif text-textprimary tracking-tight mb-2">Analysis History</h1>
+          <p className="text-textmuted font-medium">Review your past campaign audits</p>
+        </div>
+        <div data-html2canvas-ignore="true">
+          <button
+            onClick={exportReportAsPDF}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-bgbase hover:bg-bgpanel border border-borderwarm rounded-xl text-textprimary font-medium text-sm transition-colors shadow-sm"
+          >
+            <Download size={18} />
+            Export PDF
+          </button>
+        </div>
       </div>
 
       {showChart && (

@@ -4,11 +4,10 @@ import { motion } from 'framer-motion'
 import { 
   BarChart3, Zap, ArrowRight, LayoutDashboard, Search, Users, Swords, 
   GitCompare, History as HistoryIcon, Target, TrendingUp, Clock, CheckCircle2,
-  AlertTriangle, DollarSign, Download
+  AlertTriangle, DollarSign
 } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import clsx from 'clsx'
-import html2pdf from 'html2pdf.js'
 
 import { useAuth } from '../context/AuthContext'
 import { useWorkspace } from '../context/WorkspaceContext'
@@ -31,7 +30,6 @@ export default function Dashboard() {
     return 'Good evening'
   }
 
-  const reportRef = useRef(null)
   const [loading, setLoading] = useState(true)
   const [trends, setTrends] = useState([])
   const [recentJobs, setRecentJobs] = useState([])
@@ -100,47 +98,6 @@ export default function Dashboard() {
     Efficiency: t.efficiency
   }))
 
-  const exportReportAsPDF = () => {
-    try {
-      const element = reportRef.current
-      if (!element) return
-
-      // Inject White-Label Branding
-      const agencyName = localStorage.getItem('agencyName')
-      const logoUrl = localStorage.getItem('logoUrl')
-    
-    let brandingDiv = null
-    if (agencyName || logoUrl) {
-      brandingDiv = document.createElement('div')
-      brandingDiv.className = 'flex items-center gap-4 mb-8 p-6 bg-slate-900 rounded-2xl border border-white/10'
-      if (logoUrl) {
-        brandingDiv.innerHTML += `<img src="${logoUrl}" alt="Logo" class="h-12 w-auto object-contain rounded" crossorigin="anonymous" />`
-      }
-      if (agencyName) {
-        brandingDiv.innerHTML += `<h2 class="text-2xl font-bold text-white">${agencyName}</h2>`
-      }
-      element.insertBefore(brandingDiv, element.firstChild)
-    }
-
-    const opt = {
-      margin: [10, 10, 10, 10], // top, left, bottom, right in mm
-      filename: 'AdMind_Report.pdf',
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }
-
-    html2pdf().set(opt).from(element).save().then(() => {
-      // Clean up branding div after PDF is generated
-      if (brandingDiv) {
-        element.removeChild(brandingDiv)
-      }
-    })
-    } catch (error) {
-      console.error("Failed to generate PDF:", error)
-    }
-  }
-
   const runningAbTests = abTests.filter(t => t.status === 'running')
 
   return (
@@ -148,7 +105,6 @@ export default function Dashboard() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className="space-y-8 pb-12"
-      ref={reportRef}
     >
       {/* Hero */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -159,14 +115,7 @@ export default function Dashboard() {
           </h1>
           <p className="text-textmuted font-medium">Here's what's happening with your campaigns today.</p>
         </div>
-        <div className="flex items-center gap-3" data-html2canvas-ignore="true">
-          <button
-            onClick={exportReportAsPDF}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-bgbase hover:bg-bgpanel border border-borderwarm rounded-xl text-textprimary font-medium text-sm transition-colors shadow-sm"
-          >
-            <Download size={18} />
-            Export PDF
-          </button>
+        <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/analyze')}
             className="inline-flex items-center gap-2 btn-primary"
