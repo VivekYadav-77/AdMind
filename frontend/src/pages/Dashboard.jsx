@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { 
   BarChart3, Zap, ArrowRight, LayoutDashboard, Search, Users, Swords, 
   GitCompare, History as HistoryIcon, Target, TrendingUp, Clock, CheckCircle2,
-  AlertTriangle, DollarSign
+  AlertTriangle, DollarSign, Download
 } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import clsx from 'clsx'
@@ -147,6 +147,7 @@ export default function Dashboard() {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       className="space-y-8 pb-12"
+      ref={reportRef}
     >
       {/* Hero */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
@@ -157,13 +158,22 @@ export default function Dashboard() {
           </h1>
           <p className="text-textmuted font-medium">Here's what's happening with your campaigns today.</p>
         </div>
-        <button
-          onClick={() => navigate('/analyze')}
-          className="inline-flex items-center gap-2 btn-primary"
-        >
-          <Zap size={18} />
-          Run New Analysis
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={exportReportAsPDF}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-bgbase hover:bg-bgpanel border border-borderwarm rounded-xl text-textprimary font-medium text-sm transition-colors shadow-sm"
+          >
+            <Download size={18} />
+            Export PDF
+          </button>
+          <button
+            onClick={() => navigate('/analyze')}
+            className="inline-flex items-center gap-2 btn-primary"
+          >
+            <Zap size={18} />
+            Run New Analysis
+          </button>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -258,7 +268,7 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div ref={reportRef} className="bg-transparent min-h-[500px] p-2">
+          <div className="bg-transparent min-h-[500px] p-2">
             {recentJobs.length === 0 ? (
               <p className="text-sm text-textmuted py-4 text-center">No analyses found.</p>
             ) : (
@@ -313,12 +323,12 @@ export default function Dashboard() {
                 <span className="text-xs font-medium text-textprimary">Run Analysis</span>
               </button>
               
-              <button onClick={() => navigate('/tools')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-emerald-500/5 border border-borderwarm hover:border-emerald-500/30 transition-colors gap-2 text-center group">
+              <button onClick={() => navigate('/tools', { state: { activeTab: 'landing-page' } })} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-emerald-500/5 border border-borderwarm hover:border-emerald-500/30 transition-colors gap-2 text-center group">
                 <Search size={20} className="text-emerald-500 group-hover:scale-110 transition-transform" />
                 <span className="text-xs font-medium text-textprimary">Landing Audit</span>
               </button>
 
-              <button onClick={() => navigate('/tools')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-blue-500/5 border border-borderwarm hover:border-blue-500/30 transition-colors gap-2 text-center group">
+              <button onClick={() => navigate('/tools', { state: { activeTab: 'audience' } })} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-blue-500/5 border border-borderwarm hover:border-blue-500/30 transition-colors gap-2 text-center group">
                 <Users size={20} className="text-blue-500 group-hover:scale-110 transition-transform" />
                 <span className="text-xs font-medium text-textprimary">Build Audience</span>
               </button>
