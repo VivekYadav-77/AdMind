@@ -1,4 +1,4 @@
-import { History, LayoutDashboard, LogOut, Settings, ChevronDown, Plus, Wrench, GitCompare, Moon, Sun, User as UserIcon, Zap } from 'lucide-react'
+import { History, LayoutDashboard, LogOut, Settings, ChevronDown, Plus, Wrench, FlaskConical } from 'lucide-react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useWorkspace } from '../context/WorkspaceContext'
@@ -61,7 +61,7 @@ export default function Layout() {
     { name: 'Analyze', path: '/analyze', icon: Zap },
     { name: 'History', path: '/history', icon: History },
     { name: 'AI Tools', path: '/tools', icon: Wrench },
-    { name: 'A/B Tracker', path: '/ab-tracker', icon: GitCompare },
+    { name: 'A/B Tracker', path: '/tests', icon: FlaskConical },
     { name: 'Settings', path: '/settings', icon: Settings }
   ]
 
@@ -106,10 +106,23 @@ export default function Layout() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden z-10 print:h-auto print:overflow-visible print:block bg-bgbase">
-        <header className="h-20 flex items-center justify-between px-8 shrink-0 print:hidden relative z-50 border-b border-borderwarm bg-bgpanel/50 backdrop-blur-sm">
-          {/* Logo / Left space if needed (we removed title here) */}
-          <div className="flex-1"></div>
+      <main className="flex-1 flex flex-col h-screen overflow-hidden z-10">
+        <header className="h-24 flex items-center justify-between px-10 shrink-0">
+          <h1 className="text-2xl font-bold text-white tracking-tight">
+            {location.pathname === '/' 
+              ? 'Campaign Dashboard' 
+              : location.pathname.startsWith('/history/')
+              ? 'Detailed Analysis Report'
+              : location.pathname === '/history'
+              ? 'Analysis History'
+              : location.pathname.startsWith('/tools')
+              ? 'AI Marketing Tools'
+              : location.pathname.startsWith('/tests')
+              ? 'A/B Test Tracking'
+              : location.pathname === '/settings'
+              ? 'System Settings'
+              : 'Overview'}
+          </h1>
           
           <div className="flex items-center gap-4">
             <button

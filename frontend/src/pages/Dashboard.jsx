@@ -18,9 +18,71 @@ function formatMoney(value) {
 }
 
 export default function Dashboard() {
-  const { user } = useAuth()
-  const { activeWorkspace } = useWorkspace()
-  const navigate = useNavigate()
+  const [stage, setStage] = useState('upload')
+  const [agentStatus, setAgentStatus] = useState(initialAgentStatus)
+  const [results, setResults] = useState(initialResults)
+  const [csvStats, setCsvStats] = useState(null)
+  const [error, setError] = useState(null)
+  const [waitingForBackend, setWaitingForBackend] = useState(false)
+  const [activeTab, setActiveTab] = useState('audit')
+  const [jobId, setJobId] = useState(null)
+  
+  const reportRef = useRef(null)
+
+  const reset = () => {
+    setStage('upload')
+    setAgentStatus(initialAgentStatus)
+    setResults(initialResults)
+    setCsvStats(null)
+    setError(null)
+    setWaitingForBackend(false)
+    setActiveTab('audit')
+    setJobId(null)
+  }
+
+  const handleEvent = (event, data) => {
+    switch (event) {
+      case 'csv_parsed':
+        setWaitingForBackend(false)
+        setCsvStats(data)
+        break
+      case 'agent_start':
+        setWaitingForBackend(false)
+        setAgentStatus((prev) => ({ ...prev, [data.agent]: 'running' }))
+        break
+      case 'agent_done': {
+        const resultKey = data.agent === 'auditor' ? 'audit' : data.agent === 'strategist' ? 'strategy' : 'copy'
+        setAgentStatus((prev) => ({ ...prev, [data.agent]: 'done' }))
+        setResults((prev) => ({ ...prev, [resultKey]: data.result }))
+        break
+      }
+      case 'complete':
+        setStage('done')
+        break
+      case 'error':
+        setError(data.message || 'Analysis failed')
+        setStage('error')
+        break
+      default:
+        break
+    }
+  }
+
+  const runAnalysis = async (file) => {
+    // Let the backend handle CSV validation to support column aliases
+
+    setStage('running')
+    setAgentStatus(initialAgentStatus)
+    setResults(initialResults)
+    setCsvStats(null)
+    setError(null)
+    setWaitingForBackend(true)
+
+    try {
+      // Start background job
+      const response = await API.analyzeCSV(file)
+      const { job_id } = response
+      setJobId(job_id)
 
   const [loading, setLoading] = useState(true)
   const [trends, setTrends] = useState([])
@@ -92,24 +154,37 @@ export default function Dashboard() {
     Efficiency: t.efficiency
   }))
 
-  const showChart = chartData.length > 0
+    // Inject White-Label Branding
+    const agencyName = localStorage.getItem('agencyName')
+    const logoUrl = localStorage.getItem('logoUrl')
+    
+    let brandingDiv = null
+    if (agencyName || logoUrl) {
+      brandingDiv = document.createElement('div')
+      brandingDiv.className = 'flex items-center gap-4 mb-8 p-6 bg-slate-900 rounded-2xl border border-white/10'
+      if (logoUrl) {
+        brandingDiv.innerHTML += `<img src="${logoUrl}" alt="Logo" class="h-12 w-auto object-contain rounded" crossorigin="anonymous" />`
+      }
+      if (agencyName) {
+        brandingDiv.innerHTML += `<h2 class="text-2xl font-bold text-white">${agencyName}</h2>`
+      }
+      element.insertBefore(brandingDiv, element.firstChild)
+    }
 
-  const getGreeting = () => {
-    const hour = new Date().getHours()
-    if (hour < 12) return 'Good morning'
-    if (hour < 18) return 'Good afternoon'
-    return 'Good evening'
-  }
+    const opt = {
+      margin: [10, 10, 10, 10], // top, left, bottom, right in mm
+      filename: 'AdMind_Report.pdf',
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }
 
-  const firstName = user?.email ? user.email.split('@')[0] : 'User'
-
-  if (loading) {
-    return (
-      <div className="flex flex-col justify-center items-center h-[50vh] gap-4">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-borderwarm border-t-brand-500"></div>
-        <p className="text-textmuted font-medium">Loading dashboard...</p>
-      </div>
-    )
+    html2pdf().set(opt).from(element).save().then(() => {
+      // Clean up branding div after PDF is generated
+      if (brandingDiv) {
+        element.removeChild(brandingDiv)
+      }
+    })
   }
 
   const runningAbTests = abTests.filter(t => t.status === 'Running')
@@ -230,14 +305,24 @@ export default function Dashboard() {
             )}
           </div>
 
-          {/* Recent Analyses */}
-          <div className="card-warm p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-serif font-bold text-textprimary">Recent Analyses</h2>
-              <Link to="/history" className="text-sm font-medium text-textmuted hover:text-textprimary flex items-center gap-1 transition-colors">
-                View All <ArrowRight size={14} />
-              </Link>
-            </div>
+          <div ref={reportRef} className="bg-transparent min-h-[500px] p-2">
+            <AnimatePresence mode="wait">
+              {activeTab === 'audit' && results.audit && (
+                <motion.div key="audit" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
+                  <AuditResults audit={results.audit} />
+                </motion.div>
+              )}
+              {activeTab === 'strategy' && results.strategy && (
+                <motion.div key="strategy" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
+                  <StrategyResults strategy={results.strategy} jobId={jobId} />
+                </motion.div>
+              )}
+              {activeTab === 'copy' && results.copy && (
+                <motion.div key="copy" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
+                  <CopyResults copy={results.copy} />
+                </motion.div>
+              )}
+            </AnimatePresence>
             
             {recentJobs.length === 0 ? (
               <p className="text-sm text-textmuted py-4 text-center">No analyses found.</p>

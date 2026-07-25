@@ -9,7 +9,7 @@ import Login from './pages/Login'
 import Signup from './pages/Signup'
 import ReportDetail from './pages/ReportDetail'
 import Settings from './pages/Settings'
-import ABTracker from './pages/ABTracker'
+import TestTracker from './pages/TestTracker'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
 import { WorkspaceProvider } from './context/WorkspaceContext'
@@ -24,32 +24,27 @@ function ProtectedRoute({ children }) {
 
 export default function App() {
   return (
-    <ToastProvider>
-      <AuthProvider>
-        <WorkspaceProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              
-              <Route path="/" element={
-                <ProtectedRoute>
-                  <Layout />
-                </ProtectedRoute>
-              }>
-                <Route index element={<Dashboard />} />
-                <Route path="analyze" element={<Analyze />} />
-                <Route path="history" element={<History />} />
-                <Route path="history/:id" element={<ReportDetail />} />
-                <Route path="tools" element={<Tools />} />
-                <Route path="ab-tracker" element={<ABTracker />} />
-                <Route path="settings" element={<Settings />} />
-                <Route path="*" element={<Dashboard />} />
-              </Route>
-            </Routes>
-          </BrowserRouter>
-        </WorkspaceProvider>
-      </AuthProvider>
-    </ToastProvider>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<Dashboard />} />
+            <Route path="history" element={<History />} />
+            <Route path="history/:id" element={<ReportDetail />} />
+            <Route path="tools" element={<Tools />} />
+            <Route path="tests" element={<TestTracker />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="*" element={<Dashboard />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   )
 }

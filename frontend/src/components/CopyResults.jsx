@@ -2,18 +2,6 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Beaker, Sparkles, Target, Zap, Globe, MoreHorizontal, ThumbsUp, MessageCircle, Share2, ExternalLink, Loader2 } from 'lucide-react'
 
-import { API_BASE_URL } from '../services/api'
-import { imageQueue } from '../services/imageQueue'
-// Helper to create a consistent seed for Pollinations from the prompt
-const hashString = (str) => {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) - hash) + str.charCodeAt(i);
-    hash |= 0; // Convert to 32bit integer
-  }
-  return hash;
-}
-
 function AdMockup({ testData, type, label, visualPrompt }) {
   const isA = type === 'A'
   const accentColor = isA ? 'blue' : 'amber'
@@ -97,6 +85,21 @@ function AdMockup({ testData, type, label, visualPrompt }) {
           <MoreHorizontal size={20} />
         </button>
       </div>
+
+      {/* Ad Image from Pollinations */}
+      {visualPrompt && (
+        <div className="w-full aspect-video bg-slate-800 overflow-hidden relative border-b border-white/5">
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-slate-500 text-xs font-bold animate-pulse">Generating AI Creative...</span>
+          </div>
+          <img 
+            src={`https://image.pollinations.ai/prompt/${encodeURIComponent(visualPrompt)}`} 
+            alt="AI Generated Ad Creative" 
+            className="w-full h-full object-cover relative z-10 transition-opacity duration-500"
+            loading="lazy"
+          />
+        </div>
+      )}
 
       {/* Ad Text */}
       <div className="p-5 flex-1 relative">
