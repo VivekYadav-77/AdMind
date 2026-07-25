@@ -229,7 +229,7 @@ export default function Dashboard() {
               <h2 className="text-lg font-serif font-bold text-textprimary">Performance Trend</h2>
             </div>
             
-            {!showChart ? (
+            {chartData.length === 0 ? (
               <div className="h-64 flex flex-col items-center justify-center text-center bg-bgbase rounded-xl border border-dashed border-borderwarm p-6">
                 <BarChart3 size={32} className="text-textmuted mb-3 opacity-50" />
                 <h3 className="text-textprimary font-medium mb-1">No data available yet</h3>
@@ -261,24 +261,6 @@ export default function Dashboard() {
           </div>
 
           <div ref={reportRef} className="bg-transparent min-h-[500px] p-2">
-            <AnimatePresence mode="wait">
-              {activeTab === 'audit' && results.audit && (
-                <motion.div key="audit" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
-                  <AuditResults audit={results.audit} />
-                </motion.div>
-              )}
-              {activeTab === 'strategy' && results.strategy && (
-                <motion.div key="strategy" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
-                  <StrategyResults strategy={results.strategy} jobId={jobId} />
-                </motion.div>
-              )}
-              {activeTab === 'copy' && results.copy && (
-                <motion.div key="copy" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
-                  <CopyResults copy={results.copy} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-            
             {recentJobs.length === 0 ? (
               <p className="text-sm text-textmuted py-4 text-center">No analyses found.</p>
             ) : (

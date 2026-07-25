@@ -25,26 +25,30 @@ function ProtectedRoute({ children }) {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
-          
-          <Route path="/" element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }>
-            <Route index element={<Dashboard />} />
-            <Route path="history" element={<History />} />
-            <Route path="history/:id" element={<ReportDetail />} />
-            <Route path="tools" element={<Tools />} />
-            <Route path="tests" element={<TestTracker />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="*" element={<Dashboard />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+      <ToastProvider>
+        <WorkspaceProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              
+              <Route path="/" element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<Dashboard />} />
+                <Route path="history" element={<History />} />
+                <Route path="history/:id" element={<ReportDetail />} />
+                <Route path="tools" element={<Tools />} />
+                <Route path="tests" element={<TestTracker />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="*" element={<Dashboard />} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        </WorkspaceProvider>
+      </ToastProvider>
     </AuthProvider>
   )
 }

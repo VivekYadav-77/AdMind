@@ -26,6 +26,7 @@ export default function Settings() {
 
 
   const [passwordStatus, setPasswordStatus] = useState(null) // { type: 'success'|'error', message: '' }
+  const [passwordLoading, setPasswordLoading] = useState(false)
   const [settingsSaved, setSettingsSaved] = useState(false)
 
   const [branding, setBranding] = useState(() => ({
