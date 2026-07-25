@@ -1,22 +1,21 @@
-import { useState } from 'react'
-import { User, Shield, Sliders, Cpu, KeyRound, Check, AlertCircle, Briefcase } from 'lucide-react'
+﻿import { useState, useEffect } from 'react'
+import { Shield, Cpu, KeyRound, Check, AlertCircle, Briefcase, Wifi, WifiOff } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
+import { API } from '../services/api'
 
 export default function Settings() {
   const { user } = useAuth()
-  
-  // States for Settings forms
+
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   })
-  
+
   const [aiSettings, setAiSettings] = useState(() => ({
     model: localStorage.getItem('ai_model') || 'gemini-1.5-pro',
     temperature: parseFloat(localStorage.getItem('ai_temperature')) || 0.2,
-    maxTokens: 2048
   }))
 
   const [thresholds, setThresholds] = useState(() => ({
@@ -24,18 +23,43 @@ export default function Settings() {
     minRoasTarget: parseFloat(localStorage.getItem('threshold_minRoas')) || 2.5
   }))
 
-  const [passwordStatus, setPasswordStatus] = useState(null) // { type: 'success'|'error', message: '' }
+  const [passwordStatus, setPasswordStatus] = useState(null)
+  const [passwordLoading, setPasswordLoading] = useState(false)
   const [settingsSaved, setSettingsSaved] = useState(false)
-  
-  const [branding, setBranding] = useState(() => {
-    return {
-      agencyName: localStorage.getItem('agencyName') || '',
-      logoUrl: localStorage.getItem('logoUrl') || ''
-    }
-  })
+
+  const [branding, setBranding] = useState(() => ({
+    agencyName: localStorage.getItem('agencyName') || '',
+    logoUrl: localStorage.getItem('logoUrl') || ''
+  }))
   const [brandingSaved, setBrandingSaved] = useState(false)
 
-  const handlePasswordSubmit = (e) => {
+  const [apiStatus, setApiStatus] = useState('checking')
+
+  const memberSince = (() => {
+    if (user?.iat) {
+      return new Date(user.iat * 1000).toLocaleDateString('en-US', {
+        month: 'short',
+        year: 'numeric'
+      })
+    }
+    return 'N/A'
+  })()
+
+  useEffect(() => {
+    let cancelled = false
+    const checkApiStatus = async () => {
+      try {
+        await API.getWorkspaces()
+        if (!cancelled) setApiStatus('online')
+      } catch {
+        if (!cancelled) setApiStatus('offline')
+      }
+    }
+    checkApiStatus()
+    return () => { cancelled = true }
+  }, [])
+
+  const handlePasswordSubmit = async (e) => {
     e.preventDefault()
     if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
       setPasswordStatus({ type: 'error', message: 'All password fields are required.' })
@@ -45,14 +69,22 @@ export default function Settings() {
       setPasswordStatus({ type: 'error', message: 'New passwords do not match.' })
       return
     }
-    
-    // Simulate successful password update
-    setPasswordStatus({ type: 'success', message: 'Password updated successfully!' })
-    setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
-    
-    setTimeout(() => {
-      setPasswordStatus(null)
-    }, 4000)
+    if (passwordForm.newPassword.length < 6) {
+      setPasswordStatus({ type: 'error', message: 'New password must be at least 6 characters.' })
+      return
+    }
+    setPasswordLoading(true)
+    setPasswordStatus(null)
+    try {
+      await API.changePassword(passwordForm.currentPassword, passwordForm.newPassword)
+      setPasswordStatus({ type: 'success', message: 'Password updated successfully!' })
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
+      setTimeout(() => setPasswordStatus(null), 4000)
+    } catch (err) {
+      setPasswordStatus({ type: 'error', message: err.message || 'Failed to update password.' })
+    } finally {
+      setPasswordLoading(false)
+    }
   }
 
   const handleSaveSettings = () => {
@@ -61,18 +93,14 @@ export default function Settings() {
     localStorage.setItem('threshold_wasteAlert', thresholds.wasteAlertPercent.toString())
     localStorage.setItem('threshold_minRoas', thresholds.minRoasTarget.toString())
     setSettingsSaved(true)
-    setTimeout(() => {
-      setSettingsSaved(false)
-    }, 3000)
+    setTimeout(() => setSettingsSaved(false), 3000)
   }
 
   const handleSaveBranding = () => {
     localStorage.setItem('agencyName', branding.agencyName)
     localStorage.setItem('logoUrl', branding.logoUrl)
     setBrandingSaved(true)
-    setTimeout(() => {
-      setBrandingSaved(false)
-    }, 3000)
+    setTimeout(() => setBrandingSaved(false), 3000)
   }
 
   return (
@@ -87,34 +115,50 @@ export default function Settings() {
       </div>
 
       <div className="grid md:grid-cols-3 gap-8">
-        
-        {/* Left side: Profile & Account Information */}
+
+        {/* Left: Profile Card */}
         <div className="md:col-span-1 space-y-6">
           <div className="bg-bgpanel rounded-2xl p-6 border border-borderwarm shadow-sm flex flex-col items-center text-center">
             <div className="relative mb-4">
               <div className="h-20 w-20 rounded-full bg-brand-50 dark:bg-brand-500/10 flex items-center justify-center text-brand-500 text-3xl font-bold shadow-sm border border-brand-100 dark:border-brand-500/20">
                 {user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
               </div>
-              <div className="absolute bottom-0 right-0 h-5 w-5 bg-emerald-500 rounded-full border-4 border-bgpanel" />
+              <div className={`absolute bottom-0 right-0 h-5 w-5 rounded-full border-4 border-bgpanel transition-colors ${
+                apiStatus === 'online' ? 'bg-emerald-500' : apiStatus === 'offline' ? 'bg-red-500' : 'bg-amber-400 animate-pulse'
+              }`} />
             </div>
-            
+
             <h2 className="text-xl font-bold text-textprimary tracking-tight">{user?.email || 'User Account'}</h2>
-            <p className="text-sm text-textmuted mt-1">Enterprise Developer</p>
-            
+
             <div className="mt-6 pt-6 border-t border-borderwarm w-full space-y-3 text-left text-sm">
-              <div className="flex justify-between">
-                <span className="text-textmuted">Account Tier</span>
-                <span className="text-brand-400 font-bold bg-brand-500/10 px-2 py-0.5 rounded-md text-xs">Premium Pro</span>
+              <div className="flex justify-between items-center">
+                <span className="text-textmuted">Member Since</span>
+                <span className="text-textsecondary font-medium">{memberSince}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-textmuted">Database Engine</span>
-                <span className="text-textsecondary">SQLite v3</span>
+              <div className="flex justify-between items-center">
+                <span className="text-textmuted">Plan</span>
+                <span className="text-textmuted font-medium bg-white/5 px-2 py-0.5 rounded-md text-xs border border-borderwarm">Free Plan</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-textmuted">API Connection</span>
-                <span className="text-emerald-400 font-medium flex items-center gap-1">
-                  Active
-                </span>
+              <div className="flex justify-between items-center">
+                <span className="text-textmuted">API Status</span>
+                {apiStatus === 'checking' && (
+                  <span className="text-amber-400 font-medium flex items-center gap-1.5 text-xs">
+                    <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse inline-block" />
+                    Checking
+                  </span>
+                )}
+                {apiStatus === 'online' && (
+                  <span className="text-emerald-400 font-medium flex items-center gap-1.5 text-xs">
+                    <Wifi size={12} />
+                    Connected
+                  </span>
+                )}
+                {apiStatus === 'offline' && (
+                  <span className="text-red-400 font-medium flex items-center gap-1.5 text-xs">
+                    <WifiOff size={12} />
+                    Unreachable
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -130,16 +174,16 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Right side: App & Model Settings */}
+        {/* Right: App Settings */}
         <div className="md:col-span-2 space-y-6">
-          
-          {/* Section: AI Configurations */}
+
+          {/* AI Configurations */}
           <div className="bg-bgpanel rounded-2xl p-8 border border-borderwarm shadow-sm">
             <h3 className="text-lg font-bold text-textprimary mb-6 flex items-center gap-2">
               <Cpu size={20} className="text-amber-400" />
               AI Analysis Configurations
             </h3>
-            
+
             <div className="space-y-6">
               <div>
                 <label className="block text-sm font-semibold text-textsecondary mb-2">Gemini Analysis Model</label>
@@ -228,13 +272,13 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Section: White-Label Reporting */}
+          {/* White-Label Reporting */}
           <div className="bg-bgpanel rounded-2xl p-8 border border-borderwarm shadow-sm">
             <h3 className="text-lg font-bold text-textprimary mb-6 flex items-center gap-2">
               <Briefcase size={20} className="text-emerald-400" />
               White-Label Reporting
             </h3>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-textsecondary mb-1.5">Agency Name</label>
@@ -280,7 +324,7 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Section: Change Password */}
+          {/* Change Password */}
           <div className="bg-bgpanel rounded-2xl p-8 border border-borderwarm shadow-sm">
             <h3 className="text-lg font-bold text-textprimary mb-6 flex items-center gap-2">
               <KeyRound size={20} className="text-brand-400" />
@@ -324,7 +368,7 @@ export default function Settings() {
                     value={passwordForm.newPassword}
                     onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
                     className="w-full bg-bgbase border border-borderwarm rounded-xl px-4 py-2.5 text-sm text-textprimary focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all"
-                    placeholder="Minimum 6 characters"
+                    placeholder="••••••••"
                   />
                 </div>
                 <div>
@@ -334,7 +378,7 @@ export default function Settings() {
                     value={passwordForm.confirmPassword}
                     onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
                     className="w-full bg-bgbase border border-borderwarm rounded-xl px-4 py-2.5 text-sm text-textprimary focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all"
-                    placeholder="Confirm new password"
+                    placeholder="••••••••"
                   />
                 </div>
               </div>
@@ -344,16 +388,16 @@ export default function Settings() {
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.95 }}
                   type="submit"
-                  className="btn-primary"
+                  disabled={passwordLoading}
+                  className="btn-primary disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                  Update Credentials
+                  {passwordLoading ? 'Updating…' : 'Update Credentials'}
                 </motion.button>
               </div>
             </form>
           </div>
 
         </div>
-
       </div>
     </motion.div>
   )

@@ -243,5 +243,22 @@ export const API = {
       throw new Error(errorMessage)
     }
     return res.json()
+  },
+
+  changePassword: async (currentPassword, newPassword) => {
+    const res = await fetch(apiUrl('/change-password'), {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ current_password: currentPassword, new_password: newPassword })
+    })
+    if (!res.ok) {
+      let errorMessage = 'Failed to update password'
+      try {
+        const data = await res.json()
+        errorMessage = data.detail || errorMessage
+      } catch (e) {}
+      throw new Error(errorMessage)
+    }
+    return res.json()
   }
 }

@@ -21,7 +21,7 @@ from agents.audience_builder import run_audience_builder
 from agents.competitor_teardown import run_competitor_teardown
 from db.database import Base, engine, get_db, SessionLocal
 from db.models import AnalysisJob, User, Workspace, WorkspaceMember, ChatMessage
-from models.schemas import PipelineResult, UserCreate, Token
+from models.schemas import PipelineResult, UserCreate, Token, ChangePasswordRequest
 from services.csv_parser import parse_csv
 from services.gemini import GeminiError, call_gemini_chat
 from services.image_generator import image_manager
@@ -192,6 +192,21 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     
     access_token = create_access_token(data={"sub": user.email}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@app.post("/change-password")
+def change_password(
+    req: ChangePasswordRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if not verify_password(req.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    if len(req.new_password) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
+    current_user.hashed_password = get_password_hash(req.new_password)
+    db.commit()
+    return {"message": "Password updated successfully"}
 
 
 @app.get("/sample-csv")
