@@ -21,6 +21,7 @@ function formatMoney(value) {
 export default function Dashboard() {
   const { user } = useAuth()
   const { activeWorkspace } = useWorkspace()
+  const navigate = useNavigate()
   
   const firstName = user?.email?.split('@')[0] || 'User'
   const getGreeting = () => {
@@ -158,7 +159,7 @@ export default function Dashboard() {
           </h1>
           <p className="text-textmuted font-medium">Here's what's happening with your campaigns today.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3" data-html2canvas-ignore="true">
           <button
             onClick={exportReportAsPDF}
             className="inline-flex items-center gap-2 px-4 py-2 bg-bgbase hover:bg-bgpanel border border-borderwarm rounded-xl text-textprimary font-medium text-sm transition-colors shadow-sm"
