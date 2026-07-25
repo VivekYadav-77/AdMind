@@ -75,11 +75,9 @@ export default function Dashboard() {
           avgEfficiency
         })
         
-        // Local AB tests
-        const savedTests = localStorage.getItem('ab_tests')
-        if (savedTests) {
-          setAbTests(JSON.parse(savedTests))
-        }
+        // Fetch active AB tests
+        const tests = await API.getAbTests()
+        setAbTests(tests || [])
 
       } catch (err) {
         console.error("Failed to load dashboard data", err)
@@ -142,7 +140,7 @@ export default function Dashboard() {
     }
   }
 
-  const runningAbTests = abTests.filter(t => t.status === 'Running')
+  const runningAbTests = abTests.filter(t => t.status === 'running')
 
   return (
     <motion.div 
@@ -325,7 +323,7 @@ export default function Dashboard() {
                 <span className="text-xs font-medium text-textprimary">Build Audience</span>
               </button>
 
-              <button onClick={() => navigate('/ab-tracker')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-purple-500/5 border border-borderwarm hover:border-purple-500/30 transition-colors gap-2 text-center group">
+              <button onClick={() => navigate('/tests')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-purple-500/5 border border-borderwarm hover:border-purple-500/30 transition-colors gap-2 text-center group">
                 <GitCompare size={20} className="text-purple-500 group-hover:scale-110 transition-transform" />
                 <span className="text-xs font-medium text-textprimary">A/B Tracker</span>
               </button>
@@ -345,13 +343,13 @@ export default function Dashboard() {
               <div className="text-center py-6 px-4 bg-bgbase rounded-xl border border-dashed border-borderwarm">
                 <GitCompare size={24} className="mx-auto text-textmuted mb-2 opacity-50" />
                 <p className="text-sm text-textmuted">No active tests.</p>
-                <button onClick={() => navigate('/ab-tracker')} className="mt-2 text-xs font-medium text-brand-500 hover:text-brand-600">Start a Test →</button>
+                <button onClick={() => navigate('/tests')} className="mt-2 text-xs font-medium text-brand-500 hover:text-brand-600">Start a Test →</button>
               </div>
             ) : (
               <div className="space-y-3 mb-4">
                 {runningAbTests.slice(0, 3).map(test => (
                   <div key={test.id} className="p-3 bg-bgbase rounded-lg border border-borderwarm text-sm">
-                    <div className="font-semibold text-textprimary truncate">{test.name}</div>
+                    <div className="font-semibold text-textprimary truncate">{test.test_name}</div>
                     <div className="text-xs text-textmuted flex items-center gap-2 mt-1">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                       Gathering data...
@@ -363,7 +361,7 @@ export default function Dashboard() {
             
             {runningAbTests.length > 0 && (
               <button 
-                onClick={() => navigate('/ab-tracker')} 
+                onClick={() => navigate('/tests')} 
                 className="w-full py-2.5 text-sm font-medium text-textprimary bg-bgbase hover:bg-bgpanelhover rounded-xl border border-borderwarm transition-colors"
               >
                 Manage Tests

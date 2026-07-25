@@ -38,6 +38,7 @@ export default function App() {
                 </ProtectedRoute>
               }>
                 <Route index element={<Dashboard />} />
+                <Route path="analyze" element={<Analyze />} />
                 <Route path="history" element={<History />} />
                 <Route path="history/:id" element={<ReportDetail />} />
                 <Route path="tools" element={<Tools />} />
