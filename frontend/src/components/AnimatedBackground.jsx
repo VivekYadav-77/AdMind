@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useEffect, useState } from 'react'
 import KiteSVG from './svg/KiteSVG'
 import {
   BarChartSVG,
@@ -11,13 +11,14 @@ import {
   TrendArrowSVG
 } from './svg/AdAnalyticsSVGs'
 
-const AdCardFloat = ({ metric, value, x, y, delay, duration }) => (
+const AdCardFloat = ({ metric, value, x, y, delay, duration, mouseOffset }) => (
   <div 
-    className="absolute bg-animated-card rounded-xl px-4 py-3 flex flex-col items-center justify-center font-sans border border-borderwarm backdrop-blur-sm shadow-sm"
+    className="absolute bg-animated-card rounded-xl px-4 py-3 flex flex-col items-center justify-center font-sans border border-borderwarm shadow-sm transition-transform duration-300 ease-out"
     style={{
       left: `${x}%`,
       top: `${y}%`,
       animation: `icon-float ${duration}s ease-in-out ${delay}s infinite alternate`,
+      transform: `translate(${mouseOffset.x * 0.05}px, ${mouseOffset.y * 0.05}px)`
     }}
   >
     <span className="text-[10px] font-bold uppercase tracking-wider text-textmuted">{metric}</span>
@@ -30,69 +31,84 @@ const ICONS = [
   MegaphoneSVG, PieChartSVG, PercentBadgeSVG, TrendArrowSVG
 ]
 
+// Pre-defined scattered positions for a balanced look without overlapping
+const FIXED_POSITIONS = [
+  { x: 10, y: 15 }, { x: 85, y: 20 }, { x: 15, y: 80 }, { x: 80, y: 85 },
+  { x: 30, y: 10 }, { x: 70, y: 15 }, { x: 25, y: 85 }, { x: 65, y: 90 },
+]
+
+const FIXED_CARDS = [
+  { metric: 'CTR', value: '4.2%', x: 15, y: 35 },
+  { metric: 'ROI', value: '187%', x: 80, y: 60 },
+  { metric: 'Imp.', value: '2.1M', x: 50, y: 85 }
+]
+
 export default function AnimatedBackground({ density = 'low', showKite = false }) {
-  // Memoize random positions to avoid re-renders causing jumps
-  const backgroundElements = useMemo(() => {
-    let iconCount = 4
-    if (density === 'full') iconCount = 8
-    if (density === 'minimal') iconCount = 2
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-    const icons = Array.from({ length: iconCount }).map((_, i) => {
-      const Icon = ICONS[i % ICONS.length]
-      const x = Math.floor(Math.random() * 90) + 5
-      const y = Math.floor(Math.random() * 90) + 5
-      const delay = Math.random() * -20 // random start point in animation
-      const duration = Math.floor(Math.random() * 10) + 15 // 15-25s
-      const reverse = Math.random() > 0.5
-      return { id: `icon-${i}`, Component: Icon, x, y, delay, duration, reverse }
-    })
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      // Calculate offset from center of screen
+      const x = e.clientX - window.innerWidth / 2;
+      const y = e.clientY - window.innerHeight / 2;
+      setMousePosition({ x, y });
+    };
 
-    let cardCount = 0
-    if (density === 'full') cardCount = 3
-    if (density === 'low') cardCount = 1
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
 
-    const cardData = [
-      { metric: 'CTR', value: '4.2%' },
-      { metric: 'ROI', value: '187%' },
-      { metric: 'Imp.', value: '2.1M' }
-    ]
+  let iconCount = 4
+  if (density === 'full') iconCount = 8
+  if (density === 'minimal') iconCount = 2
 
-    const cards = Array.from({ length: cardCount }).map((_, i) => {
-      const x = Math.floor(Math.random() * 80) + 10
-      const y = Math.floor(Math.random() * 80) + 10
-      const delay = Math.random() * -20
-      const duration = Math.floor(Math.random() * 8) + 12 // 12-20s
-      return { id: `card-${i}`, ...cardData[i % cardData.length], x, y, delay, duration }
-    })
+  const icons = Array.from({ length: iconCount }).map((_, i) => {
+    const Icon = ICONS[i % ICONS.length]
+    const pos = FIXED_POSITIONS[i % FIXED_POSITIONS.length]
+    // Use index to seed delay and duration for consistent rendering
+    const delay = -(i * 2.5)
+    const duration = 15 + (i % 3) * 3
+    const reverse = i % 2 === 0
+    return { id: `icon-${i}`, Component: Icon, x: pos.x, y: pos.y, delay, duration, reverse }
+  })
 
-    const kiteConfig = showKite ? {
-      x: Math.floor(Math.random() * 60) + 10,
-      y: Math.floor(Math.random() * 50) + 10
-    } : null
+  let cardCount = 0
+  if (density === 'full') cardCount = 3
+  if (density === 'low') cardCount = 1
 
-    return { icons, cards, kiteConfig }
-  }, [density, showKite])
+  const cards = FIXED_CARDS.slice(0, cardCount).map((card, i) => ({
+    id: `card-${i}`, 
+    ...card, 
+    delay: -(i * 4), 
+    duration: 12 + (i * 2) 
+  }))
+
+  const kiteConfig = showKite ? { x: 65, y: 25 } : null
 
   return (
     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-animated-layer">
-      {backgroundElements.icons.map((item) => {
+      {icons.map((item, index) => {
         const animationName = item.reverse ? 'icon-float-reverse' : 'icon-float'
+        // Different parallax depth based on index
+        const depth = 0.02 + (index % 3) * 0.015;
+        
         return (
           <div
             key={item.id}
-            className="absolute bg-svg-icon"
+            className="absolute bg-svg-icon transition-transform duration-300 ease-out"
             style={{
               left: `${item.x}%`,
               top: `${item.y}%`,
-              animation: `${animationName} ${item.duration}s ease-in-out ${item.delay}s infinite alternate`
+              animation: `${animationName} ${item.duration}s ease-in-out ${item.delay}s infinite alternate`,
+              transform: `translate(${mousePosition.x * depth}px, ${mousePosition.y * depth}px)`
             }}
           >
-            <item.Component className="w-12 h-12" />
+            <item.Component className="w-16 h-16 md:w-20 md:h-20" />
           </div>
         )
       })}
 
-      {backgroundElements.cards.map((item) => (
+      {cards.map((item) => (
         <AdCardFloat 
           key={item.id} 
           metric={item.metric} 
@@ -101,15 +117,17 @@ export default function AnimatedBackground({ density = 'low', showKite = false }
           y={item.y} 
           delay={item.delay} 
           duration={item.duration} 
+          mouseOffset={mousePosition}
         />
       ))}
 
-      {backgroundElements.kiteConfig && (
+      {kiteConfig && (
         <div 
-          className="absolute bg-kite"
+          className="absolute bg-kite transition-transform duration-500 ease-out"
           style={{
-            left: `${backgroundElements.kiteConfig.x}%`,
-            top: `${backgroundElements.kiteConfig.y}%`,
+            left: `${kiteConfig.x}%`,
+            top: `${kiteConfig.y}%`,
+            transform: `translate(${mousePosition.x * 0.01}px, ${mousePosition.y * 0.01}px)`
           }}
         >
           <KiteSVG />
