@@ -21,7 +21,7 @@ export default function Signup() {
     try {
       const data = await API.register(email, password)
       login(data.access_token)
-      navigate('/')
+      navigate('/app')
     } catch (err) {
       setError(err.message)
     } finally {

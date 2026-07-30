@@ -58,12 +58,12 @@ export default function Layout() {
   }
 
   const navItems = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-    { name: 'Analyze', path: '/analyze', icon: Zap },
-    { name: 'History', path: '/history', icon: History },
-    { name: 'AI Tools', path: '/tools', icon: Wrench },
-    { name: 'A/B Tracker', path: '/tests', icon: FlaskConical },
-    { name: 'Settings', path: '/settings', icon: Settings }
+    { name: 'Dashboard', path: '/app', icon: LayoutDashboard },
+    { name: 'Analyze', path: '/app/analyze', icon: Zap },
+    { name: 'History', path: '/app/history', icon: History },
+    { name: 'AI Tools', path: '/app/tools', icon: Wrench },
+    { name: 'A/B Tracker', path: '/app/tests', icon: FlaskConical },
+    { name: 'Settings', path: '/app/settings', icon: Settings }
   ]
 
   const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : 'U'
@@ -85,8 +85,8 @@ export default function Layout() {
         
         <nav className="flex-1 mt-8 px-4 space-y-2 relative z-10">
           {navItems.map((item) => {
-            const isActive = item.path === '/' 
-              ? location.pathname === '/' 
+            const isActive = item.path === '/app' 
+              ? location.pathname === '/app' 
               : location.pathname.startsWith(item.path)
             return (
               <Link
@@ -111,17 +111,17 @@ export default function Layout() {
       <main className="flex-1 flex flex-col h-screen overflow-hidden z-10">
         <header className="h-24 flex items-center justify-between px-10 shrink-0">
           <h1 className="text-2xl font-bold text-white tracking-tight">
-            {location.pathname === '/' 
+            {location.pathname === '/app' 
               ? 'Campaign Dashboard' 
-              : location.pathname.startsWith('/history/')
+              : location.pathname.startsWith('/app/history/')
               ? 'Detailed Analysis Report'
-              : location.pathname === '/history'
+              : location.pathname === '/app/history'
               ? 'Analysis History'
-              : location.pathname.startsWith('/tools')
+              : location.pathname.startsWith('/app/tools')
               ? 'AI Marketing Tools'
-              : location.pathname.startsWith('/tests')
+              : location.pathname.startsWith('/app/tests')
               ? 'A/B Test Tracking'
-              : location.pathname === '/settings'
+              : location.pathname === '/app/settings'
               ? 'System Settings'
               : 'Overview'}
           </h1>

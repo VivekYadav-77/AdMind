@@ -10,6 +10,7 @@ import Signup from './pages/Signup'
 import ReportDetail from './pages/ReportDetail'
 import Settings from './pages/Settings'
 import TestTracker from './pages/TestTracker'
+import LandingPage from './pages/LandingPage'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
 import { WorkspaceProvider } from './context/WorkspaceContext'
@@ -22,6 +23,14 @@ function ProtectedRoute({ children }) {
   return children
 }
 
+function PublicOnlyRoute({ children }) {
+  const { isAuthenticated } = useAuth()
+  if (isAuthenticated) {
+    return <Navigate to="/app" replace />
+  }
+  return children
+}
+
 export default function App() {
   return (
     <AuthProvider>
@@ -29,10 +38,14 @@ export default function App() {
         <WorkspaceProvider>
           <BrowserRouter>
             <Routes>
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
+              {/* Public Landing Page */}
+              <Route path="/" element={<PublicOnlyRoute><LandingPage /></PublicOnlyRoute>} />
               
-              <Route path="/" element={
+              <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
+              <Route path="/signup" element={<PublicOnlyRoute><Signup /></PublicOnlyRoute>} />
+              
+              {/* Protected App Routes */}
+              <Route path="/app" element={
                 <ProtectedRoute>
                   <Layout />
                 </ProtectedRoute>
@@ -46,6 +59,8 @@ export default function App() {
                 <Route path="settings" element={<Settings />} />
                 <Route path="*" element={<Dashboard />} />
               </Route>
+              
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </BrowserRouter>
         </WorkspaceProvider>
