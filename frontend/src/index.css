@@ -4,9 +4,9 @@
 
 @layer base {
   :root {
-    --bg-base: #FAFAFA;
+    --bg-base: #F4F4F5;
     --bg-panel: #FFFFFF;
-    --bg-panel-hover: #F4F4F5;
+    --bg-panel-hover: #E4E4E7;
     --text-primary: #18181B;
     --text-secondary: #3F3F46;
     --text-muted: #71717A;
@@ -51,15 +51,15 @@
 
 /* Panel utilities - Clean, solid */
 .glass {
-  @apply bg-bgpanel border border-borderwarm shadow-lg;
+  @apply bg-bgpanel border border-borderwarm shadow-xl;
 }
 
 .glass-panel {
-  @apply bg-bgpanel border border-borderwarm shadow-md;
+  @apply bg-bgpanel border border-borderwarm shadow-lg;
 }
 
 .card-warm {
-  @apply bg-bgpanel border border-borderwarm rounded-2xl transition-all hover:border-brand-500/50 hover:shadow-md;
+  @apply bg-bgpanel border border-borderwarm rounded-2xl transition-all hover:border-brand-500/50 shadow-md hover:shadow-xl;
 }
 
 .glow-text {
@@ -137,9 +137,9 @@
 
 /* Subtle, elegant styling for the background SVGs */
 .bg-svg-icon {
-  color: var(--text-muted);
-  opacity: 0.15;
-  filter: drop-shadow(0 0 0 rgba(0,0,0,0));
+  color: var(--text-secondary);
+  opacity: 0.12;
+  filter: drop-shadow(0 0 2px rgba(0,0,0,0.02));
   transition: all 0.5s ease;
 }
 
@@ -167,8 +167,9 @@
 }
 
 .bg-animated-card {
-  opacity: 0.4;
-  backdrop-filter: blur(4px);
+  background: rgba(255, 255, 255, 0.85);
+  opacity: 0.95;
+  backdrop-filter: blur(8px);
 }
 
 .dark .bg-animated-card {
