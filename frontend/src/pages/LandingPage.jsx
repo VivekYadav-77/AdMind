@@ -1,13 +1,16 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Zap, BarChart3, TrendingUp, Target, Megaphone, 
-  Search, ShieldCheck, Cpu, ArrowRight, CheckCircle2, Play
+  Search, ShieldCheck, Cpu, ArrowRight, CheckCircle2, Play,
+  ChevronDown, Building2, Briefcase, User, Star,
+  Check, X, FileSpreadsheet, ArrowDown, Activity, Sparkles, AlertTriangle
 } from 'lucide-react'
 
 import LandingNav from '../components/LandingNav'
 import AnimatedBackground from '../components/AnimatedBackground'
+import Logo from '../components/Logo'
 
 const FADE_UP_VARIANTS = {
   hidden: { opacity: 0, y: 30 },
@@ -16,314 +19,697 @@ const FADE_UP_VARIANTS = {
 
 const STAGGER_CONTAINER = {
   hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.2
-    }
-  }
+  visible: { opacity: 1, transition: { staggerChildren: 0.2 } }
+}
+
+// Stats Counter Component
+function StatBox({ value, label, prefix = "", suffix = "" }) {
+  return (
+    <div className="flex flex-col items-center justify-center p-6 bg-bgpanel/50 border border-borderwarm rounded-3xl backdrop-blur-sm">
+      <div className="text-4xl md:text-5xl font-bold font-serif text-brand-500 mb-2">
+        {prefix}{value}{suffix}
+      </div>
+      <div className="text-textmuted text-sm uppercase tracking-wider font-semibold">{label}</div>
+    </div>
+  )
 }
 
 export default function LandingPage() {
-  // Force dark mode for landing page to make it pop
   useEffect(() => {
     document.documentElement.classList.add('dark')
     return () => {
-      // Re-evaluate on unmount if needed, but App/Layout usually handles it
       const saved = localStorage.getItem('theme')
       if (saved !== 'dark') document.documentElement.classList.remove('dark')
     }
   }, [])
+
+  const [activeFaq, setActiveFaq] = useState(null)
+  const [isAnnual, setIsAnnual] = useState(true)
+  const [activeTab, setActiveTab] = useState('audit')
+
+  // Auto-rotate tabs in preview
+  useEffect(() => {
+    const tabs = ['audit', 'strategy', 'copy']
+    const interval = setInterval(() => {
+      setActiveTab(current => {
+        const nextIndex = (tabs.indexOf(current) + 1) % tabs.length
+        return tabs[nextIndex]
+      })
+    }, 5000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const faqs = [
+    { q: "Is my campaign data secure?", a: "Absolutely. We do not store your raw CSV data after processing. All analysis is done in memory, and your proprietary campaign data is never used to train our models." },
+    { q: "Which ad platforms do you support?", a: "Currently, AdMind is optimized for Google Ads and Meta Ads (Facebook/Instagram) CSV exports. We are actively working on adding support for TikTok and LinkedIn Ads." },
+    { q: "How is this different from native platform recommendations?", a: "Native platform recommendations are designed to increase your spend. AdMind's agents are designed to increase your profit margin by finding wasted spend that platforms want you to ignore." },
+    { q: "Can I export the ad copy rewrites?", a: "Yes! All rewritten ad copy can be exported as a CSV or copied directly to your clipboard in a format ready to be pasted into Google Ads Editor." }
+  ]
+
+  const useCases = [
+    { icon: Building2, title: "For Ad Agencies", desc: "Scale your team without hiring. Audit new client accounts in seconds, not days. Deliver white-labeled optimization reports that close deals faster." },
+    { icon: Briefcase, title: "For E-commerce Brands", desc: "Stop bleeding money on unprofitable products. AdMind instantly spots which campaigns are dragging down your overall ROAS so you can scale winners." },
+    { icon: User, title: "For Solo Media Buyers", desc: "Get an AI second opinion on your strategies. Ensure you haven't missed negative keywords or budget reallocation opportunities." }
+  ]
+
+  const testimonials = [
+    { name: "Sarah Jenkins", role: "Head of Growth, TechNova", content: "AdMind caught $2,400 in wasted spend on our Google Ads account in literally 5 seconds. It paid for itself immediately.", rating: 5 },
+    { name: "Marcus Thorne", role: "Founder, Apex Agency", content: "We use the audit feature as a lead magnet. We run prospects' data through AdMind and hand them a strategy that blows them away.", rating: 5 },
+    { name: "Elena Rostova", role: "E-com Store Owner", content: "The copywriter agent is incredible. It rewrote our underperforming Facebook ads and our CTR jumped by 42% in a week.", rating: 5 }
+  ]
 
   return (
     <div className="min-h-screen bg-bgbase text-textprimary overflow-hidden selection:bg-brand-500/30 font-sans">
       <LandingNav />
       
       {/* 1. Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center pt-20 px-6 lg:px-8 overflow-hidden">
-        {/* Animated Blobs Background */}
+      <section className="relative min-h-screen flex items-center justify-center pt-24 px-6 lg:px-8 overflow-hidden">
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           <div className="landing-blob bg-brand-500/20 w-[600px] h-[600px] top-[-10%] left-[-10%]" />
           <div className="landing-blob bg-purple-500/10 w-[500px] h-[500px] bottom-[10%] right-[-10%]" style={{ animationDelay: '-5s' }} />
           <div className="landing-blob bg-blue-500/10 w-[400px] h-[400px] top-[40%] left-[40%]" style={{ animationDelay: '-10s' }} />
         </div>
-        
-        {/* Metric Cards & Kites from AnimatedBackground (set density to low to avoid cluttering Hero text) */}
         <div className="absolute inset-0 z-0 pointer-events-none opacity-50">
           <AnimatedBackground density="minimal" showKite={true} />
         </div>
 
         <div className="relative z-10 max-w-5xl mx-auto text-center mt-12">
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={STAGGER_CONTAINER}
-          >
+          <motion.div initial="hidden" animate="visible" variants={STAGGER_CONTAINER}>
             <motion.div variants={FADE_UP_VARIANTS} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-bgpanel/50 border border-borderwarm backdrop-blur-md mb-8 shadow-sm">
-              <span className="flex h-2 w-2 rounded-full bg-brand-500 animate-pulse"></span>
-              <span className="text-sm font-medium text-textsecondary">AdMind v2.0 is live</span>
+              <Sparkles size={16} className="text-brand-500" />
+              <span className="text-sm font-medium text-textsecondary">3 AI Agents • Google Gemini • FastAPI</span>
             </motion.div>
-
-            <motion.h1 variants={FADE_UP_VARIANTS} className="text-5xl md:text-7xl font-bold tracking-tight text-textprimary mb-8 leading-tight font-serif">
+            
+            <motion.h1 variants={FADE_UP_VARIANTS} className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight text-textprimary mb-8 leading-[1.1] font-serif">
               The AI Brain Behind <br />
-              <span className="landing-gradient-text italic pr-2">Winning Ad Campaigns</span>
+              <span className="landing-gradient-text italic pr-2">Winning Campaigns</span>
             </motion.h1>
-
-            <motion.p variants={FADE_UP_VARIANTS} className="text-xl text-textmuted max-w-2xl mx-auto mb-12 leading-relaxed">
-              Stop guessing what works. Our 3-agent pipeline audits your campaigns, builds a strategy, and rewrites your copy in seconds.
+            
+            <motion.p variants={FADE_UP_VARIANTS} className="text-xl text-textmuted max-w-2xl mx-auto mb-10 leading-relaxed">
+              Stop guessing what works. Our multi-agent pipeline audits your campaigns, builds a strategy, and rewrites your copy in seconds.
             </motion.p>
-
-            <motion.div variants={FADE_UP_VARIANTS} className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link to="/signup" className="w-full sm:w-auto landing-shimmer-btn btn-primary text-lg px-8 py-4 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(217,119,87,0.4)]">
+            
+            <motion.div variants={FADE_UP_VARIANTS} className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+              <Link to="/signup" className="w-full sm:w-auto landing-shimmer-btn btn-primary text-lg px-8 py-4 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(217,119,87,0.4)] hover:shadow-[0_0_40px_rgba(217,119,87,0.6)]">
                 Start Analyzing for Free <ArrowRight size={20} />
               </Link>
-              <a href="#how-it-works" className="w-full sm:w-auto btn-secondary text-lg px-8 py-4 rounded-xl flex items-center justify-center gap-2">
-                <Play size={20} className="text-brand-500" /> See How It Works
+              <a href="#how-it-works" className="w-full sm:w-auto btn-secondary text-lg px-8 py-4 rounded-xl flex items-center justify-center gap-2 group">
+                <Play size={20} className="text-brand-500 group-hover:scale-110 transition-transform" /> See How It Works
               </a>
+            </motion.div>
+            
+            <motion.div variants={FADE_UP_VARIANTS} className="flex items-center justify-center gap-4 text-sm text-textmuted">
+              <div className="flex -space-x-2">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className={`w-8 h-8 rounded-full border-2 border-bgbase bg-bgpanelhover flex items-center justify-center text-xs font-bold text-textsecondary z-[${5-i}]`} style={{ zIndex: 5-i }}>
+                    {String.fromCharCode(64 + i)}
+                  </div>
+                ))}
+              </div>
+              <div>Join <strong>1,200+ marketers</strong> already optimizing.</div>
             </motion.div>
           </motion.div>
         </div>
       </section>
 
-      {/* 2. Trust Bar */}
-      <section className="relative z-10 py-8 border-y border-borderwarm bg-bgpanel/30 backdrop-blur-sm overflow-hidden">
-        <div className="flex items-center justify-center w-full">
-          <div className="w-full inline-flex flex-nowrap overflow-hidden [mask-image:_linear-gradient(to_right,transparent_0,_black_128px,_black_calc(100%-128px),transparent_100%)]">
-            <ul className="flex items-center justify-center md:justify-start [&_li]:mx-12 [&_img]:max-w-none animate-[marquee_30s_linear_infinite]">
-              {/* Duplicate list for seamless looping */}
-              {[...Array(2)].map((_, i) => (
-                <React.Fragment key={i}>
-                  <li className="flex items-center gap-2 text-textmuted font-semibold tracking-wider text-sm uppercase">
-                    <Cpu size={20} /> Powered by Google Gemini AI
-                  </li>
-                  <li className="flex items-center gap-2 text-textmuted font-semibold tracking-wider text-sm uppercase">
-                    <Zap size={20} /> Built on FastAPI
-                  </li>
-                  <li className="flex items-center gap-2 text-textmuted font-semibold tracking-wider text-sm uppercase">
-                    <TrendingUp size={20} /> Real-time Streaming
-                  </li>
-                  <li className="flex items-center gap-2 text-textmuted font-semibold tracking-wider text-sm uppercase">
-                    <ShieldCheck size={20} /> Bank-grade Security
-                  </li>
-                </React.Fragment>
-              ))}
-            </ul>
+      {/* 2. Stats Strip */}
+      <section className="relative z-10 py-12 border-y border-borderwarm bg-bgpanel/30 backdrop-blur-sm overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <StatBox prefix="$" value="2.4M" suffix="+" label="Wasted Spend Found" />
+            <StatBox value="98" suffix="%" label="Audit Accuracy" />
+            <StatBox value="3" label="Specialized Agents" />
+            <StatBox prefix="<" value="5" suffix="s" label="Analysis Time" />
           </div>
         </div>
       </section>
 
-      {/* 3. Features / How It Works */}
-      <section id="how-it-works" className="relative z-10 py-32 px-6 lg:px-8 max-w-7xl mx-auto">
-        <motion.div 
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={FADE_UP_VARIANTS}
-          className="text-center mb-20"
-        >
-          <h2 className="text-4xl md:text-5xl font-serif font-bold text-textprimary mb-6">Three specialized agents.<br/>One perfect strategy.</h2>
+      {/* 3. How It Works - Architecture */}
+      <section id="how-it-works" className="relative z-10 py-32 px-6 lg:px-8 max-w-7xl mx-auto scroll-mt-20">
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={FADE_UP_VARIANTS} className="text-center mb-20">
+          <h2 className="text-4xl md:text-5xl font-serif font-bold text-textprimary mb-6">The 3-Agent Pipeline Explained</h2>
           <p className="text-lg text-textmuted max-w-2xl mx-auto">
-            Our multi-agent architecture divides the work just like a real growth team. 
-            The result? Expert-level optimization in seconds.
+            Instead of asking one generic AI model to do everything, AdMind uses specialized agents that pass their findings down a structured pipeline.
+          </p>
+        </motion.div>
+        
+        <div className="relative">
+          {/* Connecting Line (Desktop) */}
+          <div className="hidden lg:block absolute top-[120px] left-[10%] right-[10%] h-1 bg-borderwarm overflow-hidden rounded-full">
+            <motion.div 
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-brand-500 to-transparent"
+              animate={{ x: ["-100%", "100%"] }}
+              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 relative z-10">
+            {/* Step 0: Input */}
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="flex flex-col items-center pt-8">
+              <div className="w-16 h-16 rounded-2xl bg-bgpanel border border-borderwarm flex items-center justify-center shadow-lg mb-6 relative">
+                <FileSpreadsheet size={28} className="text-textmuted" />
+                <div className="absolute -right-2 -bottom-2 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center text-white text-xs font-bold border-2 border-bgbase">CSV</div>
+              </div>
+              <h3 className="text-xl font-bold mb-2">1. Upload Data</h3>
+              <p className="text-center text-textmuted text-sm mb-6">Export your Google Ads or Meta Ads performance CSV.</p>
+              
+              <div className="w-full bg-bgpanel border border-borderwarm rounded-xl p-3 shadow-inner">
+                <div className="text-[10px] font-mono text-textmuted opacity-50 mb-1">RAW DATA</div>
+                <div className="text-xs font-mono text-textsecondary truncate">Campaign,Clicks,Spend</div>
+                <div className="text-xs font-mono text-textsecondary truncate">Q3_Promo,1204,$450.20</div>
+              </div>
+            </motion.div>
+
+            {/* Step 1: Auditor */}
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="flex flex-col items-center pt-8">
+              <div className="w-20 h-20 rounded-2xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(217,119,87,0.15)] mb-6">
+                <Search size={32} className="text-brand-500" />
+              </div>
+              <h3 className="text-xl font-bold mb-2 text-brand-400">2. Auditor Agent</h3>
+              <p className="text-center text-textmuted text-sm mb-6">Scans the CSV to find anomalies, high CPCs, and wasted spend.</p>
+              
+              <div className="w-full bg-bgpanel border border-borderwarm rounded-xl p-3 shadow-inner relative overflow-hidden">
+                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-500"></div>
+                <div className="text-[10px] font-mono text-textmuted opacity-50 mb-1 ml-2">OUTPUT: JSON</div>
+                <div className="text-xs font-mono text-textsecondary ml-2">"issue": "High CPA"</div>
+                <div className="text-xs font-mono text-textsecondary ml-2">"severity": "high"</div>
+              </div>
+            </motion.div>
+
+            {/* Step 2: Strategist */}
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 }} className="flex flex-col items-center pt-8">
+              <div className="w-20 h-20 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(245,158,11,0.15)] mb-6">
+                <Target size={32} className="text-amber-500" />
+              </div>
+              <h3 className="text-xl font-bold mb-2 text-amber-400">3. Strategy Agent</h3>
+              <p className="text-center text-textmuted text-sm mb-6">Reads the audit and formulates a step-by-step action plan.</p>
+              
+              <div className="w-full bg-bgpanel border border-borderwarm rounded-xl p-3 shadow-inner relative overflow-hidden">
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-500"></div>
+                <div className="text-[10px] font-mono text-textmuted opacity-50 mb-1 ml-2">OUTPUT: JSON</div>
+                <div className="text-xs font-mono text-textsecondary ml-2">"action": "Pause"</div>
+                <div className="text-xs font-mono text-textsecondary ml-2">"target": "Keyword X"</div>
+              </div>
+            </motion.div>
+
+            {/* Step 3: Copywriter */}
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.4 }} className="flex flex-col items-center pt-8">
+              <div className="w-20 h-20 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.15)] mb-6">
+                <Megaphone size={32} className="text-emerald-500" />
+              </div>
+              <h3 className="text-xl font-bold mb-2 text-emerald-400">4. Copywriter Agent</h3>
+              <p className="text-center text-textmuted text-sm mb-6">Takes the strategy and rewrites poor performing ad copy.</p>
+              
+              <div className="w-full bg-bgpanel border border-borderwarm rounded-xl p-3 shadow-inner relative overflow-hidden">
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500"></div>
+                <div className="text-[10px] font-mono text-textmuted opacity-50 mb-1 ml-2">OUTPUT: TEXT</div>
+                <div className="text-xs font-mono text-textsecondary ml-2">"H1: Buy Shoes Now"</div>
+                <div className="text-xs font-mono text-textsecondary ml-2">"Desc: Free Shipping."</div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. Features Grid (Enhanced) */}
+      <section id="features" className="relative z-10 py-20 px-6 lg:px-8 max-w-7xl mx-auto scroll-mt-20">
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={STAGGER_CONTAINER} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          
+          <motion.div variants={FADE_UP_VARIANTS} className="bg-bgpanel border border-borderwarm rounded-3xl p-10 hover:border-brand-500/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(217,119,87,0.1)] group flex flex-col h-full">
+            <div className="h-16 w-16 rounded-2xl bg-brand-500/10 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300">
+              <Search size={32} className="text-brand-500" />
+            </div>
+            <h3 className="text-2xl font-bold text-textprimary mb-4">Deep Campaign Audits</h3>
+            <p className="text-textmuted leading-relaxed mb-8 flex-1">
+              Stop bleeding money. The Auditor Agent scans thousands of rows to find exactly where your budget is being wasted on irrelevant clicks and non-converting traffic.
+            </p>
+            <ul className="space-y-3">
+               <li className="flex gap-3 text-textprimary font-medium text-sm"><CheckCircle2 size={18} className="text-brand-500 shrink-0" /> Identifies Zero-Conversion Keywords</li>
+               <li className="flex gap-3 text-textprimary font-medium text-sm"><CheckCircle2 size={18} className="text-brand-500 shrink-0" /> Calculates Wasted Spend precisely</li>
+               <li className="flex gap-3 text-textprimary font-medium text-sm"><CheckCircle2 size={18} className="text-brand-500 shrink-0" /> Flags abnormally high CPCs</li>
+            </ul>
+          </motion.div>
+
+          <motion.div variants={FADE_UP_VARIANTS} className="bg-bgpanel border border-borderwarm rounded-3xl p-10 hover:border-amber-500/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(245,158,11,0.1)] group flex flex-col h-full">
+            <div className="h-16 w-16 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300">
+              <Target size={32} className="text-amber-500" />
+            </div>
+            <h3 className="text-2xl font-bold text-textprimary mb-4">Actionable Strategy</h3>
+            <p className="text-textmuted leading-relaxed mb-8 flex-1">
+              Data is useless without action. The Strategist Agent takes the audit and creates a prioritized punch-list of what to pause, scale, and adjust today.
+            </p>
+            <ul className="space-y-3">
+               <li className="flex gap-3 text-textprimary font-medium text-sm"><CheckCircle2 size={18} className="text-amber-500 shrink-0" /> Prioritized Action Items</li>
+               <li className="flex gap-3 text-textprimary font-medium text-sm"><CheckCircle2 size={18} className="text-amber-500 shrink-0" /> Budget Reallocation Advice</li>
+               <li className="flex gap-3 text-textprimary font-medium text-sm"><CheckCircle2 size={18} className="text-amber-500 shrink-0" /> Targeting expansion ideas</li>
+            </ul>
+          </motion.div>
+
+          <motion.div variants={FADE_UP_VARIANTS} className="bg-bgpanel border border-borderwarm rounded-3xl p-10 hover:border-emerald-500/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(16,185,129,0.1)] group flex flex-col h-full">
+            <div className="h-16 w-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300">
+              <Megaphone size={32} className="text-emerald-500" />
+            </div>
+            <h3 className="text-2xl font-bold text-textprimary mb-4">AI Ad Copywriter</h3>
+            <p className="text-textmuted leading-relaxed mb-8 flex-1">
+              Don't just pause bad ads, replace them with better ones. The Copywriter Agent rewrites underperforming headlines and descriptions optimized for CTR.
+            </p>
+            <ul className="space-y-3">
+               <li className="flex gap-3 text-textprimary font-medium text-sm"><CheckCircle2 size={18} className="text-emerald-500 shrink-0" /> Before/After Comparisons</li>
+               <li className="flex gap-3 text-textprimary font-medium text-sm"><CheckCircle2 size={18} className="text-emerald-500 shrink-0" /> Aligned with search intent</li>
+               <li className="flex gap-3 text-textprimary font-medium text-sm"><CheckCircle2 size={18} className="text-emerald-500 shrink-0" /> Ready to copy-paste or export</li>
+            </ul>
+          </motion.div>
+
+          <motion.div variants={FADE_UP_VARIANTS} className="bg-bgpanel border border-borderwarm rounded-3xl p-10 hover:border-purple-500/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(168,85,247,0.1)] group flex flex-col h-full overflow-hidden relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent pointer-events-none"></div>
+            <div className="h-16 w-16 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300 relative z-10">
+              <Activity size={32} className="text-purple-500" />
+            </div>
+            <h3 className="text-2xl font-bold text-textprimary mb-4 relative z-10">Live Streaming UI</h3>
+            <p className="text-textmuted leading-relaxed mb-8 flex-1 relative z-10">
+              Watch the AI think in real-time. AdMind uses Server-Sent Events (SSE) to stream the pipeline's progress live to your dashboard so you never wonder if it's stuck.
+            </p>
+            
+            {/* Mini Pipeline Preview */}
+            <div className="mt-4 p-4 rounded-xl bg-bgbase border border-borderwarm relative z-10 flex flex-col gap-2">
+               <div className="flex items-center gap-3">
+                 <CheckCircle2 size={16} className="text-emerald-500" />
+                 <span className="text-sm text-textsecondary">Auditor finished (1.2s)</span>
+               </div>
+               <div className="flex items-center gap-3">
+                 <Sparkles size={16} className="text-brand-500 animate-pulse" />
+                 <span className="text-sm text-textprimary font-medium">Strategist generating...</span>
+               </div>
+               <div className="flex items-center gap-3 opacity-50">
+                 <div className="w-4 h-4 rounded-full border-2 border-textmuted"></div>
+                 <span className="text-sm text-textmuted">Copywriter waiting</span>
+               </div>
+            </div>
+          </motion.div>
+
+        </motion.div>
+      </section>
+
+      {/* 5. Product Preview (Animated Tabs) */}
+      <section className="relative z-10 py-20 px-6 lg:px-8 max-w-6xl mx-auto">
+        <motion.div initial={{ opacity: 0, scale: 0.95, y: 40 }} whileInView={{ opacity: 1, scale: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.8, ease: "easeOut" }} className="rounded-[2.5rem] p-4 bg-gradient-to-b from-borderwarm to-transparent backdrop-blur-sm">
+          <div className="bg-bgpanel rounded-[2rem] border border-borderwarm overflow-hidden shadow-2xl relative min-h-[500px] flex flex-col">
+            {/* Fake Browser Header */}
+            <div className="h-12 bg-bgpanelhover border-b border-borderwarm flex items-center px-6 gap-4">
+              <div className="flex gap-2 shrink-0">
+                <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
+                <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+                <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
+              </div>
+              <div className="flex-1 flex justify-center">
+                <div className="px-32 py-1 rounded-md bg-bgbase border border-borderwarm text-xs text-textmuted font-mono flex items-center gap-2">
+                  <ShieldCheck size={12} className="text-emerald-500" />
+                  admind.ai/analyze/report-123
+                </div>
+              </div>
+            </div>
+
+            {/* Dashboard Content */}
+            <div className="flex flex-1 flex-col md:flex-row">
+              {/* Sidebar Tabs */}
+              <div className="w-full md:w-64 border-r border-borderwarm bg-bgbase p-4 flex flex-col gap-2">
+                <button 
+                  onClick={() => setActiveTab('audit')}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${activeTab === 'audit' ? 'bg-bgpanel shadow-sm text-brand-500 border border-borderwarm' : 'text-textmuted hover:text-textprimary hover:bg-bgpanelhover'}`}
+                >
+                  <Search size={18} /> Audit Results
+                </button>
+                <button 
+                  onClick={() => setActiveTab('strategy')}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${activeTab === 'strategy' ? 'bg-bgpanel shadow-sm text-amber-500 border border-borderwarm' : 'text-textmuted hover:text-textprimary hover:bg-bgpanelhover'}`}
+                >
+                  <Target size={18} /> Strategy Plan
+                </button>
+                <button 
+                  onClick={() => setActiveTab('copy')}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${activeTab === 'copy' ? 'bg-bgpanel shadow-sm text-emerald-500 border border-borderwarm' : 'text-textmuted hover:text-textprimary hover:bg-bgpanelhover'}`}
+                >
+                  <Megaphone size={18} /> Ad Copy
+                </button>
+              </div>
+
+              {/* Main Content Area */}
+              <div className="flex-1 p-8 bg-bgpanel relative overflow-hidden">
+                <AnimatePresence mode="wait">
+                  {activeTab === 'audit' && (
+                    <motion.div key="audit" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                      <div>
+                        <h3 className="text-2xl font-bold text-textprimary mb-1">Audit Overview</h3>
+                        <p className="text-textmuted">Found 12 critical issues causing $2,450 in wasted spend.</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 mb-6">
+                        <div className="p-4 rounded-xl border border-red-500/20 bg-red-500/5">
+                           <div className="text-red-400 text-sm font-bold mb-1">Wasted Spend</div>
+                           <div className="text-2xl font-bold text-textprimary">$2,450.00</div>
+                        </div>
+                        <div className="p-4 rounded-xl border border-borderwarm bg-bgbase">
+                           <div className="text-textmuted text-sm font-bold mb-1">Total Ad Spend</div>
+                           <div className="text-2xl font-bold text-textprimary">$12,400.00</div>
+                        </div>
+                      </div>
+                      <div className="p-4 rounded-xl border border-borderwarm bg-bgbase">
+                        <div className="flex items-center gap-2 text-red-400 font-semibold mb-2">
+                          <AlertTriangle size={18} /> Critical: Zero-Conversion Keywords
+                        </div>
+                        <p className="text-sm text-textsecondary">
+                          Keyword "software automation tools" consumed $450 with 0 conversions. 
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {activeTab === 'strategy' && (
+                    <motion.div key="strategy" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                      <div>
+                        <h3 className="text-2xl font-bold text-textprimary mb-1">Strategic Recommendations</h3>
+                        <p className="text-textmuted">Prioritized actions based on the audit.</p>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 flex items-start gap-4">
+                          <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0 mt-1">
+                            <span className="text-amber-500 font-bold text-sm">1</span>
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-textprimary mb-1">Pause "software automation tools"</h4>
+                            <p className="text-sm text-textsecondary">Immediately pause this keyword. It is bleeding budget. Reallocate the $450/mo to your top performing Campaign "Q3_Promo".</p>
+                          </div>
+                        </div>
+                        <div className="p-4 rounded-xl border border-borderwarm bg-bgbase flex items-start gap-4">
+                          <div className="w-8 h-8 rounded-full bg-bgpanel border border-borderwarm flex items-center justify-center shrink-0 mt-1">
+                            <span className="text-textmuted font-bold text-sm">2</span>
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-textprimary mb-1">Decrease Bid on "CRM pricing" by 25%</h4>
+                            <p className="text-sm text-textsecondary">Cost per conversion is 40% higher than account average. Reduce bid to target a more profitable CPA.</p>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {activeTab === 'copy' && (
+                    <motion.div key="copy" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="text-2xl font-bold text-textprimary mb-1">Ad Copy Rewrites</h3>
+                          <p className="text-textmuted">Generated new variants for low-CTR ads.</p>
+                        </div>
+                        <button className="text-xs bg-emerald-500/10 text-emerald-400 px-3 py-1.5 rounded-lg font-bold border border-emerald-500/20">
+                          Export CSV
+                        </button>
+                      </div>
+                      
+                      <div className="p-5 rounded-xl border border-emerald-500/30 bg-emerald-500/5 relative">
+                        <div className="absolute top-0 right-4 -translate-y-1/2 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">Winner Variant</div>
+                        <div className="grid grid-cols-2 gap-6">
+                          <div>
+                            <div className="text-xs font-bold text-textmuted uppercase mb-2">Original (CTR: 1.2%)</div>
+                            <div className="text-sm text-textsecondary line-through opacity-70">
+                              Software for business. Buy our software today. It is good.
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-xs font-bold text-emerald-400 uppercase mb-2">AI Rewrite (Target)</div>
+                            <div className="text-sm font-medium text-textprimary">
+                              Automate Your Workflows. Save 10 Hours a Week. Start Free Trial Today.
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      </section>
+
+      {/* 6. Comparison Table (AdMind vs Native) */}
+      <section className="relative z-10 py-24 px-6 lg:px-8 max-w-5xl mx-auto scroll-mt-20">
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={FADE_UP_VARIANTS} className="text-center mb-16">
+          <h2 className="text-3xl md:text-5xl font-serif font-bold text-textprimary mb-6">Why not just use platform recommendations?</h2>
+          <p className="text-lg text-textmuted max-w-2xl mx-auto">
+            Google and Meta's native "Optimization Scores" are designed to increase your ad spend. AdMind is designed to increase your profit margin.
           </p>
         </motion.div>
 
-        <motion.div 
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={STAGGER_CONTAINER}
-          className="grid grid-cols-1 md:grid-cols-3 gap-8"
-        >
-          {[
-            {
-              icon: Search,
-              title: "Campaign Auditor",
-              desc: "Scans your CSV data for wasted spend, low CTR keywords, and high CPC issues. Identifies the leaks in your funnel instantly."
-            },
-            {
-              icon: Target,
-              title: "Strategy Advisor",
-              desc: "Turns audit findings into prioritized actions. Know exactly what to pause, where to reduce bids, and how to reallocate budget."
-            },
-            {
-              icon: Megaphone,
-              title: "Ad Copywriter",
-              desc: "Automatically rewrites underperforming ad copy. Generates stronger headlines and clearer calls-to-action aligned with search intent."
-            }
-          ].map((feature, idx) => (
-            <motion.div 
-              key={idx}
-              variants={FADE_UP_VARIANTS}
-              className="bg-bgpanel border border-borderwarm rounded-3xl p-8 hover:border-brand-500/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(217,119,87,0.1)] group"
-            >
-              <div className="h-14 w-14 rounded-2xl bg-brand-500/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                <feature.icon size={28} className="text-brand-500" />
-              </div>
-              <h3 className="text-2xl font-bold text-textprimary mb-4">{feature.title}</h3>
-              <p className="text-textmuted leading-relaxed">{feature.desc}</p>
+        <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="bg-bgpanel border border-borderwarm rounded-3xl overflow-hidden shadow-xl">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-bgpanelhover border-b border-borderwarm">
+                <th className="p-6 font-bold text-textprimary text-lg w-1/3">Feature</th>
+                <th className="p-6 font-bold text-textmuted text-lg border-l border-borderwarm bg-bgbase/50">Native Platforms</th>
+                <th className="p-6 font-bold text-brand-500 text-lg border-l border-borderwarm bg-brand-500/5">AdMind</th>
+              </tr>
+            </thead>
+            <tbody className="text-textsecondary">
+              <tr className="border-b border-borderwarm">
+                <td className="p-6 font-medium">Primary Goal</td>
+                <td className="p-6 border-l border-borderwarm bg-bgbase/50">Increase Ad Spend</td>
+                <td className="p-6 border-l border-borderwarm bg-brand-500/5 font-bold text-textprimary">Increase Profit Margin</td>
+              </tr>
+              <tr className="border-b border-borderwarm">
+                <td className="p-6 font-medium">Finds Wasted Spend</td>
+                <td className="p-6 border-l border-borderwarm bg-bgbase/50"><X className="text-red-400" /></td>
+                <td className="p-6 border-l border-borderwarm bg-brand-500/5"><Check className="text-emerald-500" /></td>
+              </tr>
+              <tr className="border-b border-borderwarm">
+                <td className="p-6 font-medium">Multi-Platform Support</td>
+                <td className="p-6 border-l border-borderwarm bg-bgbase/50"><X className="text-red-400" /></td>
+                <td className="p-6 border-l border-borderwarm bg-brand-500/5 font-medium text-textprimary">Google & Meta CSVs</td>
+              </tr>
+              <tr className="border-b border-borderwarm">
+                <td className="p-6 font-medium">AI Copy Rewrites</td>
+                <td className="p-6 border-l border-borderwarm bg-bgbase/50"><X className="text-red-400" /></td>
+                <td className="p-6 border-l border-borderwarm bg-brand-500/5"><Check className="text-emerald-500" /></td>
+              </tr>
+              <tr>
+                <td className="p-6 font-medium">Objective Advice</td>
+                <td className="p-6 border-l border-borderwarm bg-bgbase/50"><X className="text-red-400" /></td>
+                <td className="p-6 border-l border-borderwarm bg-brand-500/5"><Check className="text-emerald-500" /></td>
+              </tr>
+            </tbody>
+          </table>
+        </motion.div>
+      </section>
+
+      {/* 7. Use Cases */}
+      <section id="use-cases" className="relative z-10 py-24 px-6 lg:px-8 max-w-7xl mx-auto scroll-mt-20">
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={FADE_UP_VARIANTS} className="text-center mb-16">
+          <h2 className="text-3xl md:text-5xl font-serif font-bold text-textprimary mb-6">Built for growth teams of all sizes.</h2>
+        </motion.div>
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={STAGGER_CONTAINER} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {useCases.map((uc, idx) => (
+            <motion.div key={idx} variants={FADE_UP_VARIANTS} className="bg-bgbase border border-borderwarm p-8 rounded-3xl hover:-translate-y-2 transition-transform duration-300 hover:shadow-lg group">
+              <uc.icon size={32} className="text-brand-500 mb-6 group-hover:scale-110 transition-transform" />
+              <h3 className="text-xl font-bold text-textprimary mb-3">{uc.title}</h3>
+              <p className="text-textmuted leading-relaxed mb-6">{uc.desc}</p>
+              <Link to="/signup" className="text-brand-500 font-bold text-sm inline-flex items-center gap-1 group-hover:gap-2 transition-all">
+                See how it works <ArrowRight size={16} />
+              </Link>
             </motion.div>
           ))}
         </motion.div>
       </section>
 
-      {/* 4. Product Preview Showcase */}
-      <section className="relative z-10 py-20 px-6 lg:px-8 max-w-6xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 40 }}
-          whileInView={{ opacity: 1, scale: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="rounded-[2.5rem] p-4 bg-gradient-to-b from-borderwarm to-transparent backdrop-blur-sm"
-        >
-          <div className="bg-bgpanel rounded-[2rem] border border-borderwarm overflow-hidden shadow-2xl relative">
-            <div className="h-12 bg-bgpanelhover border-b border-borderwarm flex items-center px-6 gap-2">
-              <div className="flex gap-2">
-                <div className="w-3 h-3 rounded-full bg-red-500/80"></div>
-                <div className="w-3 h-3 rounded-full bg-yellow-500/80"></div>
-                <div className="w-3 h-3 rounded-full bg-green-500/80"></div>
-              </div>
-              <div className="mx-auto px-4 py-1 rounded-md bg-bgbase border border-borderwarm text-xs text-textmuted font-mono">
-                admind.ai/analyze
-              </div>
-            </div>
-            
-            {/* Mock Dashboard UI */}
-            <div className="p-8 md:p-12 flex flex-col md:flex-row gap-8">
-              <div className="flex-1 space-y-6">
-                <div className="flex items-center gap-4 mb-8">
-                  <div className="h-16 w-16 rounded-2xl bg-brand-500/20 flex items-center justify-center border border-brand-500/30">
-                    <Target className="text-brand-500" size={32} />
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold text-textprimary">Optimization Report</h3>
-                    <p className="text-textmuted">Generated in 4.2 seconds</p>
-                  </div>
+      {/* 8. Testimonials */}
+      <section id="testimonials" className="relative z-10 py-32 bg-bgpanel/30 border-y border-borderwarm scroll-mt-20">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={FADE_UP_VARIANTS} className="text-center mb-20">
+            <h2 className="text-3xl md:text-5xl font-serif font-bold text-textprimary mb-6">Marketers love AdMind.</h2>
+          </motion.div>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={STAGGER_CONTAINER} className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {testimonials.map((t, idx) => (
+              <motion.div key={idx} variants={FADE_UP_VARIANTS} className="bg-bgpanel border border-borderwarm rounded-3xl p-8 relative hover:border-brand-500/30 transition-colors">
+                <div className="flex gap-1 mb-6">
+                  {[...Array(t.rating)].map((_, i) => <Star key={i} size={16} className="fill-amber-500 text-amber-500" />)}
                 </div>
-                
-                <div className="space-y-4">
-                  <div className="h-24 rounded-xl bg-bgbase border border-borderwarm p-4 flex flex-col justify-center">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm font-semibold text-red-400">Critical Issue Found</span>
-                      <span className="text-xs text-textmuted">Keyword: "cheap software"</span>
-                    </div>
-                    <div className="h-2 w-full bg-bgpanel rounded-full overflow-hidden">
-                      <div className="h-full bg-red-400 w-[85%]"></div>
-                    </div>
-                  </div>
-                  
-                  <div className="h-32 rounded-xl bg-bgbase border border-borderwarm p-5">
-                    <h4 className="text-sm font-semibold text-textprimary mb-3">AI Recommendation</h4>
-                    <p className="text-sm text-textmuted">Pause keyword "cheap software". It has consumed $450 with 0 conversions in the last 30 days. Reallocate budget to top performing ad group "Enterprise Solutions".</p>
-                  </div>
+                <p className="text-lg text-textprimary mb-8 font-medium">"{t.content}"</p>
+                <div>
+                  <p className="font-bold text-textprimary">{t.name}</p>
+                  <p className="text-sm text-textmuted">{t.role}</p>
                 </div>
-              </div>
-              
-              <div className="flex-1">
-                <div className="h-full w-full rounded-2xl bg-bgbase border border-borderwarm relative overflow-hidden flex items-center justify-center">
-                  {/* Abstract visualization */}
-                  <div className="absolute inset-0 bg-gradient-to-tr from-brand-500/10 to-transparent"></div>
-                  <BarChart3 size={100} className="text-textmuted/20" />
-                  <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-bgbase to-transparent h-1/2 flex items-end">
-                    <div className="w-full flex items-end gap-2 h-24">
-                      {[40, 70, 45, 90, 65, 100, 80].map((h, i) => (
-                        <div key={i} className="flex-1 bg-brand-500/50 rounded-t-sm" style={{ height: `${h}%` }}></div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* 9. Pricing */}
+      <section id="pricing" className="relative z-10 py-32 px-6 lg:px-8 max-w-7xl mx-auto scroll-mt-20">
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={FADE_UP_VARIANTS} className="text-center mb-16">
+          <h2 className="text-3xl md:text-5xl font-serif font-bold text-textprimary mb-6">Simple, transparent pricing.</h2>
+          <div className="flex items-center justify-center gap-4 mt-8">
+            <span className={!isAnnual ? "text-textprimary font-medium" : "text-textmuted"}>Monthly</span>
+            <button onClick={() => setIsAnnual(!isAnnual)} className="w-14 h-7 bg-bgpanel border border-borderwarm rounded-full relative transition-colors focus:outline-none flex items-center px-1">
+              <motion.div className="w-5 h-5 bg-brand-500 rounded-full" animate={{ x: isAnnual ? 26 : 0 }} transition={{ type: "spring", stiffness: 500, damping: 30 }} />
+            </button>
+            <span className={isAnnual ? "text-textprimary font-medium" : "text-textmuted"}>Annually <span className="text-brand-500 text-xs ml-1 bg-brand-500/10 px-2 py-1 rounded-full">-20%</span></span>
           </div>
+        </motion.div>
+
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={STAGGER_CONTAINER} className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center max-w-5xl mx-auto">
+          {/* Starter */}
+          <motion.div variants={FADE_UP_VARIANTS} className="bg-bgpanel border border-borderwarm rounded-3xl p-8 h-full flex flex-col">
+            <h3 className="text-xl font-bold text-textprimary mb-2">Starter</h3>
+            <p className="text-textmuted mb-6">For small brands starting out.</p>
+            <div className="mb-8">
+              <span className="text-4xl font-bold text-textprimary">${isAnnual ? '29' : '39'}</span><span className="text-textmuted">/mo</span>
+            </div>
+            <ul className="space-y-4 mb-8 flex-1">
+              <li className="flex gap-3 text-textprimary"><CheckCircle2 size={20} className="text-brand-500 shrink-0" /> Up to $10k/mo ad spend analysis</li>
+              <li className="flex gap-3 text-textprimary"><CheckCircle2 size={20} className="text-brand-500 shrink-0" /> 30 audits per month</li>
+            </ul>
+            <Link to="/signup" className="btn-secondary w-full text-center">Get Started</Link>
+          </motion.div>
+          {/* Pro */}
+          <motion.div variants={FADE_UP_VARIANTS} className="bg-bgpanel border-2 border-brand-500 rounded-3xl p-8 relative shadow-[0_0_40px_rgba(217,119,87,0.15)] h-[105%] flex flex-col z-10">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-brand-500 text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg">Most Popular</div>
+            <h3 className="text-xl font-bold text-textprimary mb-2">Pro</h3>
+            <p className="text-textmuted mb-6">For growing teams and heavy users.</p>
+            <div className="mb-8">
+              <span className="text-4xl font-bold text-textprimary">${isAnnual ? '99' : '129'}</span><span className="text-textmuted">/mo</span>
+            </div>
+            <ul className="space-y-4 mb-8 flex-1">
+              <li className="flex gap-3 text-textprimary"><CheckCircle2 size={20} className="text-brand-500 shrink-0" /> Unlimited ad spend analysis</li>
+              <li className="flex gap-3 text-textprimary"><CheckCircle2 size={20} className="text-brand-500 shrink-0" /> Unlimited audits</li>
+              <li className="flex gap-3 text-textprimary"><CheckCircle2 size={20} className="text-brand-500 shrink-0" /> AI Ad Copy Generation</li>
+            </ul>
+            <Link to="/signup" className="btn-primary w-full text-center">Start Free Trial</Link>
+          </motion.div>
+          {/* Agency */}
+          <motion.div variants={FADE_UP_VARIANTS} className="bg-bgpanel border border-borderwarm rounded-3xl p-8 h-full flex flex-col">
+            <h3 className="text-xl font-bold text-textprimary mb-2">Agency</h3>
+            <p className="text-textmuted mb-6">For managing multiple client accounts.</p>
+            <div className="mb-8">
+              <span className="text-4xl font-bold text-textprimary">${isAnnual ? '299' : '399'}</span><span className="text-textmuted">/mo</span>
+            </div>
+            <ul className="space-y-4 mb-8 flex-1">
+              <li className="flex gap-3 text-textprimary"><CheckCircle2 size={20} className="text-brand-500 shrink-0" /> Everything in Pro</li>
+              <li className="flex gap-3 text-textprimary"><CheckCircle2 size={20} className="text-brand-500 shrink-0" /> Multiple Workspaces</li>
+              <li className="flex gap-3 text-textprimary"><CheckCircle2 size={20} className="text-brand-500 shrink-0" /> White-label reports</li>
+            </ul>
+            <Link to="/signup" className="btn-secondary w-full text-center">Contact Sales</Link>
+          </motion.div>
         </motion.div>
       </section>
 
-      {/* 5. Benefits */}
-      <section className="relative z-10 py-32 px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center mb-32">
-          <motion.div 
-            initial={{ opacity: 0, x: -50 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6 }}
-          >
-            <h2 className="text-3xl md:text-4xl font-bold font-serif text-textprimary mb-6">Save Hours of Manual Analysis</h2>
-            <p className="text-lg text-textmuted mb-8 leading-relaxed">
-              Stop exporting endless CSVs to Excel and wrestling with pivot tables. AdMind processes thousands of rows of campaign data and extracts the signal from the noise instantly.
-            </p>
-            <ul className="space-y-4">
-              {['Upload your raw CSV export', 'AI analyzes metrics instantly', 'Get a structured optimization report'].map((item, i) => (
-                <li key={i} className="flex items-center gap-3 text-textprimary font-medium">
-                  <CheckCircle2 className="text-brand-500" size={20} /> {item}
-                </li>
-              ))}
-            </ul>
-          </motion.div>
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6 }}
-            className="h-80 rounded-3xl bg-bgpanel border border-borderwarm shadow-lg relative overflow-hidden flex items-center justify-center"
-          >
-             <div className="absolute inset-0 bg-brand-500/5 opacity-50"></div>
-             <Search size={80} className="text-brand-500/20" />
-          </motion.div>
+      {/* 10. FAQ Section */}
+      <section id="faq" className="relative z-10 py-32 px-6 lg:px-8 max-w-3xl mx-auto scroll-mt-20">
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={FADE_UP_VARIANTS} className="text-center mb-16">
+          <h2 className="text-3xl md:text-5xl font-serif font-bold text-textprimary mb-6">Frequently asked questions.</h2>
+        </motion.div>
+        <div className="space-y-4">
+          {faqs.map((faq, idx) => (
+            <motion.div key={idx} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: idx * 0.1 }} className="border border-borderwarm bg-bgpanel rounded-2xl overflow-hidden">
+              <button onClick={() => setActiveFaq(activeFaq === idx ? null : idx)} className="w-full flex items-center justify-between p-6 text-left focus:outline-none">
+                <span className="font-bold text-lg text-textprimary">{faq.q}</span>
+                <ChevronDown size={20} className={`text-textmuted transition-transform duration-300 ${activeFaq === idx ? 'rotate-180' : ''}`} />
+              </button>
+              <AnimatePresence>
+                {activeFaq === idx && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3 }} className="overflow-hidden">
+                    <div className="p-6 pt-0 text-textmuted leading-relaxed">
+                      {faq.a}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          ))}
         </div>
       </section>
 
-      {/* 6. Final CTA */}
-      <section className="relative z-10 py-32 overflow-hidden">
-        <div className="absolute inset-0 bg-brand-900/20 pointer-events-none"></div>
+      {/* 11. Final CTA (Enhanced) */}
+      <section className="relative z-10 py-32 overflow-hidden border-t border-borderwarm bg-bgbase">
+        <div className="absolute inset-0 z-0 flex items-center justify-center pointer-events-none opacity-30">
+           <div className="w-[800px] h-[800px] bg-brand-500/20 rounded-full blur-[120px] animate-pulse"></div>
+        </div>
         <div className="relative z-10 max-w-4xl mx-auto text-center px-6">
-          <motion.h2 
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-4xl md:text-6xl font-bold font-serif text-white mb-8"
-          >
+          <motion.h2 initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-4xl md:text-6xl font-bold font-serif text-textprimary mb-8">
             Your next campaign deserves <span className="text-brand-400 italic">better data.</span>
           </motion.h2>
-          <motion.p 
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="text-xl text-textmuted mb-12 max-w-2xl mx-auto"
-          >
-            Join top marketers using multi-agent AI to uncover hidden revenue and scale profitable campaigns faster.
+          <motion.p initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }} className="text-xl text-textmuted mb-12 max-w-2xl mx-auto">
+            Stop wasting budget on underperforming ads. Get a complete audit, strategy, and copy rewrites in seconds.
           </motion.p>
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-          >
-             <Link to="/signup" className="landing-shimmer-btn inline-flex items-center justify-center gap-2 btn-primary text-xl px-10 py-5 rounded-2xl shadow-[0_0_40px_rgba(217,119,87,0.5)]">
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="flex flex-col items-center gap-4">
+             <Link to="/signup" className="landing-shimmer-btn inline-flex items-center justify-center gap-2 btn-primary text-xl px-10 py-5 rounded-2xl shadow-[0_0_40px_rgba(217,119,87,0.5)] hover:scale-105 transition-transform duration-300">
               Start Analyzing for Free <ArrowRight size={24} />
             </Link>
+            <span className="text-sm text-textmuted">No credit card required. Free tier forever.</span>
           </motion.div>
         </div>
       </section>
 
-      {/* 7. Footer */}
-      <footer className="border-t border-borderwarm bg-bgbase py-12 px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 font-bold text-white shadow-sm">
-              A
+      {/* 12. Mega Footer (Rebuilt) */}
+      <footer className="border-t border-borderwarm bg-bgpanel pt-20 pb-10 px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
+          <div className="lg:col-span-2">
+            <div className="flex items-center gap-3 mb-6">
+              <Logo className="h-10 w-10 text-brand-500" />
+              <span className="text-2xl font-bold tracking-tight text-textprimary">AdMind</span>
             </div>
-            <span className="text-xl font-bold tracking-tight text-textprimary">AdMind</span>
+            <p className="text-textmuted mb-8 max-w-sm">
+              The multi-agent AI optimizer for growth teams. Find wasted spend and scale winning campaigns effortlessly without leaving your dashboard.
+            </p>
+            <div className="flex gap-4">
+              <a href="#" className="w-10 h-10 rounded-full bg-bgbase border border-borderwarm flex items-center justify-center text-textmuted hover:text-brand-500 hover:border-brand-500/50 transition-colors">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/></svg>
+              </a>
+              <a href="#" className="w-10 h-10 rounded-full bg-bgbase border border-borderwarm flex items-center justify-center text-textmuted hover:text-brand-500 hover:border-brand-500/50 transition-colors">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+              </a>
+            </div>
+            
+            <div className="mt-8 flex items-center gap-3">
+               <div className="text-xs font-bold text-textsecondary uppercase tracking-widest">Built With</div>
+               <div className="flex gap-2">
+                 <span className="px-2 py-1 rounded bg-bgbase border border-borderwarm text-xs text-textmuted font-mono">React</span>
+                 <span className="px-2 py-1 rounded bg-bgbase border border-borderwarm text-xs text-textmuted font-mono">FastAPI</span>
+                 <span className="px-2 py-1 rounded bg-bgbase border border-borderwarm text-xs text-textmuted font-mono">Gemini 2.0</span>
+               </div>
+            </div>
           </div>
-          
-          <div className="flex items-center gap-8 text-sm font-medium text-textmuted">
-            <Link to="/login" className="hover:text-textprimary transition-colors">Log in</Link>
-            <Link to="/signup" className="hover:text-textprimary transition-colors">Sign up</Link>
-            <a href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-textprimary transition-colors">GitHub</a>
+          <div>
+            <h4 className="font-bold text-textprimary mb-4">Product</h4>
+            <ul className="space-y-3 text-textmuted text-sm">
+              <li><a href="#how-it-works" className="hover:text-brand-500 transition-colors">How it works</a></li>
+              <li><a href="#features" className="hover:text-brand-500 transition-colors">Features</a></li>
+              <li><a href="#pricing" className="hover:text-brand-500 transition-colors">Pricing</a></li>
+              <li><a href="#" className="hover:text-brand-500 transition-colors">Integrations</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-bold text-textprimary mb-4">Resources</h4>
+            <ul className="space-y-3 text-textmuted text-sm">
+              <li><a href="#" className="hover:text-brand-500 transition-colors">Blog</a></li>
+              <li><a href="#" className="hover:text-brand-500 transition-colors">Help Center</a></li>
+              <li><a href="#" className="hover:text-brand-500 transition-colors">Ad Copy Guide</a></li>
+              <li><a href="#" className="hover:text-brand-500 transition-colors">Community</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-bold text-textprimary mb-4">Company</h4>
+            <ul className="space-y-3 text-textmuted text-sm">
+              <li><a href="#" className="hover:text-brand-500 transition-colors">About Us</a></li>
+              <li><a href="#" className="hover:text-brand-500 transition-colors">Careers</a></li>
+              <li><a href="#" className="hover:text-brand-500 transition-colors">Contact</a></li>
+              <li><a href="#" className="hover:text-brand-500 transition-colors">Privacy Policy</a></li>
+            </ul>
           </div>
         </div>
-        <div className="max-w-7xl mx-auto mt-8 text-center md:text-left text-sm text-textmuted/60">
-          &copy; {new Date().getFullYear()} AdMind Inc. Built by Vivek Yadav.
+        <div className="max-w-7xl mx-auto pt-8 border-t border-borderwarm flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-textmuted">
+          <div>&copy; {new Date().getFullYear()} AdMind Inc. Made in India 🇮🇳 by Vivek Yadav.</div>
+          <div className="flex gap-6">
+            <a href="#" className="hover:text-textprimary transition-colors">Terms of Service</a>
+            <a href="#" className="hover:text-textprimary transition-colors">Privacy Policy</a>
+          </div>
         </div>
       </footer>
     </div>
