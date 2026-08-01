@@ -120,7 +120,7 @@ export default function BlogPage() {
             <button
               key={tag}
               onClick={() => setActiveTag(tag)}
-              className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
+              className={`px-5 py-2.5 relative z-20 rounded-full text-sm font-medium transition-all duration-300 cursor-pointer ${
                 activeTag === tag 
                   ? 'bg-brand-500 text-white shadow-[0_0_15px_rgba(217,119,87,0.4)]' 
                   : 'bg-bgpanel/40 text-textsecondary hover:text-textprimary hover:bg-bgpanel border border-borderwarm backdrop-blur-sm'
@@ -133,11 +133,12 @@ export default function BlogPage() {
 
         {/* Blog Grid */}
         <motion.div 
+          key={activeTag}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: "-100px" }}
           variants={STAGGER_CONTAINER}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 relative z-20"
         >
           {filteredPosts.map(post => (
             <motion.article 
@@ -168,9 +169,9 @@ export default function BlogPage() {
                 <div className="text-sm font-medium text-textprimary">
                   {post.author} • <span className="text-textmuted font-normal">{post.date}</span>
                 </div>
-                <button className="text-brand-500 bg-brand-500/10 p-2 rounded-full group-hover:bg-brand-500 group-hover:text-white transition-all">
+                <Link to="#" className="text-brand-500 bg-brand-500/10 p-2 rounded-full group-hover:bg-brand-500 group-hover:text-white transition-all cursor-pointer relative z-30">
                   <ArrowRight size={18} />
-                </button>
+                </Link>
               </div>
             </motion.article>
           ))}
