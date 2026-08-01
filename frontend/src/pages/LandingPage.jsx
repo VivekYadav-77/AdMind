@@ -44,7 +44,6 @@ export default function LandingPage() {
   }, [])
 
   const [activeFaq, setActiveFaq] = useState(null)
-  const [isAnnual, setIsAnnual] = useState(true)
   const [activeTab, setActiveTab] = useState('audit')
 
   // Auto-rotate tabs in preview
@@ -97,7 +96,7 @@ export default function LandingPage() {
           <motion.div initial="hidden" animate="visible" variants={STAGGER_CONTAINER}>
             <motion.div variants={FADE_UP_VARIANTS} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-bgpanel/50 border border-borderwarm backdrop-blur-md mb-8 shadow-sm">
               <Sparkles size={16} className="text-brand-500" />
-              <span className="text-sm font-medium text-textsecondary">3 AI Agents • Google Gemini • FastAPI</span>
+              <span className="text-sm font-medium text-textsecondary">3 AI Agents </span>
             </motion.div>
             
             <motion.h1 variants={FADE_UP_VARIANTS} className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight text-textprimary mb-8 leading-[1.1] font-serif">
@@ -118,16 +117,7 @@ export default function LandingPage() {
               </a>
             </motion.div>
             
-            <motion.div variants={FADE_UP_VARIANTS} className="flex items-center justify-center gap-4 text-sm text-textmuted">
-              <div className="flex -space-x-2">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className={`w-8 h-8 rounded-full border-2 border-bgbase bg-bgpanelhover flex items-center justify-center text-xs font-bold text-textsecondary z-[${5-i}]`} style={{ zIndex: 5-i }}>
-                    {String.fromCharCode(64 + i)}
-                  </div>
-                ))}
-              </div>
-              <div>Join <strong>1,200+ marketers</strong> already optimizing.</div>
-            </motion.div>
+            
           </motion.div>
         </div>
       </section>
@@ -518,87 +508,9 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
-      {/* 8. Testimonials */}
-      <section id="testimonials" className="relative z-10 py-32 bg-bgpanel/30 border-y border-borderwarm scroll-mt-20">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={FADE_UP_VARIANTS} className="text-center mb-20">
-            <h2 className="text-3xl md:text-5xl font-serif font-bold text-textprimary mb-6">Marketers love AdMind.</h2>
-          </motion.div>
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={STAGGER_CONTAINER} className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((t, idx) => (
-              <motion.div key={idx} variants={FADE_UP_VARIANTS} className="bg-bgpanel border border-borderwarm rounded-3xl p-8 relative hover:border-brand-500/30 transition-colors">
-                <div className="flex gap-1 mb-6">
-                  {[...Array(t.rating)].map((_, i) => <Star key={i} size={16} className="fill-amber-500 text-amber-500" />)}
-                </div>
-                <p className="text-lg text-textprimary mb-8 font-medium">"{t.content}"</p>
-                <div>
-                  <p className="font-bold text-textprimary">{t.name}</p>
-                  <p className="text-sm text-textmuted">{t.role}</p>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
+      
 
-      {/* 9. Pricing */}
-      <section id="pricing" className="relative z-10 py-32 px-6 lg:px-8 max-w-7xl mx-auto scroll-mt-20">
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={FADE_UP_VARIANTS} className="text-center mb-16">
-          <h2 className="text-3xl md:text-5xl font-serif font-bold text-textprimary mb-6">Simple, transparent pricing.</h2>
-          <div className="flex items-center justify-center gap-4 mt-8">
-            <span className={!isAnnual ? "text-textprimary font-medium" : "text-textmuted"}>Monthly</span>
-            <button onClick={() => setIsAnnual(!isAnnual)} className="w-14 h-7 bg-bgpanel border border-borderwarm rounded-full relative transition-colors focus:outline-none flex items-center px-1">
-              <motion.div className="w-5 h-5 bg-brand-500 rounded-full" animate={{ x: isAnnual ? 26 : 0 }} transition={{ type: "spring", stiffness: 500, damping: 30 }} />
-            </button>
-            <span className={isAnnual ? "text-textprimary font-medium" : "text-textmuted"}>Annually <span className="text-brand-500 text-xs ml-1 bg-brand-500/10 px-2 py-1 rounded-full">-20%</span></span>
-          </div>
-        </motion.div>
-
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={STAGGER_CONTAINER} className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center max-w-5xl mx-auto">
-          {/* Starter */}
-          <motion.div variants={FADE_UP_VARIANTS} className="bg-bgpanel border border-borderwarm rounded-3xl p-8 h-full flex flex-col">
-            <h3 className="text-xl font-bold text-textprimary mb-2">Starter</h3>
-            <p className="text-textmuted mb-6">For small brands starting out.</p>
-            <div className="mb-8">
-              <span className="text-4xl font-bold text-textprimary">${isAnnual ? '29' : '39'}</span><span className="text-textmuted">/mo</span>
-            </div>
-            <ul className="space-y-4 mb-8 flex-1">
-              <li className="flex gap-3 text-textprimary"><CheckCircle2 size={20} className="text-brand-500 shrink-0" /> Up to $10k/mo ad spend analysis</li>
-              <li className="flex gap-3 text-textprimary"><CheckCircle2 size={20} className="text-brand-500 shrink-0" /> 30 audits per month</li>
-            </ul>
-            <Link to="/signup" className="btn-secondary w-full text-center">Get Started</Link>
-          </motion.div>
-          {/* Pro */}
-          <motion.div variants={FADE_UP_VARIANTS} className="bg-bgpanel border-2 border-brand-500 rounded-3xl p-8 relative shadow-[0_0_40px_rgba(217,119,87,0.15)] h-[105%] flex flex-col z-10">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-brand-500 text-white px-4 py-1 rounded-full text-sm font-bold shadow-lg">Most Popular</div>
-            <h3 className="text-xl font-bold text-textprimary mb-2">Pro</h3>
-            <p className="text-textmuted mb-6">For growing teams and heavy users.</p>
-            <div className="mb-8">
-              <span className="text-4xl font-bold text-textprimary">${isAnnual ? '99' : '129'}</span><span className="text-textmuted">/mo</span>
-            </div>
-            <ul className="space-y-4 mb-8 flex-1">
-              <li className="flex gap-3 text-textprimary"><CheckCircle2 size={20} className="text-brand-500 shrink-0" /> Unlimited ad spend analysis</li>
-              <li className="flex gap-3 text-textprimary"><CheckCircle2 size={20} className="text-brand-500 shrink-0" /> Unlimited audits</li>
-              <li className="flex gap-3 text-textprimary"><CheckCircle2 size={20} className="text-brand-500 shrink-0" /> AI Ad Copy Generation</li>
-            </ul>
-            <Link to="/signup" className="btn-primary w-full text-center">Start Free Trial</Link>
-          </motion.div>
-          {/* Agency */}
-          <motion.div variants={FADE_UP_VARIANTS} className="bg-bgpanel border border-borderwarm rounded-3xl p-8 h-full flex flex-col">
-            <h3 className="text-xl font-bold text-textprimary mb-2">Agency</h3>
-            <p className="text-textmuted mb-6">For managing multiple client accounts.</p>
-            <div className="mb-8">
-              <span className="text-4xl font-bold text-textprimary">${isAnnual ? '299' : '399'}</span><span className="text-textmuted">/mo</span>
-            </div>
-            <ul className="space-y-4 mb-8 flex-1">
-              <li className="flex gap-3 text-textprimary"><CheckCircle2 size={20} className="text-brand-500 shrink-0" /> Everything in Pro</li>
-              <li className="flex gap-3 text-textprimary"><CheckCircle2 size={20} className="text-brand-500 shrink-0" /> Multiple Workspaces</li>
-              <li className="flex gap-3 text-textprimary"><CheckCircle2 size={20} className="text-brand-500 shrink-0" /> White-label reports</li>
-            </ul>
-            <Link to="/signup" className="btn-secondary w-full text-center">Contact Sales</Link>
-          </motion.div>
-        </motion.div>
-      </section>
+    
 
       {/* 10. FAQ Section */}
       <section id="faq" className="relative z-10 py-32 px-6 lg:px-8 max-w-3xl mx-auto scroll-mt-20">
@@ -681,34 +593,32 @@ export default function LandingPage() {
             <ul className="space-y-3 text-textmuted text-sm">
               <li><a href="#how-it-works" className="hover:text-brand-500 transition-colors">How it works</a></li>
               <li><a href="#features" className="hover:text-brand-500 transition-colors">Features</a></li>
-              <li><a href="#pricing" className="hover:text-brand-500 transition-colors">Pricing</a></li>
+              
               <li><a href="#" className="hover:text-brand-500 transition-colors">Integrations</a></li>
             </ul>
           </div>
           <div>
             <h4 className="font-bold text-textprimary mb-4">Resources</h4>
             <ul className="space-y-3 text-textmuted text-sm">
-              <li><a href="#" className="hover:text-brand-500 transition-colors">Blog</a></li>
-              <li><a href="#" className="hover:text-brand-500 transition-colors">Help Center</a></li>
-              <li><a href="#" className="hover:text-brand-500 transition-colors">Ad Copy Guide</a></li>
-              <li><a href="#" className="hover:text-brand-500 transition-colors">Community</a></li>
+              <li><Link to="/blog" className="hover:text-brand-500 transition-colors">Blog</Link></li>
+              <li><Link to="/community" className="hover:text-brand-500 transition-colors">Community</Link></li>
             </ul>
           </div>
           <div>
             <h4 className="font-bold text-textprimary mb-4">Company</h4>
             <ul className="space-y-3 text-textmuted text-sm">
               <li><a href="#" className="hover:text-brand-500 transition-colors">About Us</a></li>
-              <li><a href="#" className="hover:text-brand-500 transition-colors">Careers</a></li>
               <li><a href="#" className="hover:text-brand-500 transition-colors">Contact</a></li>
-              <li><a href="#" className="hover:text-brand-500 transition-colors">Privacy Policy</a></li>
+              <li><Link to="/privacy" className="hover:text-brand-500 transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/terms" className="hover:text-brand-500 transition-colors">Terms of Service</Link></li>
             </ul>
           </div>
         </div>
         <div className="max-w-7xl mx-auto pt-8 border-t border-borderwarm flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-textmuted">
           <div>&copy; {new Date().getFullYear()} AdMind Inc. Made in India 🇮🇳 by Vivek Yadav.</div>
           <div className="flex gap-6">
-            <a href="#" className="hover:text-textprimary transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-textprimary transition-colors">Privacy Policy</a>
+            <Link to="/terms" className="hover:text-textprimary transition-colors">Terms of Service</Link>
+            <Link to="/privacy" className="hover:text-textprimary transition-colors">Privacy Policy</Link>
           </div>
         </div>
       </footer>

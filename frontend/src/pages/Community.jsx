@@ -1,0 +1,307 @@
+import React, { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { Star, MessageSquare, Trash2, ShieldCheck, CheckCircle2 } from 'lucide-react'
+import LandingNav from '../components/LandingNav'
+import AnimatedBackground from '../components/AnimatedBackground'
+import { useAuth } from '../context/AuthContext'
+import { API } from '../services/api'
+import { useToast } from '../context/ToastContext'
+
+const FADE_UP_VARIANTS = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
+}
+
+const STAGGER_CONTAINER = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { staggerChildren: 0.2 } }
+}
+
+function StarRating({ rating, setRating, interactive = false }) {
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          onClick={() => interactive && setRating(star)}
+          disabled={!interactive}
+          className={`focus:outline-none transition-colors ${
+            star <= rating ? 'text-yellow-500' : 'text-gray-600'
+          } ${interactive ? 'hover:text-yellow-400' : 'cursor-default'}`}
+        >
+          <Star size={interactive ? 24 : 18} fill={star <= rating ? 'currentColor' : 'none'} />
+        </button>
+      ))}
+    </div>
+  )
+}
+
+export default function Community() {
+  const { isAuthenticated, user } = useAuth()
+  const { addToast } = useToast()
+  
+  const [reviews, setReviews] = useState([])
+  const [loading, setLoading] = useState(true)
+  
+  // Write Review State
+  const [rating, setRating] = useState(5)
+  const [content, setContent] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [hasSubmitted, setHasSubmitted] = useState(false) // For current session
+
+  useEffect(() => {
+    document.documentElement.classList.add('dark')
+    fetchReviews()
+    return () => {
+      const saved = localStorage.getItem('theme')
+      if (saved !== 'dark') document.documentElement.classList.remove('dark')
+    }
+  }, [])
+
+  const fetchReviews = async () => {
+    try {
+      setLoading(true)
+      const data = await API.getReviews()
+      setReviews(data)
+    } catch (error) {
+      console.error('Failed to fetch reviews:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (content.length < 10) {
+      addToast('Review must be at least 10 characters long.', 'error')
+      return
+    }
+
+    try {
+      setIsSubmitting(true)
+      const newReview = await API.submitReview(rating, content)
+      
+      // We know it requires admin approval per requirements, so it won't show in the public feed yet.
+      addToast('Review submitted! It will appear once approved by an admin.', 'success')
+      setHasSubmitted(true)
+      setContent('')
+      setRating(5)
+      
+    } catch (error) {
+      addToast(error.message || 'Failed to submit review.', 'error')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this review?')) return
+    
+    try {
+      await API.deleteReview(id)
+      setReviews(reviews.filter(r => r.id !== id))
+      addToast('Review deleted.', 'success')
+    } catch (error) {
+      addToast(error.message || 'Failed to delete review.', 'error')
+    }
+  }
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    })
+  }
+
+  return (
+    <div className="min-h-screen bg-bgbase text-textprimary overflow-hidden selection:bg-brand-500/30 font-sans">
+      <AnimatedBackground />
+      <LandingNav />
+
+      {/* Hero Section */}
+      <section className="relative pt-32 pb-12 px-6 lg:px-8 max-w-7xl mx-auto z-10 flex flex-col items-center justify-center text-center">
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={STAGGER_CONTAINER}
+          className="max-w-4xl mx-auto space-y-6"
+        >
+          <motion.div variants={FADE_UP_VARIANTS} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-bgpanel/50 border border-brand-500/30 text-brand-400 text-sm font-medium backdrop-blur-sm">
+            <MessageSquare size={16} />
+            <span>Wall of Love</span>
+          </motion.div>
+          <motion.h1 variants={FADE_UP_VARIANTS} className="text-5xl md:text-6xl font-bold font-serif tracking-tight">
+            AdMind <span className="bg-gradient-to-r from-brand-400 to-brand-600 bg-clip-text text-transparent">Community</span>
+          </motion.h1>
+          <motion.p variants={FADE_UP_VARIANTS} className="text-xl text-textsecondary max-w-2xl mx-auto">
+            See what other digital marketers are saying about their experience with AdMind.
+          </motion.p>
+        </motion.div>
+      </section>
+
+      {/* Main Content */}
+      <section className="relative z-10 px-6 lg:px-8 pb-32 max-w-7xl mx-auto">
+        
+        {/* Write Review Section */}
+        <div className="mb-20">
+          {!isAuthenticated ? (
+            <div className="bg-bgpanel/40 border border-borderwarm rounded-3xl p-8 backdrop-blur-sm text-center">
+              <h3 className="text-2xl font-serif font-bold text-textprimary mb-4">Share Your Experience</h3>
+              <p className="text-textsecondary mb-6 max-w-lg mx-auto">
+                Join our community of marketers and share how AdMind has impacted your ad campaigns.
+              </p>
+              <div className="flex items-center justify-center gap-4">
+                <Link to="/login" className="btn-secondary px-6 py-2">Log in</Link>
+                <Link to="/signup" className="btn-primary px-6 py-2 shadow-[0_0_15px_rgba(217,119,87,0.3)]">Get Started Free</Link>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-bgpanel/40 border border-brand-500/30 rounded-3xl p-8 backdrop-blur-sm shadow-xl">
+              {hasSubmitted ? (
+                <div className="text-center py-8">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-brand-500/20 text-brand-500 mb-4">
+                    <CheckCircle2 size={32} />
+                  </div>
+                  <h3 className="text-2xl font-bold text-textprimary mb-2">Thank you!</h3>
+                  <p className="text-textsecondary">Your review has been submitted and is pending admin approval.</p>
+                </div>
+              ) : (
+                <>
+                  <h3 className="text-2xl font-serif font-bold text-textprimary mb-6 flex items-center gap-2">
+                    Write a Review
+                  </h3>
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div>
+                      <label className="block text-sm font-medium text-textsecondary mb-2">Your Rating</label>
+                      <StarRating rating={rating} setRating={setRating} interactive={true} />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-textsecondary mb-2">Your Thoughts</label>
+                      <textarea
+                        value={content}
+                        onChange={(e) => setContent(e.target.value)}
+                        placeholder="How has AdMind helped your campaigns?"
+                        className="w-full bg-bgbase/50 border border-borderwarm rounded-xl px-4 py-3 text-textprimary focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors min-h-[120px] resize-y"
+                        maxLength={1000}
+                        required
+                      ></textarea>
+                      <div className="text-right text-xs text-textmuted mt-1">
+                        {content.length}/1000 characters
+                      </div>
+                    </div>
+                    <div className="flex justify-end">
+                      <button 
+                        type="submit" 
+                        disabled={isSubmitting}
+                        className="btn-primary px-8 py-3 disabled:opacity-50"
+                      >
+                        {isSubmitting ? 'Submitting...' : 'Submit Review'}
+                      </button>
+                    </div>
+                  </form>
+                </>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Public Feed Section */}
+        <div className="space-y-8">
+          <div className="flex items-center justify-between border-b border-borderwarm pb-4">
+            <h2 className="text-2xl font-bold text-textprimary">Recent Reviews</h2>
+            <div className="text-sm text-textsecondary">
+              Showing approved reviews
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="flex justify-center py-20">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
+            </div>
+          ) : reviews.length === 0 ? (
+            <div className="text-center py-20 bg-bgpanel/20 rounded-3xl border border-borderwarm/50 border-dashed">
+              <MessageSquare size={48} className="mx-auto text-textmuted mb-4 opacity-50" />
+              <p className="text-textsecondary text-lg">No reviews yet. Be the first to share your experience!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {reviews.map(review => (
+                <div key={review.id} className="bg-bgpanel/40 border border-borderwarm rounded-3xl p-6 backdrop-blur-sm flex flex-col h-full relative group">
+                  
+                  {/* Delete Button if own review */}
+                  {isAuthenticated && user && review.user_id === user.id && (
+                    <button 
+                      onClick={() => handleDelete(review.id)}
+                      className="absolute top-4 right-4 text-red-400/50 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity bg-red-400/10 p-2 rounded-full"
+                      title="Delete your review"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+
+                  <div className="flex items-center justify-between mb-4 pr-8">
+                    <StarRating rating={review.rating} />
+                  </div>
+                  
+                  <p className="text-textsecondary mb-6 flex-grow whitespace-pre-wrap">
+                    "{review.content}"
+                  </p>
+                  
+                  <div className="flex items-center justify-between pt-4 border-t border-borderwarm/50 mt-auto">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-brand-500/20 text-brand-500 flex items-center justify-center font-bold text-sm">
+                        {review.author_name.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="font-medium text-textprimary text-sm">{review.author_name}</span>
+                    </div>
+                    <span className="text-xs text-textmuted">{formatDate(review.created_at)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Reused Footer from LandingPage */}
+      <footer className="relative z-10 bg-bgbase border-t border-borderwarm py-16 px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+          <div className="md:col-span-2">
+            <div className="flex items-center gap-3 mb-6">
+              <span className="text-2xl font-bold tracking-tight text-textprimary">AdMind</span>
+            </div>
+            <p className="text-textsecondary mb-6 max-w-sm">
+              The AI co-pilot for digital marketers. Build campaigns, analyze performance, and write converting copy in seconds.
+            </p>
+          </div>
+          <div>
+            <h4 className="font-bold text-textprimary mb-4">Resources</h4>
+            <ul className="space-y-3 text-textmuted text-sm">
+              <li><Link to="/blog" className="hover:text-brand-500 transition-colors">Blog</Link></li>
+              <li><Link to="/community" className="hover:text-brand-500 transition-colors">Community</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-bold text-textprimary mb-4">Company</h4>
+            <ul className="space-y-3 text-textmuted text-sm">
+              <li><a href="#" className="hover:text-brand-500 transition-colors">About Us</a></li>
+              <li><a href="#" className="hover:text-brand-500 transition-colors">Contact</a></li>
+              <li><Link to="/privacy" className="hover:text-brand-500 transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/terms" className="hover:text-brand-500 transition-colors">Terms of Service</Link></li>
+            </ul>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto pt-8 border-t border-borderwarm flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-textmuted">
+          <div>&copy; {new Date().getFullYear()} AdMind Inc. Made in India 🇮🇳 by Vivek Yadav.</div>
+          <div className="flex gap-6">
+            <Link to="/terms" className="hover:text-textprimary transition-colors">Terms of Service</Link>
+            <Link to="/privacy" className="hover:text-textprimary transition-colors">Privacy Policy</Link>
+          </div>
+        </div>
+      </footer>
+    </div>
+  )
+}

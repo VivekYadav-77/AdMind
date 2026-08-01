@@ -276,5 +276,34 @@ export const API = {
     })
     if (!res.ok) throw new Error('Could not declare winner')
     return res.json()
+  },
+
+  // Community Reviews
+  getReviews: async () => {
+    const res = await fetch(apiUrl('/reviews'), {
+      method: 'GET'
+      // No auth headers required for viewing
+    })
+    if (!res.ok) throw new Error('Could not fetch reviews')
+    return res.json()
+  },
+
+  submitReview: async (rating, content) => {
+    const res = await fetch(apiUrl('/reviews'), {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rating, content })
+    })
+    if (!res.ok) throw new Error('Could not submit review')
+    return res.json()
+  },
+
+  deleteReview: async (id) => {
+    const res = await fetch(apiUrl(`/reviews/${id}`), {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    })
+    if (!res.ok) throw new Error('Could not delete review')
+    return res.json()
   }
 }

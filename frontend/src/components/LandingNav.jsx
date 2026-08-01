@@ -17,26 +17,36 @@ export default function LandingNav() {
   }, [scrollY])
 
   const navLinks = [
-    { name: 'Features', href: '#features' },
-    { name: 'Use Cases', href: '#use-cases' },
-    { name: 'Testimonials', href: '#testimonials' },
-    { name: 'Pricing', href: '#pricing' },
-    { name: 'FAQ', href: '#faq' },
+    { name: 'Features', href: '/#features', isAnchor: true },
+    { name: 'Use Cases', href: '/#use-cases', isAnchor: true },
+    { name: 'Testimonials', href: '/#testimonials', isAnchor: true },
+    { name: 'Blog', href: '/blog', isAnchor: false },
+    { name: 'Community', href: '/community', isAnchor: false },
+    { name: 'FAQ', href: '/#faq', isAnchor: true },
   ]
 
-  const scrollToSection = (e, href) => {
-    e.preventDefault()
-    setMobileMenuOpen(false)
-    const element = document.querySelector(href)
-    if (element) {
-      const offset = 80 // height of the fixed nav
-      const elementPosition = element.getBoundingClientRect().top
-      const offsetPosition = elementPosition + window.scrollY - offset
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      })
+  const scrollToSection = (e, link) => {
+    if (!link.isAnchor) {
+      setMobileMenuOpen(false)
+      return // Let Link handle the routing
     }
+    
+    // If we are on the home page, scroll smoothly
+    if (window.location.pathname === '/') {
+      e.preventDefault()
+      setMobileMenuOpen(false)
+      const element = document.querySelector(link.href.replace('/', ''))
+      if (element) {
+        const offset = 80 // height of the fixed nav
+        const elementPosition = element.getBoundingClientRect().top
+        const offsetPosition = elementPosition + window.scrollY - offset
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        })
+      }
+    }
+    // Else, we let it navigate to /#section naturally
   }
 
   return (
@@ -56,24 +66,31 @@ export default function LandingNav() {
               <span className="text-2xl font-bold tracking-tight text-textprimary">AdMind</span>
             </div>
             
-            {/* Status Badge */}
-            <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-bgpanel/50 border border-borderwarm backdrop-blur-md">
-              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-xs font-medium text-textsecondary">Status: Live</span>
-            </div>
+            
           </div>
 
           {/* Desktop Nav Links */}
           <nav className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
-              <a 
-                key={link.name} 
-                href={link.href}
-                onClick={(e) => scrollToSection(e, link.href)}
-                className="text-sm font-medium text-textsecondary hover:text-brand-500 transition-colors"
-              >
-                {link.name}
-              </a>
+              link.isAnchor && window.location.pathname === '/' ? (
+                <a 
+                  key={link.name} 
+                  href={link.href.replace('/', '')}
+                  onClick={(e) => scrollToSection(e, link)}
+                  className="text-sm font-medium text-textsecondary hover:text-brand-500 transition-colors"
+                >
+                  {link.name}
+                </a>
+              ) : (
+                <Link
+                  key={link.name}
+                  to={link.href}
+                  onClick={(e) => scrollToSection(e, link)}
+                  className="text-sm font-medium text-textsecondary hover:text-brand-500 transition-colors"
+                >
+                  {link.name}
+                </Link>
+              )
             ))}
           </nav>
 
@@ -128,14 +145,25 @@ export default function LandingNav() {
 
               <nav className="flex flex-col gap-6 flex-1 mt-4">
                 {navLinks.map((link) => (
-                  <a 
-                    key={link.name} 
-                    href={link.href}
-                    onClick={(e) => scrollToSection(e, link.href)}
-                    className="text-2xl font-serif font-bold text-textprimary"
-                  >
-                    {link.name}
-                  </a>
+                  link.isAnchor && window.location.pathname === '/' ? (
+                    <a 
+                      key={link.name} 
+                      href={link.href.replace('/', '')}
+                      onClick={(e) => scrollToSection(e, link)}
+                      className="text-2xl font-serif font-bold text-textprimary"
+                    >
+                      {link.name}
+                    </a>
+                  ) : (
+                    <Link
+                      key={link.name}
+                      to={link.href}
+                      onClick={(e) => scrollToSection(e, link)}
+                      className="text-2xl font-serif font-bold text-textprimary"
+                    >
+                      {link.name}
+                    </Link>
+                  )
                 ))}
               </nav>
 

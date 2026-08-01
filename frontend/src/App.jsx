@@ -11,6 +11,10 @@ import ReportDetail from './pages/ReportDetail'
 import Settings from './pages/Settings'
 import TestTracker from './pages/TestTracker'
 import LandingPage from './pages/LandingPage'
+import BlogPage from './pages/BlogPage'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import TermsOfService from './pages/TermsOfService'
+import Community from './pages/Community'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
 import { WorkspaceProvider } from './context/WorkspaceContext'
@@ -43,6 +47,12 @@ export default function App() {
               
               <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
               <Route path="/signup" element={<PublicOnlyRoute><Signup /></PublicOnlyRoute>} />
+              
+              {/* New Public Routes (No Auth Needed to View) */}
+              <Route path="/blog" element={<BlogPage />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfService />} />
+              <Route path="/community" element={<Community />} />
               
               {/* Protected App Routes */}
               <Route path="/app" element={

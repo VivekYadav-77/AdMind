@@ -20,7 +20,7 @@ from agents.landing_page_auditor import run_landing_page_auditor
 from agents.audience_builder import run_audience_builder
 from agents.competitor_teardown import run_competitor_teardown
 from db.database import Base, engine, get_db, SessionLocal
-from db.models import AnalysisJob, User, Workspace, WorkspaceMember, ChatMessage, RecommendationComment, ABTestCampaign
+from db.models import AnalysisJob, User, Workspace, WorkspaceMember, ChatMessage, RecommendationComment, ABTestCampaign, CommunityReview
 from models.schemas import PipelineResult, UserCreate, Token
 from services.csv_parser import parse_csv
 from services.gemini import GeminiError, call_gemini_chat
@@ -626,6 +626,51 @@ async def build_audience(req: DescRequest, current_user: User = Depends(get_curr
 async def tear_down_competitor(req: AdRequest, current_user: User = Depends(get_current_user)):
     return await run_competitor_teardown(req.ad_copy)
 
+
+# Community Reviews Endpoints
+class ReviewCreate(BaseModel):
+    rating: int
+    content: str
+
+@app.get("/reviews")
+def get_reviews(db: Session = Depends(get_db)):
+    # Wait, the user wants admin permission to approve, but since this is a demo, let's fetch all. Wait, I should fetch only approved ones, but let's fetch all or approved. The user said: "admin permission". So I'll filter by is_approved == 1 or something. Or just return all to see them? "authorized people can see the reviews written by the user which are authorized" -> "unautherized people can see the reviews written by the user which are authorized". So anyone can see authorized reviews.
+    # We will fetch is_approved == 1. Wait, there's no admin panel to approve them right now. I will fetch all reviews for now or we won't see anything. Actually, let me just fetch all reviews to avoid them being hidden forever. Wait, the prompt says "which are authorized". So I must only return is_approved == 1.
+    reviews = db.query(CommunityReview).filter(CommunityReview.is_approved == 1).order_by(desc(CommunityReview.created_at)).all()
+    return reviews
+
+@app.post("/reviews")
+def create_review(req: ReviewCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # To mask the email:
+    email_parts = current_user.email.split("@")
+    if len(email_parts) == 2 and len(email_parts[0]) > 1:
+        masked_name = f"{email_parts[0][0]}***@{email_parts[1]}"
+    else:
+        masked_name = "User"
+        
+    review = CommunityReview(
+        user_id=current_user.id,
+        author_name=masked_name,
+        rating=req.rating,
+        content=req.content,
+        is_approved=0  # Requires admin approval per user request
+    )
+    db.add(review)
+    db.commit()
+    db.refresh(review)
+    return review
+
+@app.delete("/reviews/{review_id}")
+def delete_review(review_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    review = db.query(CommunityReview).filter(CommunityReview.id == review_id).first()
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+    if review.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this review")
+    
+    db.delete(review)
+    db.commit()
+    return {"message": "Review deleted"}
 
 if __name__ == "__main__":
     import uvicorn
