@@ -16,6 +16,7 @@ import BlogPost from './pages/BlogPost'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsOfService from './pages/TermsOfService'
 import Community from './pages/Community'
+import ScrollToTop from './components/ScrollToTop'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
 import { WorkspaceProvider } from './context/WorkspaceContext'
@@ -42,6 +43,7 @@ export default function App() {
       <ToastProvider>
         <WorkspaceProvider>
           <BrowserRouter>
+            <ScrollToTop />
             <Routes>
               {/* Public Landing Page */}
               <Route path="/" element={<PublicOnlyRoute><LandingPage /></PublicOnlyRoute>} />
