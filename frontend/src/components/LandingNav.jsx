@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, useScroll, AnimatePresence } from 'framer-motion'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, Sun, Moon } from 'lucide-react'
 import clsx from 'clsx'
 import Logo from './Logo'
 
@@ -9,6 +9,21 @@ export default function LandingNav() {
   const { scrollY } = useScroll()
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('theme')
+    if (saved) return saved === 'dark'
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  })
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark')
+      localStorage.setItem('theme', 'dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+      localStorage.setItem('theme', 'light')
+    }
+  }, [isDarkMode])
 
   useEffect(() => {
     return scrollY.onChange((latest) => {
@@ -95,6 +110,13 @@ export default function LandingNav() {
           </nav>
 
           <div className="hidden md:flex items-center gap-4">
+            <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className="p-2 text-textmuted hover:text-brand-500 transition-colors"
+              aria-label="Toggle theme"
+            >
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
             <Link
               to="/login"
               className="text-sm font-medium text-textsecondary hover:text-textprimary transition-colors px-4 py-2"
@@ -103,7 +125,7 @@ export default function LandingNav() {
             </Link>
             <Link
               to="/signup"
-              className="btn-primary text-sm px-5 py-2.5 rounded-xl shadow-[0_0_15px_rgba(217,119,87,0.3)]"
+              className="btn-primary text-sm px-5 py-2.5 rounded-xl shadow-[0_0_15px_var(--brand-glow-light)]"
             >
               Get Started Free
             </Link>
@@ -135,12 +157,20 @@ export default function LandingNav() {
                   <Logo className="h-10 w-10 text-brand-500" />
                   <span className="text-2xl font-bold tracking-tight text-textprimary">AdMind</span>
                 </div>
-                <button 
-                  className="p-2 text-textprimary focus:outline-none"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  <X size={24} />
-                </button>
+                <div className="flex items-center gap-4">
+                  <button
+                    onClick={() => setIsDarkMode(!isDarkMode)}
+                    className="p-2 text-textmuted hover:text-brand-500 transition-colors"
+                  >
+                    {isDarkMode ? <Sun size={24} /> : <Moon size={24} />}
+                  </button>
+                  <button 
+                    className="p-2 text-textprimary focus:outline-none"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
               </div>
 
               <nav className="flex flex-col gap-6 flex-1 mt-4">

@@ -36,10 +36,12 @@ function StatBox({ value, label, prefix = "", suffix = "" }) {
 
 export default function LandingPage() {
   useEffect(() => {
-    document.documentElement.classList.add('dark')
-    return () => {
-      const saved = localStorage.getItem('theme')
-      if (saved !== 'dark') document.documentElement.classList.remove('dark')
+    const saved = localStorage.getItem('theme')
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    if (saved === 'dark' || (!saved && prefersDark)) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
     }
   }, [])
 
@@ -109,7 +111,7 @@ export default function LandingPage() {
             </motion.p>
             
             <motion.div variants={FADE_UP_VARIANTS} className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-              <Link to="/signup" className="w-full sm:w-auto landing-shimmer-btn btn-primary text-lg px-8 py-4 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(217,119,87,0.4)] hover:shadow-[0_0_40px_rgba(217,119,87,0.6)]">
+              <Link to="/signup" className="w-full sm:w-auto landing-shimmer-btn btn-primary text-lg px-8 py-4 rounded-xl flex items-center justify-center gap-2 shadow-[0_0_30px_var(--brand-glow)] hover:shadow-[0_0_40px_var(--brand-glow-max)]">
                 Start Analyzing for Free <ArrowRight size={20} />
               </Link>
               <a href="#how-it-works" className="w-full sm:w-auto btn-secondary text-lg px-8 py-4 rounded-xl flex items-center justify-center gap-2 group">
@@ -172,7 +174,7 @@ export default function LandingPage() {
 
             {/* Step 1: Auditor */}
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="flex flex-col items-center pt-8">
-              <div className="w-20 h-20 rounded-2xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(217,119,87,0.15)] mb-6">
+              <div className="w-20 h-20 rounded-2xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center shadow-[0_0_20px_var(--brand-glow-subtle)] mb-6">
                 <Search size={32} className="text-brand-500" />
               </div>
               <h3 className="text-xl font-bold mb-2 text-brand-400">2. Auditor Agent</h3>
@@ -225,7 +227,7 @@ export default function LandingPage() {
       <section id="features" className="relative z-10 py-20 px-6 lg:px-8 max-w-7xl mx-auto scroll-mt-20">
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={STAGGER_CONTAINER} className="grid grid-cols-1 md:grid-cols-2 gap-8">
           
-          <motion.div variants={FADE_UP_VARIANTS} className="bg-bgpanel border border-borderwarm rounded-3xl p-10 hover:border-brand-500/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(217,119,87,0.1)] group flex flex-col h-full">
+          <motion.div variants={FADE_UP_VARIANTS} className="bg-bgpanel border border-borderwarm rounded-3xl p-10 hover:border-brand-500/50 transition-all duration-300 hover:shadow-[0_0_30px_var(--brand-glow-subtle)] group flex flex-col h-full">
             <div className="h-16 w-16 rounded-2xl bg-brand-500/10 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300">
               <Search size={32} className="text-brand-500" />
             </div>
@@ -551,7 +553,7 @@ export default function LandingPage() {
             Stop wasting budget on underperforming ads. Get a complete audit, strategy, and copy rewrites in seconds.
           </motion.p>
           <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }} className="flex flex-col items-center gap-4">
-             <Link to="/signup" className="landing-shimmer-btn inline-flex items-center justify-center gap-2 btn-primary text-xl px-10 py-5 rounded-2xl shadow-[0_0_40px_rgba(217,119,87,0.5)] hover:scale-105 transition-transform duration-300">
+             <Link to="/signup" className="landing-shimmer-btn inline-flex items-center justify-center gap-2 btn-primary text-xl px-10 py-5 rounded-2xl shadow-[0_0_40px_var(--brand-glow-strong)] hover:scale-105 transition-transform duration-300">
               Start Analyzing for Free <ArrowRight size={24} />
             </Link>
             <span className="text-sm text-textmuted">No credit card required. Free tier forever.</span>
