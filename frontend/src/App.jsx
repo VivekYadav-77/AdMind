@@ -12,6 +12,7 @@ import Settings from './pages/Settings'
 import TestTracker from './pages/TestTracker'
 import LandingPage from './pages/LandingPage'
 import BlogPage from './pages/BlogPage'
+import BlogPost from './pages/BlogPost'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsOfService from './pages/TermsOfService'
 import Community from './pages/Community'
@@ -50,6 +51,7 @@ export default function App() {
               
               {/* New Public Routes (No Auth Needed to View) */}
               <Route path="/blog" element={<BlogPage />} />
+              <Route path="/blog/:id" element={<BlogPost />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/community" element={<Community />} />

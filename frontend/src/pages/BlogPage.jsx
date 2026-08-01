@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { BookOpen, Clock, ArrowRight, Tags } from 'lucide-react'
 import LandingNav from '../components/LandingNav'
 import AnimatedBackground from '../components/AnimatedBackground'
+import { useToast } from '../context/ToastContext'
 
 const FADE_UP_VARIANTS = {
   hidden: { opacity: 0, y: 30 },
@@ -15,65 +16,11 @@ const STAGGER_CONTAINER = {
   visible: { opacity: 1, transition: { staggerChildren: 0.2 } }
 }
 
-const BLOG_POSTS = [
-  {
-    id: 1,
-    title: "10 AI Prompts to Supercharge Your Facebook Ads",
-    excerpt: "Discover the best prompts to generate high-converting ad copy for Meta platforms using AI.",
-    tag: "AI",
-    readTime: "5 min",
-    date: "Oct 12, 2026",
-    author: "Vivek Yadav",
-  },
-  {
-    id: 2,
-    title: "The Ultimate Guide to Competitor Teardowns",
-    excerpt: "Learn how to legally spy on your competitors' ads and uncover their winning strategies.",
-    tag: "Strategy",
-    readTime: "8 min",
-    date: "Oct 10, 2026",
-    author: "AdMind Team",
-  },
-  {
-    id: 3,
-    title: "Why A/B Testing Your Copy is Non-Negotiable",
-    excerpt: "Stop guessing. Start testing. We break down the math behind incremental copy improvements.",
-    tag: "Copy",
-    readTime: "6 min",
-    date: "Oct 05, 2026",
-    author: "AdMind Team",
-  },
-  {
-    id: 4,
-    title: "Audience Building in a Privacy-First World",
-    excerpt: "With tracking limitations, how do you find your ideal customers? AI-driven persona building.",
-    tag: "Strategy",
-    readTime: "7 min",
-    date: "Sep 28, 2026",
-    author: "Vivek Yadav",
-  },
-  {
-    id: 5,
-    title: "Landing Page Audit Checklist for 2026",
-    excerpt: "Is your landing page leaking conversions? Use this 15-point checklist to plug the holes.",
-    tag: "CRO",
-    readTime: "10 min",
-    date: "Sep 20, 2026",
-    author: "AdMind Team",
-  },
-  {
-    id: 6,
-    title: "How AdMind Uses Gemini to Write Better Ads",
-    excerpt: "A behind-the-scenes look at the architecture powering our AI copywriter.",
-    tag: "Engineering",
-    readTime: "12 min",
-    date: "Sep 15, 2026",
-    author: "Vivek Yadav",
-  },
-]
+import { BLOG_POSTS } from '../data/blogPosts'
 
 export default function BlogPage() {
   const [activeTag, setActiveTag] = useState('All')
+  const { addToast } = useToast()
 
   useEffect(() => {
     document.documentElement.classList.add('dark')
@@ -169,7 +116,10 @@ export default function BlogPage() {
                 <div className="text-sm font-medium text-textprimary">
                   {post.author} • <span className="text-textmuted font-normal">{post.date}</span>
                 </div>
-                <Link to="#" className="text-brand-500 bg-brand-500/10 p-2 rounded-full group-hover:bg-brand-500 group-hover:text-white transition-all cursor-pointer relative z-30">
+                <Link 
+                  to={`/blog/${post.id}`}
+                  className="text-brand-500 bg-brand-500/10 p-2 rounded-full group-hover:bg-brand-500 group-hover:text-white transition-all cursor-pointer relative z-30"
+                >
                   <ArrowRight size={18} />
                 </Link>
               </div>
