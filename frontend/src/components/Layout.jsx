@@ -7,6 +7,7 @@ import clsx from 'clsx'
 import { motion } from 'framer-motion'
 import Modal from './ui/Modal'
 import AnimatedBackground from './AnimatedBackground'
+import Logo from './Logo'
 
 export default function Layout() {
   const location = useLocation()
@@ -69,16 +70,22 @@ export default function Layout() {
   const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : 'U'
 
   return (
-    <div className="flex min-h-screen bg-bgbase text-textprimary font-sans selection:bg-brand-500/30 transition-colors duration-300" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+    <div className="relative flex min-h-screen bg-bgbase text-textprimary font-sans selection:bg-brand-500/30 transition-colors duration-300" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+      
+      {/* Background Blobs matching the landing page */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="landing-blob bg-brand-500/20 w-[600px] h-[600px] top-[-10%] left-[-10%]" />
+        <div className="landing-blob bg-purple-500/10 w-[500px] h-[500px] bottom-[10%] right-[-10%]" style={{ animationDelay: '-5s' }} />
+        <div className="landing-blob bg-blue-500/10 w-[400px] h-[400px] top-[40%] left-[40%]" style={{ animationDelay: '-10s' }} />
+      </div>
+
       <AnimatedBackground density="low" showKite={false} />
       <div className="grain-overlay print:hidden" />
       {/* Sidebar */}
       <aside className="w-64 flex-shrink-0 flex flex-col bg-bgpanel border-r border-borderwarm z-10 relative print:hidden">
         <div className="flex h-20 items-center px-6 border-b border-borderwarm relative z-10">
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 font-bold text-white shadow-sm">
-              A
-            </div>
+            <Logo className="h-8 w-8 text-brand-500" />
             <span className="text-xl font-bold tracking-tight text-textprimary">AdMind</span>
           </div>
         </div>

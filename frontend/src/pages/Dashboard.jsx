@@ -117,7 +117,7 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate('/analyze')}
+            onClick={() => navigate('/app/analyze')}
             className="inline-flex items-center gap-2 btn-primary"
           >
             <Zap size={18} />
@@ -192,7 +192,7 @@ export default function Dashboard() {
                 <BarChart3 size={32} className="text-textmuted mb-3 opacity-50" />
                 <h3 className="text-textprimary font-medium mb-1">No data available yet</h3>
                 <p className="text-sm text-textmuted max-w-sm">Run your first campaign analysis to see your ROAS and efficiency trends here.</p>
-                <button onClick={() => navigate('/analyze')} className="mt-4 text-sm font-medium text-brand-500 hover:text-brand-600">Run Analysis →</button>
+                <button onClick={() => navigate('/app/analyze')} className="mt-4 text-sm font-medium text-brand-500 hover:text-brand-600">Run Analysis →</button>
               </div>
             ) : (
               <div className="h-64">
@@ -246,7 +246,7 @@ export default function Dashboard() {
                       </div>
                       
                       <button 
-                        onClick={() => navigate(job.status === 'complete' ? `/history/${job.id}` : '#')}
+                        onClick={() => navigate(job.status === 'complete' ? `/app/history/${job.id}` : '#')}
                         disabled={job.status !== 'complete'}
                         className="opacity-0 group-hover:opacity-100 px-4 py-2 bg-bgpanel text-textprimary text-xs font-semibold rounded-lg border border-borderwarm hover:border-brand-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
@@ -268,22 +268,22 @@ export default function Dashboard() {
           <div className="card-warm p-6">
             <h2 className="text-lg font-serif font-bold text-textprimary mb-4">Quick Actions</h2>
             <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => navigate('/analyze')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-brand-500/5 border border-borderwarm hover:border-brand-500/30 transition-colors gap-2 text-center group">
+              <button onClick={() => navigate('/app/analyze')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-brand-500/5 border border-borderwarm hover:border-brand-500/30 transition-colors gap-2 text-center group">
                 <Zap size={20} className="text-brand-500 group-hover:scale-110 transition-transform" />
                 <span className="text-xs font-medium text-textprimary">Run Analysis</span>
               </button>
               
-              <button onClick={() => navigate('/tools', { state: { activeTab: 'landing-page' } })} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-emerald-500/5 border border-borderwarm hover:border-emerald-500/30 transition-colors gap-2 text-center group">
+              <button onClick={() => navigate('/app/tools', { state: { activeTab: 'landing-page' } })} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-emerald-500/5 border border-borderwarm hover:border-emerald-500/30 transition-colors gap-2 text-center group">
                 <Search size={20} className="text-emerald-500 group-hover:scale-110 transition-transform" />
                 <span className="text-xs font-medium text-textprimary">Landing Audit</span>
               </button>
 
-              <button onClick={() => navigate('/tools', { state: { activeTab: 'audience' } })} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-blue-500/5 border border-borderwarm hover:border-blue-500/30 transition-colors gap-2 text-center group">
+              <button onClick={() => navigate('/app/tools', { state: { activeTab: 'audience' } })} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-blue-500/5 border border-borderwarm hover:border-blue-500/30 transition-colors gap-2 text-center group">
                 <Users size={20} className="text-blue-500 group-hover:scale-110 transition-transform" />
                 <span className="text-xs font-medium text-textprimary">Build Audience</span>
               </button>
 
-              <button onClick={() => navigate('/tests')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-purple-500/5 border border-borderwarm hover:border-purple-500/30 transition-colors gap-2 text-center group">
+              <button onClick={() => navigate('/app/tests')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-purple-500/5 border border-borderwarm hover:border-purple-500/30 transition-colors gap-2 text-center group">
                 <GitCompare size={20} className="text-purple-500 group-hover:scale-110 transition-transform" />
                 <span className="text-xs font-medium text-textprimary">A/B Tracker</span>
               </button>
@@ -303,7 +303,7 @@ export default function Dashboard() {
               <div className="text-center py-6 px-4 bg-bgbase rounded-xl border border-dashed border-borderwarm">
                 <GitCompare size={24} className="mx-auto text-textmuted mb-2 opacity-50" />
                 <p className="text-sm text-textmuted">No active tests.</p>
-                <button onClick={() => navigate('/tests')} className="mt-2 text-xs font-medium text-brand-500 hover:text-brand-600">Start a Test →</button>
+                <button onClick={() => navigate('/app/tests')} className="mt-2 text-xs font-medium text-brand-500 hover:text-brand-600">Start a Test →</button>
               </div>
             ) : (
               <div className="space-y-3 mb-4">
@@ -321,7 +321,7 @@ export default function Dashboard() {
             
             {runningAbTests.length > 0 && (
               <button 
-                onClick={() => navigate('/tests')} 
+                onClick={() => navigate('/app/tests')} 
                 className="w-full py-2.5 text-sm font-medium text-textprimary bg-bgbase hover:bg-bgpanelhover rounded-xl border border-borderwarm transition-colors"
               >
                 Manage Tests

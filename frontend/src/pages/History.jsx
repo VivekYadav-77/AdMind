@@ -283,7 +283,7 @@ export default function History() {
                 <div className="flex items-center">
                   {job.status === 'complete' ? (
                     <button
-                      onClick={() => navigate(`/history/${job.id}`)}
+                      onClick={() => navigate(`/app/history/${job.id}`)}
                       className="w-full md:w-auto px-5 py-2.5 bg-bgpanelhover hover:bg-bgpanel text-textprimary font-medium rounded-xl text-sm transition-all border border-borderwarm hover:border-brand-500/50"
                     >
                       View Report

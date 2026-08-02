@@ -111,7 +111,7 @@ export default function ReportDetail() {
     return (
       <div className="space-y-6">
         <button
-          onClick={() => navigate('/history')}
+          onClick={() => navigate('/app/history')}
           className="inline-flex items-center gap-2 text-textmuted hover:text-textprimary transition-colors"
         >
           <ArrowLeft size={16} /> Back to History
@@ -149,7 +149,7 @@ export default function ReportDetail() {
       >
         <div className="flex flex-wrap items-center justify-between gap-4 print:hidden">
           <button
-            onClick={() => navigate('/history')}
+            onClick={() => navigate('/app/history')}
             className="inline-flex items-center gap-2 text-textmuted hover:text-textprimary transition-colors group text-sm font-semibold"
           >
             <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
