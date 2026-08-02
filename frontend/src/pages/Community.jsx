@@ -52,12 +52,7 @@ export default function Community() {
   const [hasSubmitted, setHasSubmitted] = useState(false) // For current session
 
   useEffect(() => {
-    document.documentElement.classList.add('dark')
     fetchReviews()
-    return () => {
-      const saved = localStorage.getItem('theme')
-      if (saved !== 'dark') document.documentElement.classList.remove('dark')
-    }
   }, [])
 
   const fetchReviews = async () => {

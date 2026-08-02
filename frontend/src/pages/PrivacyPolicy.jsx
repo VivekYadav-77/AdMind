@@ -16,13 +16,6 @@ const STAGGER_CONTAINER = {
 }
 
 export default function PrivacyPolicy() {
-  useEffect(() => {
-    document.documentElement.classList.add('dark')
-    return () => {
-      const saved = localStorage.getItem('theme')
-      if (saved !== 'dark') document.documentElement.classList.remove('dark')
-    }
-  }, [])
 
   return (
     <div className="min-h-screen bg-bgbase text-textprimary overflow-hidden selection:bg-brand-500/30 font-sans">

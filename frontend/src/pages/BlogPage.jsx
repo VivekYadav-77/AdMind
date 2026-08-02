@@ -22,13 +22,6 @@ export default function BlogPage() {
   const [activeTag, setActiveTag] = useState('All')
   const { addToast } = useToast()
 
-  useEffect(() => {
-    document.documentElement.classList.add('dark')
-    return () => {
-      const saved = localStorage.getItem('theme')
-      if (saved !== 'dark') document.documentElement.classList.remove('dark')
-    }
-  }, [])
 
   const tags = ['All', ...new Set(BLOG_POSTS.map(post => post.tag))]
   const filteredPosts = activeTag === 'All' ? BLOG_POSTS : BLOG_POSTS.filter(post => post.tag === activeTag)

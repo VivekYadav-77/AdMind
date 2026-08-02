@@ -21,12 +21,7 @@ export default function BlogPost() {
   const post = BLOG_POSTS.find(p => p.id === parseInt(id))
 
   useEffect(() => {
-    document.documentElement.classList.add('dark')
     window.scrollTo(0, 0)
-    return () => {
-      const saved = localStorage.getItem('theme')
-      if (saved !== 'dark') document.documentElement.classList.remove('dark')
-    }
   }, [id])
 
   if (!post) {
