@@ -160,30 +160,19 @@
 
 /* Subtle, elegant styling for the background SVGs */
 .bg-svg-icon {
-  color: var(--text-secondary);
-  opacity: 0.12;
-  filter: drop-shadow(0 0 2px rgba(0,0,0,0.02));
+  color: var(--brand-500); /* Use a subtle brand color */
+  opacity: 0.15;
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.3)); /* Glowing effect */
   transition: all 0.5s ease;
 }
 
-.dark .bg-svg-icon {
-  color: var(--brand-500); /* Use a subtle brand color in dark mode */
-  opacity: 0.15;
-  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.3)); /* Glowing effect */
-}
-
 /* Individual Icon Overrides (Optional for variety) */
-.dark .bg-svg-icon:nth-child(even) {
+.bg-svg-icon:nth-child(even) {
   color: var(--brand-400);
   filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.3));
 }
 
 .bg-kite {
-  color: var(--text-secondary);
-  opacity: 0.2;
-}
-
-.dark .bg-kite {
   color: var(--brand-500);
   opacity: 0.25;
   filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.4));
