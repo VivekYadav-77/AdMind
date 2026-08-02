@@ -48,7 +48,7 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen bg-bgbase text-textprimary relative">
+    <div className="flex min-h-screen bg-bgbase text-textprimary relative selection:bg-brand-500/30">
       <div className="absolute top-6 right-6 z-50">
         <button
           onClick={() => setIsDarkMode(!isDarkMode)}
