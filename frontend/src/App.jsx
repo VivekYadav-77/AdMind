@@ -16,6 +16,7 @@ import BlogPost from './pages/BlogPost'
 import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsOfService from './pages/TermsOfService'
 import Community from './pages/Community'
+import AboutUs from './pages/AboutUs'
 import ScrollToTop from './components/ScrollToTop'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
@@ -57,6 +58,7 @@ export default function App() {
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/community" element={<Community />} />
+              <Route path="/about" element={<AboutUs />} />
               
               {/* Protected App Routes */}
               <Route path="/app" element={
