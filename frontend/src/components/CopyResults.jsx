@@ -250,10 +250,26 @@ export default function CopyResults({ copy }) {
                 </div>
 
                 {/* Test A */}
-                <VariantPanel testData={variant.test_a} type="A" posterPrompts={variant.poster_prompts} />
+                <VariantPanel 
+                  testData={variant.test_a} 
+                  type="A" 
+                  posterPrompts={variant.poster_prompts || (variant.poster_prompt || variant.visual_prompt ? {
+                    ideogram: variant.poster_prompt || variant.visual_prompt,
+                    midjourney: variant.poster_prompt || variant.visual_prompt,
+                    canva: variant.poster_prompt || variant.visual_prompt
+                  } : null)} 
+                />
 
                 {/* Test B */}
-                <VariantPanel testData={variant.test_b} type="B" posterPrompts={variant.poster_prompts} />
+                <VariantPanel 
+                  testData={variant.test_b} 
+                  type="B" 
+                  posterPrompts={variant.poster_prompts || (variant.poster_prompt || variant.visual_prompt ? {
+                    ideogram: variant.poster_prompt || variant.visual_prompt,
+                    midjourney: variant.poster_prompt || variant.visual_prompt,
+                    canva: variant.poster_prompt || variant.visual_prompt
+                  } : null)} 
+                />
               </div>
 
               {/* Test rationale */}
