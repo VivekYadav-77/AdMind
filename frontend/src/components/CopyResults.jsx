@@ -101,16 +101,13 @@ function PosterBlueprint({ testData, type, label }) {
   )
 }
 
-function AIPromptPanel({ posterPrompt }) {
-  const [activeTab, setActiveTab] = useState('midjourney')
+function AIPromptPanel({ posterPrompts }) {
+  const [activeTab, setActiveTab] = useState('ideogram')
   const [copied, setCopied] = useState(false)
   
-  if (!posterPrompt) return null;
+  if (!posterPrompts || !posterPrompts.ideogram) return null;
 
-  const midjourneyPrompt = `${posterPrompt} --ar 4:5 --style raw --v 6.0`
-  const dallePrompt = `${posterPrompt}. Generate this as a vertical poster format (4:5 aspect ratio) with high professional quality.`
-
-  const activePromptText = activeTab === 'midjourney' ? midjourneyPrompt : dallePrompt
+  const activePromptText = posterPrompts[activeTab]
 
   const handleCopy = () => {
     navigator.clipboard.writeText(activePromptText)
@@ -118,14 +115,34 @@ function AIPromptPanel({ posterPrompt }) {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const getToolHint = () => {
+    switch (activeTab) {
+      case 'ideogram': return 'Go to ideogram.ai → Create → Paste prompt'
+      case 'midjourney': return 'Go to Discord → /imagine → Paste prompt'
+      case 'canva': return 'Go to Canva → Apps → Magic Design → Paste prompt'
+      default: return ''
+    }
+  }
+
   return (
     <div className="mt-4 rounded-xl border border-borderwarm bg-bgpanel shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-borderwarm bg-bgbase">
-        <div className="flex items-center gap-2">
-          <Sparkles size={14} className="text-purple-400" />
-          <span className="text-xs font-bold text-textprimary uppercase tracking-wider">AI Generation Prompt</span>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-borderwarm bg-bgbase flex-wrap gap-2">
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-2">
+            <Sparkles size={14} className="text-purple-400" />
+            <span className="text-xs font-bold text-textprimary uppercase tracking-wider">Complete Poster Prompt</span>
+          </div>
+          {activeTab === 'ideogram' && (
+            <span className="text-[10px] text-emerald-400 font-medium">✨ Best for text accuracy</span>
+          )}
         </div>
         <div className="flex bg-bgpanelhover rounded-lg p-0.5 border border-borderwarm">
+          <button 
+            onClick={() => setActiveTab('ideogram')}
+            className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${activeTab === 'ideogram' ? 'bg-bgpanel text-textprimary shadow-sm border border-emerald-500/30 text-emerald-400' : 'text-textmuted hover:text-textprimary'}`}
+          >
+            ⭐ Ideogram
+          </button>
           <button 
             onClick={() => setActiveTab('midjourney')}
             className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${activeTab === 'midjourney' ? 'bg-bgpanel text-textprimary shadow-sm' : 'text-textmuted hover:text-textprimary'}`}
@@ -133,10 +150,10 @@ function AIPromptPanel({ posterPrompt }) {
             Midjourney
           </button>
           <button 
-            onClick={() => setActiveTab('dalle')}
-            className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${activeTab === 'dalle' ? 'bg-bgpanel text-textprimary shadow-sm' : 'text-textmuted hover:text-textprimary'}`}
+            onClick={() => setActiveTab('canva')}
+            className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${activeTab === 'canva' ? 'bg-bgpanel text-textprimary shadow-sm' : 'text-textmuted hover:text-textprimary'}`}
           >
-            DALL·E / Firefly
+            Canva AI
           </button>
         </div>
       </div>
@@ -158,18 +175,18 @@ function AIPromptPanel({ posterPrompt }) {
       <div className="px-4 py-2 bg-bgbase border-t border-borderwarm flex items-center gap-2">
         <LayoutTemplate size={12} className="text-textmuted" />
         <span className="text-[11px] text-textmuted">
-          Paste this into {activeTab === 'midjourney' ? 'Discord (/imagine)' : 'ChatGPT or Adobe Firefly'} to generate the visual.
+          📌 {getToolHint()}
         </span>
       </div>
     </div>
   )
 }
 
-function VariantPanel({ testData, type, posterPrompt }) {
+function VariantPanel({ testData, type, posterPrompts }) {
   return (
     <div className="flex flex-col gap-4">
       <PosterBlueprint testData={testData} type={type} label={testData?.label || `Variation ${type}`} />
-      <AIPromptPanel posterPrompt={posterPrompt} />
+      <AIPromptPanel posterPrompts={posterPrompts} />
     </div>
   )
 }
@@ -233,10 +250,10 @@ export default function CopyResults({ copy }) {
                 </div>
 
                 {/* Test A */}
-                <VariantPanel testData={variant.test_a} type="A" posterPrompt={variant.poster_prompt || variant.visual_prompt} />
+                <VariantPanel testData={variant.test_a} type="A" posterPrompts={variant.poster_prompts} />
 
                 {/* Test B */}
-                <VariantPanel testData={variant.test_b} type="B" posterPrompt={variant.poster_prompt || variant.visual_prompt} />
+                <VariantPanel testData={variant.test_b} type="B" posterPrompts={variant.poster_prompts} />
               </div>
 
               {/* Test rationale */}
