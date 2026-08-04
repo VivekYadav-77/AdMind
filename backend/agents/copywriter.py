@@ -86,7 +86,7 @@ Respond ONLY with this JSON structure:
         "headline": "<your headline for test B>",
         "description": "<your description for test B>"
       }},
-      "visual_prompt": "<A cinematic, highly-detailed description of an image to accompany this ad campaign (e.g. 'A sleek modern running shoe on a glowing neon track, highly detailed, photorealistic')>",
+      "poster_prompt": "<A structured AI generation prompt describing the subject, composition (e.g. rule of thirds, hero shot), color palette, and style.>",
       "test_rationale": "<1-2 sentences explaining WHY testing these two angles will reveal which messaging resonates best with this audience>"
     }}
   ],

@@ -1,223 +1,175 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Beaker, Sparkles, Target, Zap, Globe, MoreHorizontal, ThumbsUp, MessageCircle, Share2, ExternalLink, Loader2 } from 'lucide-react'
-import { API_BASE_URL } from '../services/api'
-import { imageQueue } from '../services/imageQueue'
+import { Beaker, Sparkles, Target, Zap, Globe, ExternalLink, Copy, CheckCircle2, Image as ImageIcon, LayoutTemplate } from 'lucide-react'
 
-const hashString = (str) => {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash &= hash;
-  }
-  return hash;
-};
-
-function AdMockup({ testData, type, label, visualPrompt }) {
+function PosterBlueprint({ testData, type, label }) {
   const isA = type === 'A'
   const accentColor = isA ? 'blue' : 'amber'
   const AccentIcon = isA ? Target : Zap
-  const brandName = "AdMind"
-  
-  const [retryCount, setRetryCount] = React.useState(0);
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [countdown, setCountdown] = React.useState(null);
-  const [imgSrc, setImgSrc] = React.useState(null);
-
-  React.useEffect(() => {
-    if (countdown === null) return;
-    
-    if (countdown === 0) {
-      setRetryCount(c => c + 1);
-      setIsLoading(true);
-      setCountdown(null);
-      return;
-    }
-    
-    const timer = setTimeout(() => {
-      setCountdown(countdown - 1);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, [countdown]);
-
-  React.useEffect(() => {
-    if (!visualPrompt || countdown !== null) return;
-
-    let isMounted = true;
-    const url = `${API_BASE_URL}/workspaces/images/generate?prompt=${encodeURIComponent(visualPrompt)}&seed=${Math.abs(hashString(visualPrompt + type)) + retryCount}`;
-    
-    imageQueue.enqueue(url)
-      .then(objectUrl => {
-         if (isMounted) {
-            setImgSrc(objectUrl);
-         }
-      })
-      .catch(error => {
-         if (isMounted) {
-            console.error("Image generation failed:", error);
-            if (retryCount >= 1) {
-              // Hard fallback to prevent infinite loading if backend is blocked
-              const fallbackSeed = Math.abs(hashString(visualPrompt + type));
-              setImgSrc(`https://picsum.photos/seed/${fallbackSeed}/800/600`);
-            } else {
-              setIsLoading(false);
-              setCountdown(10);
-            }
-         }
-      });
-      
-    return () => { isMounted = false; };
-  }, [visualPrompt, retryCount, type, countdown]);
 
   return (
     <div className={`relative flex flex-col rounded-2xl border-2 border-${accentColor}-500/30 bg-bgpanel overflow-hidden group hover:border-${accentColor}-500/60 transition-colors shadow-lg`}>
       {/* Top Banner */}
       <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-${accentColor}-400 to-${accentColor}-600`} />
       
-      {/* Ad Header */}
+      {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-borderwarm bg-bgpanelhover">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-bgpanelhover to-bgpanel border border-borderwarm shadow-inner flex items-center justify-center p-1">
-            <div className="h-full w-full rounded-full bg-bgpanelhover flex items-center justify-center text-xs font-black text-textmuted">
-              {brandName.charAt(0)}
-            </div>
+          <div className={`p-1.5 rounded-lg bg-${accentColor}-500/20 text-${accentColor}-400`}>
+            <AccentIcon size={16} />
           </div>
           <div>
-            <h4 className="text-[15px] font-bold text-textprimary tracking-tight leading-none mb-1">{brandName}</h4>
-            <div className="flex items-center gap-1.5 text-[11px] text-textmuted font-medium">
-              <span>Sponsored</span>
-              <span className="w-1 h-1 rounded-full bg-textmuted" />
-              <Globe size={10} />
-            </div>
+            <h4 className="text-[13px] font-bold text-textprimary tracking-tight uppercase">{label}</h4>
+            <div className="text-[11px] text-textmuted font-medium">Layout Blueprint</div>
           </div>
         </div>
-        <button className="text-textmuted hover:text-textprimary transition-colors">
-          <MoreHorizontal size={20} />
-        </button>
-      </div>
-
-      {/* Ad Image from Pollinations */}
-      {visualPrompt && (
-        <div className="w-full aspect-video bg-slate-800 overflow-hidden relative border-b border-white/5">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-slate-500 text-xs font-bold animate-pulse">Generating AI Creative...</span>
-          </div>
-          <img 
-            src={`https://image.pollinations.ai/prompt/${encodeURIComponent(visualPrompt)}`} 
-            alt="AI Generated Ad Creative" 
-            className="w-full h-full object-cover relative z-10 transition-opacity duration-500"
-            loading="lazy"
-          />
+        <div className="text-[10px] font-mono text-textmuted bg-bgpanel px-2 py-1 rounded border border-borderwarm">
+          1080 × 1350
         </div>
-      )}
-
-      {/* Ad Text */}
-      <div className="p-5 flex-1 relative">
-        <p className="text-[15px] text-textsecondary whitespace-pre-wrap leading-relaxed font-medium">
-          {testData?.description}
-        </p>
       </div>
 
-      {/* Ad Image Creative (Generated by Backend Fallback Manager) */}
-      {visualPrompt && (
-        <div className="w-full aspect-[4/3] overflow-hidden border-y border-borderwarm bg-bgpanel relative group">
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-bgpanel/50 backdrop-blur-sm z-10">
-              <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
-            </div>
-          )}
+      {/* Blueprint Area */}
+      <div className="p-6 bg-[#0a0a0c] relative flex-1 flex flex-col items-center justify-center min-h-[360px] pattern-grid-lg">
+        {/* Decorative background grid */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+        
+        {/* Wireframe Container */}
+        <div className="w-[240px] h-[300px] border border-borderwarm bg-bgbase rounded-md flex flex-col relative z-10 overflow-hidden shadow-2xl">
           
-          {countdown !== null && (
-            <div className="absolute inset-0 bg-bgpanel/95 backdrop-blur-md flex items-center justify-center flex-col text-center z-20 p-6 overflow-hidden">
-              {/* Background animated gradients */}
-              <div className={`absolute -top-10 -left-10 w-40 h-40 ${isA ? 'bg-blue-500/20' : 'bg-amber-500/20'} rounded-full blur-[60px] animate-pulse`} />
-              <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-purple-500/20 rounded-full blur-[60px] animate-pulse" style={{ animationDelay: '1s' }} />
-
-              {/* Animated Centerpiece */}
-              <div className="relative mb-6 flex items-center justify-center mt-2">
-                <div className={`absolute inset-[-24px] border-2 ${isA ? 'border-blue-500/20 border-t-blue-400/80' : 'border-amber-500/20 border-t-amber-400/80'} rounded-full animate-[spin_3s_linear_infinite]`} />
-                <div className={`absolute inset-[-12px] border-2 border-purple-500/20 rounded-full animate-[spin_2s_linear_infinite_reverse] border-b-purple-400/80`} />
-                <div className={`h-16 w-16 bg-gradient-to-br ${isA ? 'from-blue-600' : 'from-amber-600'} to-purple-600 rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(168,85,247,0.5)] relative z-10`}>
-                  <Sparkles className="w-8 h-8 text-white animate-pulse" />
-                </div>
-              </div>
-              
-              <div className="space-y-1.5 relative z-10">
-                <div className={`text-lg font-black text-transparent bg-clip-text bg-gradient-to-r ${isA ? 'from-blue-400' : 'from-amber-400'} to-purple-400 tracking-wide uppercase`}>
-                  Crafting Masterpiece
-                </div>
-                <div className="text-[11px] text-textmuted font-medium tracking-wide">
-                  Optimizing for highest conversion rate
-                </div>
-              </div>
-
-              {/* Progress Bar & Countdown */}
-              <div className="mt-8 flex flex-col items-center gap-2 relative z-10 w-full px-6">
-                <div className="h-1.5 w-full bg-bgpanelhover rounded-full overflow-hidden shadow-inner border border-borderwarm">
-                  <div 
-                    className={`h-full bg-gradient-to-r ${isA ? 'from-blue-500' : 'from-amber-500'} to-purple-500 transition-all duration-1000 ease-linear`}
-                    style={{ width: `${((10 - countdown) / 10) * 100}%` }}
-                  />
-                </div>
-                <div className="flex w-full justify-between items-center mt-1">
-                  <div className={`text-[9px] uppercase tracking-[0.2em] ${isA ? 'text-blue-400/80' : 'text-amber-400/80'} font-bold flex items-center gap-1`}>
-                    <Zap size={10} /> Rendering
-                  </div>
-                  <div className="text-[10px] font-black text-textprimary tracking-wider">
-                    {countdown}s
-                  </div>
-                </div>
-              </div>
+          {/* Headline Zone (Top 25%) */}
+          <div className="h-[25%] border-b border-dashed border-borderwarm bg-blue-500/5 flex flex-col items-center justify-center p-2 relative group cursor-default">
+            <span className="text-[9px] font-bold uppercase tracking-wider text-blue-400/70 mb-1">Headline Zone</span>
+            <div className="w-3/4 h-2 bg-blue-500/20 rounded-full mb-1"></div>
+            <div className="w-1/2 h-2 bg-blue-500/20 rounded-full"></div>
+            
+            {/* Tooltip */}
+            <div className="absolute inset-0 bg-bgpanelhover/95 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-3 text-center z-20">
+              <p className="text-[10px] text-textprimary leading-tight">Place your hook here. Keep it under 30 chars for maximum impact.</p>
             </div>
-          )}
-
-          {imgSrc && (
-            <img 
-              key={`img-${retryCount}`}
-              src={imgSrc}
-              alt="AI Generated Ad Creative" 
-              loading="lazy"
-              className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
-              onError={(e) => {
-                setIsLoading(false);
-                e.target.style.display = 'none';
-                setCountdown(10);
-              }}
-              onLoad={(e) => {
-                setIsLoading(false);
-                e.target.style.display = 'block';
-                if (e.target.nextSibling) {
-                  e.target.nextSibling.style.display = 'none';
-                }
-              }}
-            />
-          )}
+          </div>
+          
+          {/* Visual Focus Area (Center 45%) */}
+          <div className="h-[45%] border-b border-dashed border-borderwarm bg-purple-500/5 flex items-center justify-center relative group cursor-default">
+            <ImageIcon className="text-purple-500/20 w-12 h-12" />
+            <span className="absolute top-2 left-2 text-[9px] font-bold uppercase tracking-wider text-purple-400/70">Visual Focus</span>
+            
+            {/* Tooltip */}
+            <div className="absolute inset-0 bg-bgpanelhover/95 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-3 text-center z-20">
+              <p className="text-[10px] text-textprimary leading-tight">Main creative element. Use AI generation prompt to fill this area.</p>
+            </div>
+          </div>
+          
+          {/* Body Copy (Mid 15%) */}
+          <div className="h-[15%] border-b border-dashed border-borderwarm bg-amber-500/5 flex flex-col items-center justify-center p-2 gap-1 relative group cursor-default">
+            <span className="absolute top-1 left-2 text-[8px] font-bold uppercase tracking-wider text-amber-400/70">Body Copy</span>
+            <div className="w-[85%] h-1.5 bg-amber-500/20 rounded-full mt-2"></div>
+            <div className="w-[75%] h-1.5 bg-amber-500/20 rounded-full"></div>
+            
+            {/* Tooltip */}
+            <div className="absolute inset-0 bg-bgpanelhover/95 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-3 text-center z-20">
+              <p className="text-[10px] text-textprimary leading-tight">Supporting description. Focus on specific benefits.</p>
+            </div>
+          </div>
+          
+          {/* CTA Block (Bottom 15%) */}
+          <div className="h-[15%] bg-emerald-500/5 flex flex-col items-center justify-center relative group cursor-default">
+            <div className="px-4 py-1.5 bg-emerald-500/20 border border-emerald-500/30 rounded text-[9px] font-bold text-emerald-400 uppercase tracking-widest">
+              CTA Button
+            </div>
+            {/* Tooltip */}
+            <div className="absolute inset-0 bg-bgpanelhover/95 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-3 text-center z-20">
+              <p className="text-[10px] text-textprimary leading-tight">Clear, unmistakable action driver (e.g. "Shop Now").</p>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
 
-      {/* Headline & CTA */}
-      <div className="p-4 bg-bgpanelhover flex items-center justify-between gap-4 border-t border-borderwarm">
-        <div className="flex-1">
-          <p className="text-[10px] uppercase tracking-wider text-textmuted font-bold mb-1">
-            {testData?.angle || 'Performance Angle'}
-          </p>
-          <h3 className="text-base font-bold text-textprimary leading-tight">
-            {testData?.headline || 'Boost Your Campaign ROI Today'}
-          </h3>
+      {/* Copy Content */}
+      <div className="p-5 border-t border-borderwarm bg-bgpanelhover">
+        <div className="space-y-4">
+          <div>
+            <span className="text-[10px] uppercase tracking-wider text-textmuted font-bold block mb-1">Headline</span>
+            <p className="text-[14px] font-bold text-textprimary leading-tight">{testData?.headline}</p>
+          </div>
+          <div>
+            <span className="text-[10px] uppercase tracking-wider text-textmuted font-bold block mb-1">Description</span>
+            <p className="text-[13px] text-textsecondary leading-relaxed">{testData?.description}</p>
+          </div>
         </div>
-        <button className={`shrink-0 bg-white/10 hover:bg-white/20 transition-colors text-white text-xs font-bold px-4 py-2 rounded-lg border border-white/10`}>
-          Learn More
+      </div>
+    </div>
+  )
+}
+
+function AIPromptPanel({ posterPrompt }) {
+  const [activeTab, setActiveTab] = useState('midjourney')
+  const [copied, setCopied] = useState(false)
+  
+  if (!posterPrompt) return null;
+
+  const midjourneyPrompt = `${posterPrompt} --ar 4:5 --style raw --v 6.0`
+  const dallePrompt = `${posterPrompt}. Generate this as a vertical poster format (4:5 aspect ratio) with high professional quality.`
+
+  const activePromptText = activeTab === 'midjourney' ? midjourneyPrompt : dallePrompt
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(activePromptText)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="mt-4 rounded-xl border border-borderwarm bg-bgpanel shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-borderwarm bg-bgbase">
+        <div className="flex items-center gap-2">
+          <Sparkles size={14} className="text-purple-400" />
+          <span className="text-xs font-bold text-textprimary uppercase tracking-wider">AI Generation Prompt</span>
+        </div>
+        <div className="flex bg-bgpanelhover rounded-lg p-0.5 border border-borderwarm">
+          <button 
+            onClick={() => setActiveTab('midjourney')}
+            className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${activeTab === 'midjourney' ? 'bg-bgpanel text-textprimary shadow-sm' : 'text-textmuted hover:text-textprimary'}`}
+          >
+            Midjourney
+          </button>
+          <button 
+            onClick={() => setActiveTab('dalle')}
+            className={`px-3 py-1 text-[11px] font-bold rounded-md transition-all ${activeTab === 'dalle' ? 'bg-bgpanel text-textprimary shadow-sm' : 'text-textmuted hover:text-textprimary'}`}
+          >
+            DALL·E / Firefly
+          </button>
+        </div>
+      </div>
+      
+      <div className="p-4 bg-bgpanelhover/50 relative group">
+        <p className="text-[13px] text-textprimary/90 font-mono leading-relaxed select-all pr-12">
+          {activePromptText}
+        </p>
+        
+        <button 
+          onClick={handleCopy}
+          className="absolute top-4 right-4 p-2 bg-bgpanel border border-borderwarm rounded-lg text-textmuted hover:text-textprimary hover:border-purple-500/50 transition-all shadow-sm"
+          title="Copy prompt"
+        >
+          {copied ? <CheckCircle2 size={16} className="text-emerald-400" /> : <Copy size={16} />}
         </button>
       </div>
-
-      {/* Social Actions (Mock) */}
-      <div className="px-4 py-3 flex items-center gap-6 border-t border-borderwarm text-textmuted bg-bgpanel">
-        <div className="flex items-center gap-1.5 hover:text-textprimary cursor-pointer transition-colors"><ThumbsUp size={16} /> <span className="text-xs font-medium">Like</span></div>
-        <div className="flex items-center gap-1.5 hover:text-textprimary cursor-pointer transition-colors"><MessageCircle size={16} /> <span className="text-xs font-medium">Comment</span></div>
-        <div className="flex items-center gap-1.5 hover:text-textprimary cursor-pointer transition-colors"><Share2 size={16} /> <span className="text-xs font-medium">Share</span></div>
+      
+      <div className="px-4 py-2 bg-bgbase border-t border-borderwarm flex items-center gap-2">
+        <LayoutTemplate size={12} className="text-textmuted" />
+        <span className="text-[11px] text-textmuted">
+          Paste this into {activeTab === 'midjourney' ? 'Discord (/imagine)' : 'ChatGPT or Adobe Firefly'} to generate the visual.
+        </span>
       </div>
+    </div>
+  )
+}
+
+function VariantPanel({ testData, type, posterPrompt }) {
+  return (
+    <div className="flex flex-col gap-4">
+      <PosterBlueprint testData={testData} type={type} label={testData?.label || `Variation ${type}`} />
+      <AIPromptPanel posterPrompt={posterPrompt} />
     </div>
   )
 }
@@ -276,15 +228,15 @@ export default function CopyResults({ copy }) {
               <div className="grid lg:grid-cols-2 gap-8 relative px-4 lg:px-0">
                 
                 {/* VS Badge in the middle */}
-                <div className="hidden lg:flex absolute top-[40%] left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-bgpanel border-4 border-borderwarm items-center justify-center z-10 shadow-lg">
+                <div className="hidden lg:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-bgpanel border-4 border-borderwarm items-center justify-center z-10 shadow-lg">
                   <span className="text-[12px] font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-amber-400">VS</span>
                 </div>
 
-                {/* Test A Mockup */}
-                <AdMockup testData={variant.test_a} type="A" label={variant.test_a?.label || 'Variation A'} visualPrompt={variant.visual_prompt} />
+                {/* Test A */}
+                <VariantPanel testData={variant.test_a} type="A" posterPrompt={variant.poster_prompt || variant.visual_prompt} />
 
-                {/* Test B Mockup */}
-                <AdMockup testData={variant.test_b} type="B" label={variant.test_b?.label || 'Variation B'} visualPrompt={variant.visual_prompt} />
+                {/* Test B */}
+                <VariantPanel testData={variant.test_b} type="B" posterPrompt={variant.poster_prompt || variant.visual_prompt} />
               </div>
 
               {/* Test rationale */}

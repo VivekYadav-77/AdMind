@@ -24,7 +24,7 @@ from db.models import AnalysisJob, User, Workspace, WorkspaceMember, ChatMessage
 from models.schemas import PipelineResult, UserCreate, Token
 from services.csv_parser import parse_csv
 from services.gemini import GeminiError, call_gemini_chat
-from services.image_generator import image_manager
+
 from auth import (
     verify_password,
     get_password_hash,
@@ -244,26 +244,6 @@ def create_workspace(ws: WorkspaceCreate, db: Session = Depends(get_db), current
     db.add(member)
     db.commit()
     return {"id": new_ws.id, "name": new_ws.name, "role": "admin"}
-
-
-@app.get("/workspaces/images/generate")
-async def generate_image(prompt: str):
-    """
-    Generates an image using the fallback provider manager.
-    Returns raw image bytes to the frontend.
-    """
-    if not prompt:
-        raise HTTPException(status_code=400, detail="Prompt is required")
-    
-    try:
-        image_bytes = await image_manager.generate_image(prompt)
-        return Response(
-            content=image_bytes, 
-            media_type="image/jpeg",
-            headers={"Cache-Control": "public, max-age=86400"}
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 
