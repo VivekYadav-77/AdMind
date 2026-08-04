@@ -1,6 +1,18 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Beaker, Sparkles, Target, Zap, Globe, MoreHorizontal, ThumbsUp, MessageCircle, Share2, ExternalLink, Loader2 } from 'lucide-react'
+import { API_BASE_URL } from '../services/api'
+import { imageQueue } from '../services/imageQueue'
+
+const hashString = (str) => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash &= hash;
+  }
+  return hash;
+};
 
 function AdMockup({ testData, type, label, visualPrompt }) {
   const isA = type === 'A'
