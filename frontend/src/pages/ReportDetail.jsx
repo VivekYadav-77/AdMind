@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Calendar, Download, AlertCircle, FileSearch, Lightbulb, PenLine, BarChart3, MessageSquare, Send, X } from 'lucide-react'
+import { ArrowLeft, Calendar, Download, AlertCircle, FileSearch, Lightbulb, PenLine, BarChart3, MessageSquare, Send, X, ChevronDown, FileText, File } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import ReactMarkdown from 'react-markdown'
 import clsx from 'clsx'
@@ -11,6 +11,8 @@ import CampaignHealthScore from '../components/CampaignHealthScore'
 import StrategyResults from '../components/StrategyResults'
 import CopyResults from '../components/CopyResults'
 import TabBar from '../components/ui/TabBar'
+import ReportPrintTemplate from '../components/ReportPrintTemplate'
+import { useReportExport } from '../hooks/useReportExport'
 
 function formatMoney(value) {
   return `$${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
@@ -24,6 +26,8 @@ export default function ReportDetail() {
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState('audit')
   const reportRef = useRef(null)
+  const printRef = useRef(null)
+  const [showExportMenu, setShowExportMenu] = useState(false)
 
   const agencyName = localStorage.getItem('agencyName')
   const logoUrl = localStorage.getItem('logoUrl')
@@ -88,9 +92,7 @@ export default function ReportDetail() {
     }
   }
 
-  const downloadPDF = () => {
-    window.print()
-  }
+  const { downloadPDF, downloadDOCX, isExporting, exportType } = useReportExport(job, printRef)
 
   const tabs = [
     { id: 'audit', label: 'Audit', icon: FileSearch, color: 'blue' },
@@ -135,6 +137,7 @@ export default function ReportDetail() {
 
   return (
     <div className="flex gap-6 h-full relative print:block" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+      <ReportPrintTemplate ref={printRef} job={job} />
       <style>{`
         @media print {
           @page { size: landscape; margin: 0; }
@@ -169,13 +172,60 @@ export default function ReportDetail() {
               <MessageSquare size={16} />
               {showChat ? "Hide Chat" : "Ask AI"}
             </button>
-            <button
-              onClick={downloadPDF}
-              className="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_4px_14px_0_rgba(217,119,87,0.39)] transition-all hover:bg-brand-600 hover:scale-105"
-            >
-              <Download size={16} />
-              Download PDF Report
-            </button>
+            <div className="relative">
+              <div className="flex inline-flex items-center rounded-xl bg-brand-500 shadow-[0_4px_14px_0_rgba(217,119,87,0.39)] transition-all hover:bg-brand-600 hover:scale-105">
+                <button
+                  onClick={() => { setShowExportMenu(false); downloadPDF(); }}
+                  disabled={isExporting}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  {isExporting && exportType === 'pdf' ? (
+                    <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  ) : (
+                    <Download size={16} />
+                  )}
+                  Download PDF
+                </button>
+                <div className="w-px h-5 bg-white/30" />
+                <button
+                  onClick={() => setShowExportMenu(!showExportMenu)}
+                  disabled={isExporting}
+                  className="px-2 py-2.5 text-white disabled:opacity-50 hover:bg-white/10 rounded-r-xl"
+                >
+                  <ChevronDown size={16} />
+                </button>
+              </div>
+
+              <AnimatePresence>
+                {showExportMenu && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="absolute right-0 mt-2 w-56 rounded-xl border border-borderwarm bg-bgpanel shadow-xl overflow-hidden z-50"
+                  >
+                    <button
+                      onClick={() => { setShowExportMenu(false); downloadPDF(); }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-textprimary hover:bg-bgpanelhover transition-colors"
+                    >
+                      <File size={16} className="text-red-400" />
+                      <span>PDF Document (.pdf)</span>
+                    </button>
+                    <button
+                      onClick={() => { setShowExportMenu(false); downloadDOCX(); }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-textprimary hover:bg-bgpanelhover transition-colors"
+                    >
+                      {isExporting && exportType === 'docx' ? (
+                        <div className="w-4 h-4 rounded-full border-2 border-blue-400/30 border-t-blue-400 animate-spin" />
+                      ) : (
+                        <FileText size={16} className="text-blue-400" />
+                      )}
+                      <span>Word Document (.docx)</span>
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
         </div>
 

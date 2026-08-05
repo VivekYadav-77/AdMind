@@ -113,14 +113,8 @@ export default function Settings() {
             </h2>
 
             <div className="mt-6 pt-6 border-t border-borderwarm w-full space-y-3 text-left text-sm">
-              <div className="flex justify-between items-center">
-                <span className="text-textmuted">Member Since</span>
-                <span className="text-textsecondary font-medium">{memberSince}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-textmuted">Plan</span>
-                <span className="text-textmuted font-medium bg-white/5 px-2 py-0.5 rounded-md text-xs border border-borderwarm">Free Plan</span>
-              </div>
+              
+              
               <div className="flex justify-between items-center">
                 <span className="text-textmuted">API Status</span>
                 {apiStatus === 'checking' && (
