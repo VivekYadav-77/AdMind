@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Shield, Cpu, KeyRound, Check, AlertCircle, Briefcase, Wifi, WifiOff } from 'lucide-react'
+import { KeyRound, Check, AlertCircle, Briefcase, Wifi, WifiOff } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { API } from '../services/api'
@@ -13,21 +13,8 @@ export default function Settings() {
     confirmPassword: ''
   })
 
-  const [aiSettings, setAiSettings] = useState(() => ({
-    model: localStorage.getItem('ai_model') || 'gemini-1.5-pro',
-    temperature: parseFloat(localStorage.getItem('ai_temperature')) || 0.2,
-  }))
-
-  const [thresholds, setThresholds] = useState(() => ({
-    wasteAlertPercent: parseInt(localStorage.getItem('threshold_wasteAlert')) || 15,
-    minRoasTarget: parseFloat(localStorage.getItem('threshold_minRoas')) || 2.5
-  }))
-
-
-
   const [passwordStatus, setPasswordStatus] = useState(null) // { type: 'success'|'error', message: '' }
   const [passwordLoading, setPasswordLoading] = useState(false)
-  const [settingsSaved, setSettingsSaved] = useState(false)
 
   const [branding, setBranding] = useState(() => ({
     agencyName: localStorage.getItem('agencyName') || '',
@@ -89,13 +76,6 @@ export default function Settings() {
     }
   }
 
-  const handleSaveSettings = () => {
-    localStorage.setItem('agencyName', branding.agencyName)
-    localStorage.setItem('logoUrl', branding.logoUrl)
-    setSettingsSaved(true)
-    setTimeout(() => setSettingsSaved(false), 3000)
-  }
-
   const handleSaveBranding = () => {
     localStorage.setItem('agencyName', branding.agencyName)
     localStorage.setItem('logoUrl', branding.logoUrl)
@@ -111,13 +91,13 @@ export default function Settings() {
     >
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-textprimary tracking-tight mb-2">System Settings</h1>
-        <p className="text-textmuted font-medium">Configure your AdMind experience</p>
+        <p className="text-textmuted font-medium">Manage your account and preferences</p>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-8">
-
+      <div className="grid md:grid-cols-[280px_1fr] gap-8">
+        
         {/* Left: Profile Card */}
-        <div className="md:col-span-1 space-y-6">
+        <div className="space-y-6">
           <div className="bg-bgpanel rounded-2xl p-6 border border-borderwarm shadow-sm flex flex-col items-center text-center">
             <div className="relative mb-4">
               <div className="h-20 w-20 rounded-full bg-brand-50 dark:bg-brand-500/10 flex items-center justify-center text-brand-500 text-3xl font-bold shadow-sm border border-brand-100 dark:border-brand-500/20">
@@ -128,7 +108,9 @@ export default function Settings() {
               }`} />
             </div>
 
-            <h2 className="text-xl font-bold text-textprimary tracking-tight">{user?.email || 'User Account'}</h2>
+            <h2 className="text-xl font-bold text-textprimary tracking-tight truncate w-full px-2" title={user?.email || 'User Account'}>
+              {user?.email || 'User Account'}
+            </h2>
 
             <div className="mt-6 pt-6 border-t border-borderwarm w-full space-y-3 text-left text-sm">
               <div className="flex justify-between items-center">
@@ -160,159 +142,36 @@ export default function Settings() {
                   </span>
                 )}
               </div>
+              <div className="pt-3">
+                <p className="text-[11px] text-textmuted leading-relaxed">
+                  Your connection is encrypted. Never share your credentials with anyone.
+                </p>
+              </div>
             </div>
-          </div>
-
-          <div className="bg-bgpanel rounded-2xl p-6 border border-borderwarm shadow-sm">
-            <h3 className="text-base font-bold text-textprimary mb-4 flex items-center gap-2">
-              <Shield size={16} className="text-emerald-400" />
-              Security Information
-            </h3>
-            <p className="text-xs text-textmuted leading-relaxed">
-              Your connection is encrypted using SSL, and tokens are safely stored in your local security scope. Never share your authorization tokens or credentials with anyone.
-            </p>
           </div>
         </div>
 
-        {/* Right: App Settings */}
-        <div className="md:col-span-2 space-y-6">
-
-          {/* AI Configurations */}
-          <div className="bg-bgpanel rounded-2xl p-8 border border-borderwarm shadow-sm">
-            <h3 className="text-lg font-bold text-textprimary mb-6 flex items-center gap-2">
-              <Cpu size={20} className="text-amber-400" />
-              AI Analysis Configurations
-            </h3>
-
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-semibold text-textsecondary mb-2">Gemini Analysis Model</label>
-                <select
-                  value={aiSettings.model}
-                  onChange={(e) => setAiSettings(prev => ({ ...prev, model: e.target.value }))}
-                  className="w-full bg-bgbase border border-borderwarm rounded-xl px-4 py-3 text-sm text-textprimary focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all"
-                >
-                  <option value="gemini-1.5-flash">Gemini 1.5 Flash (Default - High Speed)</option>
-                  <option value="gemini-1.5-pro">Gemini 1.5 Pro (Precision Analytics)</option>
-                  <option value="gemini-2.0-flash">Gemini 2.0 Flash (Advanced Performance)</option>
-                </select>
-              </div>
-
-              <div>
-                <div className="flex justify-between text-sm font-semibold text-textsecondary mb-2">
-                  <label>LLM Creativity (Temperature)</label>
-                  <span className="text-amber-400 font-bold">{aiSettings.temperature}</span>
-                </div>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.05"
-                  value={aiSettings.temperature}
-                  onChange={(e) => setAiSettings(prev => ({ ...prev, temperature: parseFloat(e.target.value) }))}
-                  className="w-full accent-brand-500 bg-white/5 h-2 rounded-lg cursor-pointer"
-                />
-                <span className="text-[11px] text-textmuted mt-1 block">Lower values ensure structured strategy recommendations, while higher values generate creative ad copywriting variations.</span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 border-t border-borderwarm pt-6">
-                <div>
-                  <label className="block text-sm font-semibold text-textsecondary mb-2">Budget Waste Threshold</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min="5"
-                      max="50"
-                      value={thresholds.wasteAlertPercent}
-                      onChange={(e) => setThresholds(prev => ({ ...prev, wasteAlertPercent: parseInt(e.target.value) || 0 }))}
-                      className="w-full bg-bgbase border border-borderwarm rounded-xl px-4 py-2.5 text-sm text-textprimary focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all"
-                    />
-                    <span className="text-textmuted font-bold text-sm">%</span>
-                  </div>
-                  <span className="text-[10px] text-textmuted mt-1 block">Highlight keywords wasting more than this budget ratio.</span>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-textsecondary mb-2">Target ROAS Warning</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0.5"
-                      max="10"
-                      value={thresholds.minRoasTarget}
-                      onChange={(e) => setThresholds(prev => ({ ...prev, minRoasTarget: parseFloat(e.target.value) || 0 }))}
-                      className="w-full bg-bgbase border border-borderwarm rounded-xl px-4 py-2.5 text-sm text-textprimary focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all"
-                    />
-                    <span className="text-textmuted font-bold text-sm">x</span>
-                  </div>
-                  <span className="text-[10px] text-textmuted mt-1 block">Flags campaigns yielding lower target returns.</span>
-                </div>
-              </div>
-
-              {/* White Label Settings */}
-              <div className="grid grid-cols-2 gap-4 border-t border-white/5 pt-6">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-2">Agency Name</label>
-                  <input
-                    type="text"
-                    value={branding.agencyName}
-                    onChange={(e) => setBranding(prev => ({ ...prev, agencyName: e.target.value }))}
-                    placeholder="E.g. AdMind Agency"
-                    className="w-full bg-[#111625] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-blue-500/50"
-                  />
-                  <span className="text-[10px] text-slate-400 mt-1 block">Appears on PDF reports.</span>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-300 mb-2">Logo URL</label>
-                  <input
-                    type="url"
-                    value={branding.logoUrl}
-                    onChange={(e) => setBranding(prev => ({ ...prev, logoUrl: e.target.value }))}
-                    placeholder="https://example.com/logo.png"
-                    className="w-full bg-[#111625] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-blue-500/50"
-                  />
-                  <span className="text-[10px] text-slate-400 mt-1 block">Image URL for PDF reports.</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between border-t border-white/5 pt-6">
-                <button
-                  onClick={handleSaveSettings}
-                  className="btn-primary flex items-center gap-2"
-                >
-                  Save Configurations
-                </button>
-                {settingsSaved && (
-                  <motion.span
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className="text-emerald-400 font-bold text-sm flex items-center gap-1"
-                  >
-                    <Check size={16} /> Saved Successfully
-                  </motion.span>
-                )}
-              </div>
-            </div>
-          </div>
+        {/* Right: Settings Sections */}
+        <div className="space-y-6">
 
           {/* White-Label Reporting */}
           <div className="bg-bgpanel rounded-2xl p-8 border border-borderwarm shadow-sm">
             <h3 className="text-lg font-bold text-textprimary mb-6 flex items-center gap-2">
-              <Briefcase size={20} className="text-emerald-400" />
+              <Briefcase size={20} className="text-brand-500" />
               White-Label Reporting
             </h3>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
                 <label className="block text-sm font-semibold text-textsecondary mb-1.5">Agency Name</label>
                 <input
                   type="text"
                   value={branding.agencyName}
                   onChange={(e) => setBranding(prev => ({ ...prev, agencyName: e.target.value }))}
-                  className="w-full bg-bgbase border border-borderwarm rounded-xl px-4 py-2.5 text-sm text-textprimary focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                  className="w-full bg-bgbase border border-borderwarm rounded-xl px-4 py-2.5 text-sm text-textprimary focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all"
                   placeholder="e.g., Apex Growth Agency"
                 />
+                <span className="text-[11px] text-textmuted mt-1.5 block">Appears on exported PDF reports.</span>
               </div>
 
               <div>
@@ -321,9 +180,10 @@ export default function Settings() {
                   type="url"
                   value={branding.logoUrl}
                   onChange={(e) => setBranding(prev => ({ ...prev, logoUrl: e.target.value }))}
-                  className="w-full bg-bgbase border border-borderwarm rounded-xl px-4 py-2.5 text-sm text-textprimary focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all"
+                  className="w-full bg-bgbase border border-borderwarm rounded-xl px-4 py-2.5 text-sm text-textprimary focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 transition-all"
                   placeholder="https://example.com/logo.png"
                 />
+                <span className="text-[11px] text-textmuted mt-1.5 block">Image URL for PDF reports.</span>
               </div>
 
               <div className="flex items-center justify-between border-t border-borderwarm pt-6 mt-6">
@@ -331,7 +191,7 @@ export default function Settings() {
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleSaveBranding}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold text-white rounded-xl shadow-sm hover:shadow transition-all duration-200 active:scale-[0.98]"
+                  className="btn-primary"
                 >
                   Save Branding
                 </motion.button>
@@ -339,7 +199,7 @@ export default function Settings() {
                   <motion.span
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="text-emerald-400 font-bold text-sm flex items-center gap-1"
+                    className="text-brand-500 font-bold text-sm flex items-center gap-1"
                   >
                     <Check size={16} /> Saved Successfully
                   </motion.span>
@@ -351,19 +211,19 @@ export default function Settings() {
           {/* Change Password */}
           <div className="bg-bgpanel rounded-2xl p-8 border border-borderwarm shadow-sm">
             <h3 className="text-lg font-bold text-textprimary mb-6 flex items-center gap-2">
-              <KeyRound size={20} className="text-brand-400" />
+              <KeyRound size={20} className="text-brand-500" />
               Update Account Password
             </h3>
 
-            <form onSubmit={handlePasswordSubmit} className="space-y-4">
+            <form onSubmit={handlePasswordSubmit} className="space-y-5">
               {passwordStatus && (
                 <motion.div
                   initial={{ opacity: 0, y: -5 }}
                   animate={{ opacity: 1, y: 0 }}
                   className={`rounded-xl border p-4 text-xs font-semibold ${
                     passwordStatus.type === 'success'
-                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                      : 'bg-red-500/10 border-red-500/30 text-red-400'
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
+                      : 'bg-red-500/10 border-red-500/30 text-red-500'
                   }`}
                 >
                   <span className="flex items-center gap-2">
@@ -384,7 +244,7 @@ export default function Settings() {
                 />
               </div>
 
-              <div className="grid sm:grid-cols-2 gap-4">
+              <div className="grid sm:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-sm font-semibold text-textsecondary mb-1.5">New Password</label>
                   <input
@@ -407,7 +267,7 @@ export default function Settings() {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-borderwarm">
+              <div className="pt-6 border-t border-borderwarm mt-6">
                 <motion.button
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.95 }}
