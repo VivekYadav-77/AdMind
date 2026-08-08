@@ -11,7 +11,6 @@ import CampaignHealthScore from '../components/CampaignHealthScore'
 import StrategyResults from '../components/StrategyResults'
 import CopyResults from '../components/CopyResults'
 import TabBar from '../components/ui/TabBar'
-import ReportPrintTemplate from '../components/ReportPrintTemplate'
 import { useReportExport } from '../hooks/useReportExport'
 
 function formatMoney(value) {
@@ -26,7 +25,6 @@ export default function ReportDetail() {
   const [error, setError] = useState(null)
   const [activeTab, setActiveTab] = useState('audit')
   const reportRef = useRef(null)
-  const printRef = useRef(null)
   const [showExportMenu, setShowExportMenu] = useState(false)
 
   const agencyName = localStorage.getItem('agencyName')
@@ -92,7 +90,7 @@ export default function ReportDetail() {
     }
   }
 
-  const { downloadPDF, downloadDOCX, isExporting, exportType } = useReportExport(job, printRef)
+  const { downloadPDF, downloadDOCX, isExporting, exportType } = useReportExport(job)
 
   const tabs = [
     { id: 'audit', label: 'Audit', icon: FileSearch, color: 'blue' },
@@ -137,7 +135,6 @@ export default function ReportDetail() {
 
   return (
     <div className="flex gap-6 h-full relative print:block" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-      <ReportPrintTemplate ref={printRef} job={job} />
       <style>{`
         @media print {
           @page { size: landscape; margin: 0; }

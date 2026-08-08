@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import html2pdf from 'html2pdf.js';
+import { API } from '../services/api';
 import {
   Document,
   Packer,
@@ -14,59 +14,34 @@ import {
   AlignmentType,
 } from 'docx';
 
-export function useReportExport(job, printRef) {
+export function useReportExport(job) {
   const [isExporting, setIsExporting] = useState(false);
   const [exportType, setExportType] = useState(null); // 'pdf' | 'docx'
 
   const downloadPDF = async () => {
-    if (!printRef.current || !job) return;
+    if (!job) return;
     
     setIsExporting(true);
     setExportType('pdf');
     
-    const element = printRef.current;
-    
-    // 1. Create invisible wrapper
-    const wrapper = document.createElement('div');
-    wrapper.style.position = 'absolute';
-    wrapper.style.left = '0px';
-    wrapper.style.top = '0px';
-    wrapper.style.width = '0px';
-    wrapper.style.height = '0px';
-    wrapper.style.overflow = 'hidden';
-    
-    // 2. Clone the template and reset styles for safe capture
-    const clone = element.cloneNode(true);
-    clone.style.position = 'absolute';
-    clone.style.left = '0px';
-    clone.style.top = '0px';
-    clone.style.width = '800px';
-    clone.style.height = 'auto'; // ensure full height
-    clone.style.zIndex = '1';
-    clone.style.overflow = 'visible';
-    
-    wrapper.appendChild(clone);
-    document.body.appendChild(wrapper);
-    
-    // 3. Wait briefly for browser paint
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
     try {
-      const opt = {
-        margin:       10,
-        filename:     `admind-report-${job.id}-${new Date().toISOString().split('T')[0]}.pdf`,
-        image:        { type: 'jpeg', quality: 0.95 },
-        html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
-
-      await html2pdf().from(clone).set(opt).save();
+      const doc = generateWordDocument(job);
+      const docxBlob = await Packer.toBlob(doc);
+      
+      const pdfBlob = await API.exportPDF(docxBlob);
+      
+      const url = window.URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `admind-report-${job.id}-${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("PDF generation failed", error);
       alert("Failed to generate PDF. Please try again.");
     } finally {
-      // 4. Cleanup
-      document.body.removeChild(wrapper);
       setIsExporting(false);
       setExportType(null);
     }

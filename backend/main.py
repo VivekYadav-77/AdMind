@@ -12,6 +12,8 @@ from fastapi.responses import PlainTextResponse, StreamingResponse, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
+import tempfile
+from docx2pdf import convert as docx_to_pdf
 
 from agents.auditor import run_auditor
 from agents.copywriter import run_copywriter
@@ -148,6 +150,41 @@ async def run_analysis_task(job_id: int, csv_text: str):
             _append_job_log(db, job_id, "error", {"message": str(exc)})
     finally:
         db.close()
+
+
+@app.post("/export/pdf")
+async def export_pdf(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    if not file.filename or not file.filename.endswith('.docx'):
+        raise HTTPException(status_code=400, detail="Only .docx files are accepted")
+    
+    contents = await file.read()
+    
+    with tempfile.TemporaryDirectory() as tmpdir:
+        docx_path = os.path.join(tmpdir, "report.docx")
+        pdf_path  = os.path.join(tmpdir, "report.pdf")
+        
+        with open(docx_path, 'wb') as f:
+            f.write(contents)
+        
+        try:
+            docx_to_pdf(docx_path, pdf_path)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"PDF conversion failed: {str(e)}")
+            
+        if not os.path.exists(pdf_path):
+             raise HTTPException(status_code=500, detail="PDF conversion failed: file not created")
+             
+        with open(pdf_path, 'rb') as f:
+            pdf_bytes = f.read()
+    
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=admind-report.pdf"}
+    )
 
 
 @app.get("/health")

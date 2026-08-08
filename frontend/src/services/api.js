@@ -122,6 +122,20 @@ export const API = {
     })
   },
 
+  exportPDF: async (docxBlob) => {
+    const formData = new FormData()
+    formData.append('file', docxBlob, 'report.docx')
+    
+    const res = await fetch(apiUrl('/export/pdf'), {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: formData
+    })
+    
+    if (!res.ok) throw new Error('PDF export failed')
+    return res.blob()
+  },
+
   getSampleCSV: async () => {
     const res = await fetch(apiUrl('/sample-csv'))
     if (!res.ok) {
