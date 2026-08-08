@@ -1,4 +1,5 @@
 import React, { forwardRef } from 'react';
+import { createPortal } from 'react-dom';
 
 // Format currency
 const formatMoney = (val) => `$${Number(val || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
@@ -22,11 +23,22 @@ const ReportPrintTemplate = forwardRef(({ job }, ref) => {
 
   const inefficientSpend = audit?.inefficient_spend !== undefined ? audit.inefficient_spend : (audit?.wasted_spend || 0);
 
-  return (
+  const content = (
     <div 
       ref={ref} 
-      className="bg-white text-gray-900 absolute opacity-0 pointer-events-none" 
-      style={{ left: '-9999px', top: 0, width: '800px', fontFamily: 'sans-serif', padding: '40px' }}
+      className="bg-white text-gray-900" 
+      style={{ 
+        position: 'fixed', 
+        top: 0, 
+        left: '-9999px',
+        zIndex: 1, 
+        width: '800px', 
+        fontFamily: 'sans-serif', 
+        padding: '40px',
+        backgroundColor: '#ffffff',
+        pointerEvents: 'none',
+        overflow: 'hidden'
+      }}
     >
       {/* 1. Cover Page */}
       <div className="flex flex-col items-center justify-center min-h-[900px] text-center" style={{ pageBreakAfter: 'always' }}>
@@ -153,30 +165,34 @@ const ReportPrintTemplate = forwardRef(({ job }, ref) => {
           </div>
 
           <div className="space-y-6">
-            {['high', 'medium', 'low'].map(priorityLevel => {
-              const items = strategy.recommendations.filter(r => String(r.priority).toLowerCase() === priorityLevel || String(r.priority) === (priorityLevel === 'high' ? '1' : priorityLevel === 'medium' ? '2' : '3'));
-              if (items.length === 0) return null;
-              
-              return (
-                <div key={priorityLevel} className="mb-6">
-                  <h3 className="text-xl font-bold uppercase mb-4 text-gray-800">{priorityLevel} Priority</h3>
-                  <div className="space-y-4">
-                    {items.map((item, i) => (
-                      <div key={i} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="px-2 py-1 bg-gray-200 text-gray-800 rounded text-xs font-bold uppercase tracking-wider">
-                            {item.action.replace(/_/g, ' ')}
-                          </span>
-                          <span className="font-bold text-lg">{item.target}</span>
+            {strategy.recommendations.length === 0 ? (
+              <p className="text-gray-500 italic">No recommendations available for this report.</p>
+            ) : (
+              ['high', 'medium', 'low'].map(priorityLevel => {
+                const items = strategy.recommendations.filter(r => String(r.priority).toLowerCase() === priorityLevel || String(r.priority) === (priorityLevel === 'high' ? '1' : priorityLevel === 'medium' ? '2' : '3'));
+                if (items.length === 0) return null;
+                
+                return (
+                  <div key={priorityLevel} className="mb-6">
+                    <h3 className="text-xl font-bold uppercase mb-4 text-gray-800">{priorityLevel} Priority</h3>
+                    <div className="space-y-4">
+                      {items.map((item, i) => (
+                        <div key={i} className="p-4 border border-gray-200 rounded-lg bg-gray-50">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="px-2 py-1 bg-gray-200 text-gray-800 rounded text-xs font-bold uppercase tracking-wider">
+                              {item.action.replace(/_/g, ' ')}
+                            </span>
+                            <span className="font-bold text-lg">{item.target}</span>
+                          </div>
+                          <p className="text-sm text-gray-700 mb-2"><strong>Reasoning:</strong> {item.reasoning}</p>
+                          <p className="text-sm text-indigo-700 font-bold"><strong>Expected Impact:</strong> {item.expected_impact}</p>
                         </div>
-                        <p className="text-sm text-gray-700 mb-2"><strong>Reasoning:</strong> {item.reasoning}</p>
-                        <p className="text-sm text-indigo-700 font-bold"><strong>Expected Impact:</strong> {item.expected_impact}</p>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })
+            )}
           </div>
         </div>
       )}
@@ -222,6 +238,8 @@ const ReportPrintTemplate = forwardRef(({ job }, ref) => {
       )}
     </div>
   );
+
+  return createPortal(content, document.body);
 });
 
 ReportPrintTemplate.displayName = 'ReportPrintTemplate';

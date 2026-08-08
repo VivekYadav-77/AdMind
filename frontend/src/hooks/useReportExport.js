@@ -24,9 +24,15 @@ export function useReportExport(job, printRef) {
     setIsExporting(true);
     setExportType('pdf');
     
+    const element = printRef.current;
+    const originalLeft = element.style.left;
+    const originalZIndex = element.style.zIndex;
+    
+    // Temporarily bring element into viewport for html2canvas
+    element.style.left = '0px';
+    element.style.zIndex = '9999';
+    
     try {
-      const element = printRef.current;
-      
       const opt = {
         margin:       10,
         filename:     `admind-report-${job.id}-${new Date().toISOString().split('T')[0]}.pdf`,
@@ -40,6 +46,9 @@ export function useReportExport(job, printRef) {
       console.error("PDF generation failed", error);
       alert("Failed to generate PDF. Please try again.");
     } finally {
+      // Restore hidden positioning
+      element.style.left = originalLeft;
+      element.style.zIndex = originalZIndex;
       setIsExporting(false);
       setExportType(null);
     }
