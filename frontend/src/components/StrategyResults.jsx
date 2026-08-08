@@ -43,7 +43,7 @@ const itemVariants = {
   show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
 }
 
-export default function StrategyResults({ strategy, jobId }) {
+export default function StrategyResults({ strategy, jobId, job }) {
   const [comments, setComments] = useState({}) // { [target_keyword]: [comment1, comment2] }
   const [newComment, setNewComment] = useState({}) // { [target_keyword]: "text" }
   const [activeCommentBox, setActiveCommentBox] = useState(null)
@@ -82,28 +82,59 @@ export default function StrategyResults({ strategy, jobId }) {
   const handleExportCSV = () => {
     if (!strategy || !strategy.recommendations) return
     
-    const headers = ['Priority', 'Action', 'Target', 'Reasoning', 'Expected Impact']
+    const agencyName = localStorage.getItem('agencyName') || 'AdMind'
+    const reportDate = job?.created_at ? new Date(job.created_at).toLocaleString() : new Date().toLocaleString()
+    
     const escapeCsv = (str) => {
       if (str === null || str === undefined) return '""'
-      // Replace newlines, tabs, and carriage returns with spaces to prevent row breaks
       const stringified = String(str).replace(/[\r\n\t]+/g, ' ').trim()
-      // Always wrap in quotes and escape internal quotes to ensure robust structure
       return `"${stringified.replace(/"/g, '""')}"`
     }
     
+    const getPriorityLabel = (priority) => {
+      const p = String(priority).toLowerCase()
+      if (p === 'high' || p === '1') return 'High'
+      if (p === 'medium' || p === '2') return 'Medium'
+      return 'Low'
+    }
+
+    // 1. Metadata Block
+    const metadataLines = [
+      [agencyName + ' Strategy Recommendations Plan'],
+      ['Report ID', jobId || 'N/A'],
+      ['Export Date', reportDate],
+      ['Total Recommendations', strategy.recommendations.length],
+      [] // Empty separator
+    ].map(row => row.map(escapeCsv).join(','))
+
+    // 2. Main Recommendations Table
+    const headers = ['Priority', 'Action', 'Target', 'Reasoning', 'Expected Impact']
+    const headerRow = headers.map(escapeCsv).join(',')
+    
     const rows = strategy.recommendations.map(r => [
-      String(r.priority || '').charAt(0).toUpperCase() + String(r.priority || '').slice(1).toLowerCase(),
+      getPriorityLabel(r.priority),
       String(r.action || '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
       r.target,
       r.reasoning,
       r.expected_impact
     ].map(escapeCsv).join(','))
+
+    // 3. AI Strategist Summary Row
+    const summaryLines = [
+      [], // Empty separator
+      ['AI Strategist Summary'],
+      [strategy.summary || '']
+    ].map(row => row.map(escapeCsv).join(','))
     
-    const csvContent = [headers.map(escapeCsv).join(','), ...rows].join('\n')
+    // Combine all sections with CRLF (\r\n) for Excel compatibility on Windows
+    const csvContent = [...metadataLines, headerRow, ...rows, ...summaryLines].join('\r\n')
+    
     const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     link.href = URL.createObjectURL(blob)
-    link.setAttribute('download', 'admind_strategy_plan.csv')
+    
+    const dateStr = job?.created_at ? new Date(job.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+    link.setAttribute('download', `admind-strategy-${jobId || 'export'}-${dateStr}.csv`)
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)

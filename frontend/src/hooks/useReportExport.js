@@ -113,7 +113,7 @@ function generateWordDocument(job) {
   // 2. Audit Section
   if (job.audit_data) {
     const audit = job.audit_data;
-    const inefficientSpend = audit.inefficient_spend !== undefined ? audit.inefficient_spend : (audit.wasted_spend || 0);
+    const inefficientSpend = audit.inefficient_spend || 0;
 
     sections.push(
       new Paragraph({ text: "Audit Intelligence", heading: HeadingLevel.HEADING_1 }),
@@ -167,34 +167,10 @@ function generateWordDocument(job) {
       new Paragraph({ text: "" }),
       new Paragraph({ children: [new TextRun({ text: "AI Strategist Summary", bold: true })] }),
       new Paragraph({ text: job.strategy_data.summary || "" }),
+      new Paragraph({ text: "" }),
+      createStrategyTable(job.strategy_data.recommendations),
       new Paragraph({ text: "" })
     );
-
-    const grouped = job.strategy_data.recommendations.reduce((acc, item) => {
-      const p = String(item.priority).toLowerCase();
-      const groupKey = (p === 'high' || p === '1') ? 'High Priority' : (p === 'medium' || p === '2') ? 'Medium Priority' : 'Low Priority';
-      if (!acc[groupKey]) acc[groupKey] = [];
-      acc[groupKey].push(item);
-      return acc;
-    }, {});
-
-    for (const [priority, items] of Object.entries(grouped)) {
-      sections.push(new Paragraph({ text: priority, heading: HeadingLevel.HEADING_2 }));
-      
-      items.forEach((item) => {
-        sections.push(
-          new Paragraph({
-            children: [
-              new TextRun({ text: `[${item.action.replace(/_/g, ' ').toUpperCase()}] `, bold: true }),
-              new TextRun({ text: item.target, bold: true }),
-            ]
-          }),
-          new Paragraph({ text: `Reasoning: ${item.reasoning}` }),
-          new Paragraph({ text: `Expected Impact: ${item.expected_impact}` }),
-          new Paragraph({ text: "" })
-        );
-      });
-    }
   }
 
   // 4. A/B Copy Section
@@ -212,26 +188,62 @@ function generateWordDocument(job) {
         new Paragraph({ text: `Target: ${variant.keyword} (${variant.campaign_name})`, heading: HeadingLevel.HEADING_2 }),
         new Paragraph({ children: [new TextRun({ text: "Strategic Rationale:", bold: true })] }),
         new Paragraph({ text: variant.test_rationale || variant.improvement_reason || "" }),
+        new Paragraph({ text: "" }),
+        createCopyVariantTable(variant),
         new Paragraph({ text: "" })
       );
 
-      sections.push(
-        new Paragraph({ children: [new TextRun({ text: "Test A", bold: true })] }),
-        new Paragraph({ text: `Headline: ${variant.test_a?.headline || ""}` }),
-        new Paragraph({ text: `Description: ${variant.test_a?.description || ""}` }),
-        new Paragraph({ text: "" }),
-        
-        new Paragraph({ children: [new TextRun({ text: "Test B", bold: true })] }),
-        new Paragraph({ text: `Headline: ${variant.test_b?.headline || ""}` }),
-        new Paragraph({ text: `Description: ${variant.test_b?.description || ""}` }),
-        new Paragraph({ text: "" })
-      );
+      if (variant.poster_prompts) {
+        sections.push(
+          new Paragraph({ children: [new TextRun({ text: "AI Poster Generation Prompts", bold: true })] }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: "Ideogram: ", bold: true }),
+              new TextRun({ text: variant.poster_prompts.ideogram || "N/A" })
+            ]
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: "Midjourney: ", bold: true }),
+              new TextRun({ text: variant.poster_prompts.midjourney || "N/A" })
+            ]
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: "Canva: ", bold: true }),
+              new TextRun({ text: variant.poster_prompts.canva || "N/A" })
+            ]
+          }),
+          new Paragraph({ text: "" })
+        );
+      }
     });
   }
 
+  // 5. Footer / Generator Branding stamp
+  sections.push(
+    new Paragraph({ text: "" }),
+    new Paragraph({ text: "" }),
+    new Paragraph({
+      children: [
+        new TextRun({ text: `Report generated on ${new Date().toLocaleString()} by AdMind Analysis Platform.`, italic: true, size: 18 })
+      ],
+      alignment: AlignmentType.CENTER
+    })
+  );
+
   return new Document({
     sections: [{
-      properties: {},
+      properties: {
+        page: {
+          margin: {
+            top: 1440,
+            bottom: 1440,
+            left: 1440,
+            right: 1440,
+          },
+        },
+      },
       children: sections
     }]
   });
@@ -252,7 +264,7 @@ function createMetricsTable(rowsData) {
       new TableRow({
         children: row.map(cellText => (
           new TableCell({
-            margins: { top: 100, bottom: 100, left: 100, right: 100 },
+            margins: { top: 120, bottom: 120, left: 120, right: 120 },
             children: [new Paragraph({ text: cellText })]
           })
         ))
@@ -267,7 +279,8 @@ function createIssuesTable(issues) {
   const headers = ["Keyword", "Campaign", "Severity", "Issue Type", "Impacted Spend"];
   const headerRow = new TableRow({
     children: headers.map(h => new TableCell({
-      margins: { top: 100, bottom: 100, left: 100, right: 100 },
+      shading: { fill: "F3F4F6" },
+      margins: { top: 120, bottom: 120, left: 120, right: 120 },
       children: [new Paragraph({ children: [new TextRun({ text: h, bold: true })] })]
     }))
   });
@@ -281,8 +294,8 @@ function createIssuesTable(issues) {
         issue.issue_type.replace(/_/g, ' '),
         formatMoney(issue.spend)
       ].map(text => new TableCell({
-        margins: { top: 100, bottom: 100, left: 100, right: 100 },
-        children: [new Paragraph({ text: String(text) })]
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ text: String(text || '') })]
       }))
     });
   });
@@ -299,7 +312,8 @@ function createAnomaliesTable(anomalies) {
   const headers = ["Segment Type", "Value", "Keyword", "Campaign", "Severity", "Spend"];
   const headerRow = new TableRow({
     children: headers.map(h => new TableCell({
-      margins: { top: 100, bottom: 100, left: 100, right: 100 },
+      shading: { fill: "F3F4F6" },
+      margins: { top: 120, bottom: 120, left: 120, right: 120 },
       children: [new Paragraph({ children: [new TextRun({ text: h, bold: true })] })]
     }))
   });
@@ -314,8 +328,8 @@ function createAnomaliesTable(anomalies) {
         anomaly.severity,
         formatMoney(anomaly.spend)
       ].map(text => new TableCell({
-        margins: { top: 100, bottom: 100, left: 100, right: 100 },
-        children: [new Paragraph({ text: String(text) })]
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ text: String(text || '') })]
       }))
     });
   });
@@ -323,5 +337,136 @@ function createAnomaliesTable(anomalies) {
   return new Table({
     width: { size: 100, type: WidthType.PERCENTAGE },
     rows: [headerRow, ...rows]
+  });
+}
+
+function createStrategyTable(recommendations) {
+  const getPriorityLabel = (priority) => {
+    const p = String(priority).toLowerCase();
+    if (p === 'high' || p === '1') return 'High';
+    if (p === 'medium' || p === '2') return 'Medium';
+    return 'Low';
+  };
+
+  const formatAction = (act) => {
+    return String(act || '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  // Sort recommendations: High (1) -> Medium (2) -> Low (3)
+  const sortedRecs = [...recommendations].sort((a, b) => {
+    const getPVal = (r) => {
+      const p = String(r.priority).toLowerCase();
+      if (p === 'high' || p === '1') return 1;
+      if (p === 'medium' || p === '2') return 2;
+      return 3;
+    };
+    return getPVal(a) - getPVal(b);
+  });
+
+  const headers = ["Priority", "Action", "Target", "Reasoning", "Expected Impact"];
+  const headerRow = new TableRow({
+    children: headers.map(h => new TableCell({
+      shading: { fill: "F3F4F6" },
+      margins: { top: 120, bottom: 120, left: 120, right: 120 },
+      children: [new Paragraph({ children: [new TextRun({ text: h, bold: true })] })]
+    }))
+  });
+
+  const rows = sortedRecs.map(rec => {
+    return new TableRow({
+      children: [
+        getPriorityLabel(rec.priority),
+        formatAction(rec.action),
+        rec.target,
+        rec.reasoning,
+        rec.expected_impact
+      ].map(text => new TableCell({
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ text: String(text || '') })]
+      }))
+    });
+  });
+
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [headerRow, ...rows]
+  });
+}
+
+function createCopyVariantTable(variant) {
+  const headerRow = new TableRow({
+    children: [
+      new TableCell({
+        shading: { fill: "F3F4F6" },
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ children: [new TextRun({ text: "Element", bold: true })] })]
+      }),
+      new TableCell({
+        shading: { fill: "F3F4F6" },
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ children: [new TextRun({ text: `Test A: ${variant.test_a?.label || "Variant A"}`, bold: true })] })]
+      }),
+      new TableCell({
+        shading: { fill: "F3F4F6" },
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ children: [new TextRun({ text: `Test B: ${variant.test_b?.label || "Variant B"}`, bold: true })] })]
+      })
+    ]
+  });
+
+  const angleRow = new TableRow({
+    children: [
+      new TableCell({
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ children: [new TextRun({ text: "Creative Angle", bold: true })] })]
+      }),
+      new TableCell({
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ text: variant.test_a?.angle || "" })]
+      }),
+      new TableCell({
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ text: variant.test_b?.angle || "" })]
+      })
+    ]
+  });
+
+  const headlineRow = new TableRow({
+    children: [
+      new TableCell({
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ children: [new TextRun({ text: "Headline", bold: true })] })]
+      }),
+      new TableCell({
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ text: variant.test_a?.headline || "" })]
+      }),
+      new TableCell({
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ text: variant.test_b?.headline || "" })]
+      })
+    ]
+  });
+
+  const descriptionRow = new TableRow({
+    children: [
+      new TableCell({
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ children: [new TextRun({ text: "Description", bold: true })] })]
+      }),
+      new TableCell({
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ text: variant.test_a?.description || "" })]
+      }),
+      new TableCell({
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ text: variant.test_b?.description || "" })]
+      })
+    ]
+  });
+
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [headerRow, angleRow, headlineRow, descriptionRow]
   });
 }

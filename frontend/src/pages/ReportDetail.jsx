@@ -170,28 +170,19 @@ export default function ReportDetail() {
               {showChat ? "Hide Chat" : "Ask AI"}
             </button>
             <div className="relative">
-              <div className="flex inline-flex items-center rounded-xl bg-brand-500 shadow-[0_4px_14px_0_rgba(217,119,87,0.39)] transition-all hover:bg-brand-600 hover:scale-105">
-                <button
-                  onClick={() => { setShowExportMenu(false); downloadPDF(); }}
-                  disabled={isExporting}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-                >
-                  {isExporting && exportType === 'pdf' ? (
-                    <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                  ) : (
-                    <Download size={16} />
-                  )}
-                  Download PDF
-                </button>
-                <div className="w-px h-5 bg-white/30" />
-                <button
-                  onClick={() => setShowExportMenu(!showExportMenu)}
-                  disabled={isExporting}
-                  className="px-2 py-2.5 text-white disabled:opacity-50 hover:bg-white/10 rounded-r-xl"
-                >
-                  <ChevronDown size={16} />
-                </button>
-              </div>
+              <button
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                disabled={isExporting}
+                className="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_4px_14px_0_rgba(217,119,87,0.39)] transition-all hover:bg-brand-600 hover:scale-105 disabled:opacity-50"
+              >
+                {isExporting ? (
+                  <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                ) : (
+                  <Download size={16} />
+                )}
+                Export Report
+                <ChevronDown size={16} className={clsx("transition-transform", showExportMenu && "rotate-180")} />
+              </button>
 
               <AnimatePresence>
                 {showExportMenu && (
@@ -286,7 +277,7 @@ export default function ReportDetail() {
               )}
               {activeTab === 'strategy' && job.strategy_data && (
                 <motion.div key="strategy" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }}>
-                  <StrategyResults strategy={job.strategy_data} jobId={job.id} />
+                  <StrategyResults strategy={job.strategy_data} jobId={job.id} job={job} />
                 </motion.div>
               )}
               {activeTab === 'copy' && job.copy_data && (
