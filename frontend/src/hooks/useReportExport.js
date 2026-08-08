@@ -25,30 +25,48 @@ export function useReportExport(job, printRef) {
     setExportType('pdf');
     
     const element = printRef.current;
-    const originalLeft = element.style.left;
-    const originalZIndex = element.style.zIndex;
     
-    // Temporarily bring element into viewport for html2canvas
-    element.style.left = '0px';
-    element.style.zIndex = '9999';
+    // 1. Create invisible wrapper
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'absolute';
+    wrapper.style.left = '0px';
+    wrapper.style.top = '0px';
+    wrapper.style.width = '0px';
+    wrapper.style.height = '0px';
+    wrapper.style.overflow = 'hidden';
+    
+    // 2. Clone the template and reset styles for safe capture
+    const clone = element.cloneNode(true);
+    clone.style.position = 'absolute';
+    clone.style.left = '0px';
+    clone.style.top = '0px';
+    clone.style.width = '800px';
+    clone.style.height = 'auto'; // ensure full height
+    clone.style.zIndex = '1';
+    clone.style.overflow = 'visible';
+    
+    wrapper.appendChild(clone);
+    document.body.appendChild(wrapper);
+    
+    // 3. Wait briefly for browser paint
+    await new Promise(resolve => setTimeout(resolve, 300));
     
     try {
       const opt = {
         margin:       10,
         filename:     `admind-report-${job.id}-${new Date().toISOString().split('T')[0]}.pdf`,
         image:        { type: 'jpeg', quality: 0.95 },
-        html2canvas:  { scale: 2, useCORS: true },
+        html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 
-      await html2pdf().from(element).set(opt).save();
+      await html2pdf().from(clone).set(opt).save();
     } catch (error) {
       console.error("PDF generation failed", error);
       alert("Failed to generate PDF. Please try again.");
     } finally {
-      // Restore hidden positioning
-      element.style.left = originalLeft;
-      element.style.zIndex = originalZIndex;
+      // 4. Cleanup
+      document.body.removeChild(wrapper);
       setIsExporting(false);
       setExportType(null);
     }

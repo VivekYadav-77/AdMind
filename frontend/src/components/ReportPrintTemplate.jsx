@@ -28,16 +28,13 @@ const ReportPrintTemplate = forwardRef(({ job }, ref) => {
       ref={ref} 
       className="bg-white text-gray-900" 
       style={{ 
-        position: 'fixed', 
+        position: 'absolute', 
         top: 0, 
         left: '-9999px',
-        zIndex: 1, 
         width: '800px', 
         fontFamily: 'sans-serif', 
         padding: '40px',
-        backgroundColor: '#ffffff',
-        pointerEvents: 'none',
-        overflow: 'hidden'
+        backgroundColor: '#ffffff'
       }}
     >
       {/* 1. Cover Page */}
