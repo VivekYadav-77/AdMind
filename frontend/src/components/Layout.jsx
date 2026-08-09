@@ -16,17 +16,12 @@ export default function Layout() {
   const { workspaces, activeWorkspace, changeWorkspace, createWorkspace } = useWorkspace()
 
   const [showWsDropdown, setShowWsDropdown] = useState(false)
-  const [showUserDropdown, setShowUserDropdown] = useState(false)
   const wsDropdownRef = useRef(null)
-  const userDropdownRef = useRef(null)
 
   useEffect(() => {
     function handleClickOutside(event) {
       if (wsDropdownRef.current && !wsDropdownRef.current.contains(event.target)) {
         setShowWsDropdown(false)
-      }
-      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
-        setShowUserDropdown(false)
       }
     }
     
@@ -162,7 +157,7 @@ export default function Layout() {
 
             <div className="relative" ref={wsDropdownRef}>
               <button 
-                onClick={() => { setShowWsDropdown(!showWsDropdown); setShowUserDropdown(false) }}
+                onClick={() => setShowWsDropdown(!showWsDropdown)}
                 className="flex items-center gap-2 bg-bgpanelhover hover:bg-bgpanel border border-borderwarm px-4 py-2.5 rounded-xl text-sm font-medium text-textprimary transition-colors"
               >
                 {activeWorkspace ? activeWorkspace.name : 'Loading...'}
@@ -201,30 +196,19 @@ export default function Layout() {
               )}
             </div>
 
-            <div className="relative" ref={userDropdownRef}>
+            <div>
               <motion.button
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => { setShowUserDropdown(!showUserDropdown); setShowWsDropdown(false) }}
+                onClick={() => {
+                  navigate('/app/settings')
+                  setShowWsDropdown(false)
+                }}
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-bgpanel border border-borderwarm font-bold text-textprimary hover:bg-bgpanelhover transition-colors"
+                title="Go to Settings"
               >
                 {userInitial}
               </motion.button>
-              {showUserDropdown && (
-                <div className="absolute right-0 mt-2 w-56 bg-bgpanel border border-borderwarm rounded-2xl shadow-xl overflow-hidden z-50">
-                  <div className="p-4 border-b border-borderwarm">
-                    <p className="text-sm font-bold text-textprimary truncate">{user?.email || 'User'}</p>
-                  </div>
-                  <div className="p-2">
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-3 text-left px-4 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-500/10 transition-colors font-medium"
-                    >
-                      <LogOut size={16} /> Logout
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </header>

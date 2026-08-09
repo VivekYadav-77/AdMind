@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react'
-import { KeyRound, Check, AlertCircle, Briefcase, Wifi, WifiOff } from 'lucide-react'
+import { KeyRound, Check, AlertCircle, Briefcase, Wifi, WifiOff, LogOut } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { API } from '../services/api'
+import { useNavigate } from 'react-router-dom'
 
 export default function Settings() {
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+  
+  const handleLogout = () => {
+    logout()
+    navigate('/login')
+  }
 
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
@@ -137,9 +144,15 @@ export default function Settings() {
                 )}
               </div>
               <div className="pt-3">
-                <p className="text-[11px] text-textmuted leading-relaxed">
+                <p className="text-[11px] text-textmuted leading-relaxed mb-4">
                   Your connection is encrypted. Never share your credentials with anyone.
                 </p>
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm text-red-500 bg-red-500/10 hover:bg-red-500/20 transition-colors font-medium border border-red-500/20"
+                >
+                  <LogOut size={16} /> Logout
+                </button>
               </div>
             </div>
           </div>
