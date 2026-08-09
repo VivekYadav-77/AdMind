@@ -135,7 +135,7 @@ export default function Layout() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden z-10">
         <header className="h-24 flex items-center justify-between px-10 shrink-0">
-          <h1 className="text-2xl font-bold text-white tracking-tight">
+          <h1 className="text-2xl font-bold text-textprimary tracking-tight">
             {location.pathname === '/app' 
               ? 'Campaign Dashboard' 
               : location.pathname.startsWith('/app/history/')
