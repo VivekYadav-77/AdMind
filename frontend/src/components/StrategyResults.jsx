@@ -256,7 +256,7 @@ export default function StrategyResults({ strategy, jobId, job }) {
                         whileHover={{ scale: 1.01 }}
                         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
                         key={`${item.target}-${index}`} 
-                        className={`group relative rounded-3xl border border-white/10 bg-gradient-to-br ${bg} p-6 shadow-xl hover:shadow-[0_8px_30px_rgba(255,255,255,0.08)] hover:border-white/20 transition-all overflow-hidden backdrop-blur-xl`}
+                        className={`group relative rounded-3xl border border-borderwarm bg-gradient-to-br ${bg} p-6 shadow-xl hover:shadow-2xl hover:border-brand-500/30 transition-all overflow-hidden backdrop-blur-xl`}
                       >
                         <div className={`absolute left-0 top-0 bottom-0 w-2 bg-${color}-500/50 group-hover:bg-${color}-400 transition-all`} style={{ boxShadow: `0 0 15px ${shadow}` }} />
                         
@@ -266,22 +266,22 @@ export default function StrategyResults({ strategy, jobId, job }) {
                               <span className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-black uppercase tracking-widest ${actionClass(item.action)}`}>
                                 <ActionIcon size={14} /> {item.action.replace(/_/g, ' ')}
                               </span>
-                              <h3 className="text-xl font-black text-white truncate">{item.target}</h3>
+                              <h3 className="text-xl font-black text-textprimary truncate">{item.target}</h3>
                             </div>
                             
-                            <p className="text-[15px] leading-relaxed text-slate-300 font-medium">{item.reasoning}</p>
+                            <p className="text-[15px] leading-relaxed text-textsecondary font-medium">{item.reasoning}</p>
                           </div>
                           
-                          <div className="md:w-80 shrink-0 rounded-2xl bg-black/50 p-5 border border-white/5 shadow-inner">
+                          <div className="md:w-80 shrink-0 rounded-2xl bg-bgbase p-5 border border-borderwarm shadow-inner">
                             <div className="flex items-center justify-between mb-2">
-                              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Expected Impact</p>
+                              <p className="text-[10px] font-black uppercase tracking-widest text-textmuted">Expected Impact</p>
                               <div className={`w-2.5 h-2.5 rounded-full bg-${color}-500`} style={{ boxShadow: `0 0 8px ${shadow}` }} />
                             </div>
-                            <p className="text-[15px] font-bold text-slate-200 leading-snug">{item.expected_impact}</p>
+                            <p className="text-[15px] font-bold text-textprimary leading-snug">{item.expected_impact}</p>
                             
                             <button 
                               onClick={() => setActiveCommentBox(activeCommentBox === item.target ? null : item.target)}
-                              className="mt-4 flex items-center gap-1.5 text-xs font-bold text-slate-400 hover:text-indigo-400 transition-colors"
+                              className="mt-4 flex items-center gap-1.5 text-xs font-bold text-textmuted hover:text-brand-500 transition-colors"
                             >
                               <MessageSquare size={14} /> 
                               {comments[item.target]?.length || 0} Comments
@@ -296,20 +296,20 @@ export default function StrategyResults({ strategy, jobId, job }) {
                               initial={{ opacity: 0, height: 0 }} 
                               animate={{ opacity: 1, height: 'auto' }} 
                               exit={{ opacity: 0, height: 0 }}
-                              className="mt-6 pt-6 border-t border-white/10"
+                              className="mt-6 pt-6 border-t border-borderwarm"
                             >
                               <div className="space-y-4 mb-4 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
                                 {comments[item.target]?.map(c => (
-                                  <div key={c.id} className="bg-white/5 p-3 rounded-xl border border-white/5">
+                                  <div key={c.id} className="bg-bgbase p-3 rounded-xl border border-borderwarm">
                                     <div className="flex justify-between items-center mb-1">
-                                      <span className="text-xs font-bold text-indigo-300">{c.user_email}</span>
-                                      <span className="text-[10px] text-slate-500">{new Date(c.created_at).toLocaleDateString()}</span>
+                                      <span className="text-xs font-bold text-brand-600 dark:text-brand-400">{c.user_email}</span>
+                                      <span className="text-[10px] text-textmuted">{new Date(c.created_at).toLocaleDateString()}</span>
                                     </div>
-                                    <p className="text-sm text-slate-300">{c.comment_text}</p>
+                                    <p className="text-sm text-textprimary">{c.comment_text}</p>
                                   </div>
                                 ))}
                                 {(!comments[item.target] || comments[item.target].length === 0) && (
-                                  <p className="text-sm text-slate-500 italic">No comments yet. Start the discussion!</p>
+                                  <p className="text-sm text-textmuted italic">No comments yet. Start the discussion!</p>
                                 )}
                               </div>
                               <div className="flex gap-2">
@@ -319,11 +319,11 @@ export default function StrategyResults({ strategy, jobId, job }) {
                                   value={newComment[item.target] || ''}
                                   onChange={e => setNewComment(prev => ({...prev, [item.target]: e.target.value}))}
                                   onKeyDown={e => e.key === 'Enter' && handleAddComment(item.target)}
-                                  className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-500/50"
+                                  className="flex-1 bg-bgbase border border-borderwarm rounded-xl px-4 py-2 text-sm text-textprimary focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50"
                                 />
                                 <button 
                                   onClick={() => handleAddComment(item.target)}
-                                  className="bg-indigo-600 hover:bg-indigo-500 text-white p-2.5 rounded-xl transition-colors"
+                                  className="btn-primary p-2.5 rounded-xl flex items-center justify-center transition-colors"
                                 >
                                   <Send size={16} />
                                 </button>
