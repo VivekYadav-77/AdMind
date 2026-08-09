@@ -2,7 +2,7 @@ import { History, LayoutDashboard, LogOut, Settings, ChevronDown, Plus, Wrench, 
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useWorkspace } from '../context/WorkspaceContext'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import clsx from 'clsx'
 import { motion } from 'framer-motion'
 import Modal from './ui/Modal'
@@ -17,6 +17,24 @@ export default function Layout() {
 
   const [showWsDropdown, setShowWsDropdown] = useState(false)
   const [showUserDropdown, setShowUserDropdown] = useState(false)
+  const wsDropdownRef = useRef(null)
+  const userDropdownRef = useRef(null)
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (wsDropdownRef.current && !wsDropdownRef.current.contains(event.target)) {
+        setShowWsDropdown(false)
+      }
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target)) {
+        setShowUserDropdown(false)
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
   const [showNewWsModal, setShowNewWsModal] = useState(false)
   const [newWsName, setNewWsName] = useState('')
   const [isSubmittingWs, setIsSubmittingWs] = useState(false)
@@ -142,7 +160,7 @@ export default function Layout() {
               {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
             </button>
 
-            <div className="relative">
+            <div className="relative" ref={wsDropdownRef}>
               <button 
                 onClick={() => { setShowWsDropdown(!showWsDropdown); setShowUserDropdown(false) }}
                 className="flex items-center gap-2 bg-bgpanelhover hover:bg-bgpanel border border-borderwarm px-4 py-2.5 rounded-xl text-sm font-medium text-textprimary transition-colors"
@@ -183,7 +201,7 @@ export default function Layout() {
               )}
             </div>
 
-            <div className="relative">
+            <div className="relative" ref={userDropdownRef}>
               <motion.button
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.95 }}
