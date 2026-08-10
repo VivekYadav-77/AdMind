@@ -76,6 +76,12 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
     if user.is_banned:
         raise HTTPException(status_code=403, detail="Your account has been banned.")
+        
+    # Update last_seen_at
+    from datetime import datetime
+    user.last_seen_at = datetime.utcnow()
+    db.commit()
+    
     return user
 
 
@@ -709,7 +715,7 @@ def get_admin_stats(db: Session = Depends(get_db), admin: User = Depends(require
     from datetime import datetime, date
     today = date.today()
     total_users = db.query(User).count()
-    active_today = db.query(User).filter(func.date(User.created_at) == today).count() # simplistic proxy for active
+    active_today = db.query(User).filter(func.date(User.last_seen_at) == today).count() 
     total_jobs = db.query(AnalysisJob).count()
     total_spend_analyzed = db.query(func.sum(AnalysisJob.input_spend)).scalar() or 0.0
     reviews_pending = db.query(CommunityReview).filter(CommunityReview.is_approved == 0).count()
@@ -722,6 +728,30 @@ def get_admin_stats(db: Session = Depends(get_db), admin: User = Depends(require
         "reviews_pending": reviews_pending,
         "total_workspaces": total_workspaces
     }
+
+@app.get("/admin/stats/growth")
+def get_admin_growth(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    from datetime import datetime, date, timedelta
+    today = date.today()
+    start_date = today - timedelta(days=30)
+    
+    date_list = [start_date + timedelta(days=x) for x in range(31)]
+    
+    users = db.query(User.created_at).filter(User.created_at >= start_date).all()
+    jobs = db.query(AnalysisJob.created_at).filter(AnalysisJob.created_at >= start_date).all()
+    
+    from collections import Counter
+    user_counts = Counter(u[0].date() for u in users if u[0])
+    job_counts = Counter(j[0].date() for j in jobs if j[0])
+    
+    data = []
+    for d in date_list:
+        data.append({
+            "date": d.strftime("%b %d"),
+            "new_users": user_counts.get(d, 0),
+            "new_jobs": job_counts.get(d, 0)
+        })
+    return data
 
 @app.get("/admin/users", response_model=dict)
 def get_admin_users(page: int = 1, size: int = 20, search: str = "", db: Session = Depends(get_db), admin: User = Depends(require_admin)):

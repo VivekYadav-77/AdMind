@@ -12,7 +12,7 @@ import Logo from './Logo'
 export default function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { logout, user } = useAuth()
+  const { logout, user, isAdmin } = useAuth()
   const { workspaces, activeWorkspace, changeWorkspace, createWorkspace } = useWorkspace()
 
   const [showWsDropdown, setShowWsDropdown] = useState(false)
@@ -125,9 +125,21 @@ export default function Layout() {
             )
           })}
         </nav>
+
+        {isAdmin && (
+          <div className="p-4 border-t border-borderwarm relative z-10">
+            <Link 
+              to="/admin" 
+              className="flex items-center justify-center gap-2 w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl shadow-lg shadow-orange-500/20 transition-all duration-300 transform hover:-translate-y-0.5"
+            >
+              Admin Panel
+            </Link>
+          </div>
+        )}
       </aside>
 
       {/* Main Content */}
+
       <main className="flex-1 flex flex-col h-screen overflow-hidden z-10">
         <header className="h-24 flex items-center justify-between px-10 shrink-0">
           <h1 className="text-2xl font-bold text-textprimary tracking-tight">

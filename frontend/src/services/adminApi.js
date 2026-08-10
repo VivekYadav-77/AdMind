@@ -21,6 +21,12 @@ export const adminApi = {
     return res.json()
   },
 
+  getGrowthStats: async () => {
+    const res = await fetch(`${API_URL}/admin/stats/growth`, { headers: getHeaders() })
+    if (!res.ok) throw new Error('Failed to fetch growth stats')
+    return res.json()
+  },
+
   getUsers: async (page = 1, size = 20, search = '') => {
     const res = await fetch(`${API_URL}/admin/users?page=${page}&size=${size}&search=${encodeURIComponent(search)}`, { headers: getHeaders() })
     if (!res.ok) throw new Error('Failed to fetch users')

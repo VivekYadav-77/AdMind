@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { adminApi } from '../../services/adminApi'
 import { Search, Trash2, Eye } from 'lucide-react'
 import Modal from '../../components/ui/Modal'
+import Pagination from '../../components/ui/Pagination'
 
 export default function AdminJobs() {
   const [data, setData] = useState({ items: [], total: 0, page: 1, size: 20 })
@@ -108,6 +109,7 @@ export default function AdminJobs() {
             </tbody>
           </table>
         </div>
+        <Pagination page={data.page} pages={data.pages} onPageChange={fetchJobs} />
       </div>
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={`Job #${selectedJob?.id} Details`}>

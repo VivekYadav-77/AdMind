@@ -1,21 +1,25 @@
 import { useState, useEffect } from 'react'
 import { adminApi } from '../../services/adminApi'
 import { Users, BarChart3, Star, Briefcase, Activity, AlertTriangle } from 'lucide-react'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null)
+  const [growth, setGrowth] = useState([])
   const [activity, setActivity] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [statsData, activityData] = await Promise.all([
+        const [statsData, activityData, growthData] = await Promise.all([
           adminApi.getStats(),
-          adminApi.getActivity()
+          adminApi.getActivity(),
+          adminApi.getGrowthStats()
         ])
         setStats(statsData)
         setActivity(activityData)
+        setGrowth(growthData)
       } catch (err) {
         console.error('Failed to fetch admin stats', err)
       } finally {
@@ -60,9 +64,21 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-bgpanel border border-borderwarm rounded-2xl p-6">
-          <h3 className="text-lg font-bold mb-4">Platform Growth (Placeholder Chart)</h3>
-          <div className="h-64 flex items-center justify-center border border-dashed border-borderwarm rounded-xl text-textmuted">
-             Integrate Recharts here for real growth data
+          <h3 className="text-lg font-bold mb-4">Platform Growth (Last 30 Days)</h3>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={growth} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
+                <XAxis dataKey="date" stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
+                <YAxis stroke="#888" fontSize={12} tickLine={false} axisLine={false} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1f2937', borderColor: '#374151', borderRadius: '8px' }}
+                  itemStyle={{ color: '#fff' }}
+                />
+                <Line type="monotone" dataKey="new_users" name="New Users" stroke="#f97316" strokeWidth={3} dot={false} activeDot={{ r: 8 }} />
+                <Line type="monotone" dataKey="new_jobs" name="New Jobs" stroke="#8b5cf6" strokeWidth={3} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </div>
 

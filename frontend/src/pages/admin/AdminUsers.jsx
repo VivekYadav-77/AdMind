@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { adminApi } from '../../services/adminApi'
 import { Search, ShieldAlert, ShieldCheck, Trash2, Ban } from 'lucide-react'
+import Pagination from '../../components/ui/Pagination'
 
 export default function AdminUsers() {
   const [data, setData] = useState({ items: [], total: 0, page: 1, size: 20 })
@@ -117,6 +118,7 @@ export default function AdminUsers() {
             </tbody>
           </table>
         </div>
+        <Pagination page={data.page} pages={data.pages} onPageChange={fetchUsers} />
       </div>
     </div>
   )

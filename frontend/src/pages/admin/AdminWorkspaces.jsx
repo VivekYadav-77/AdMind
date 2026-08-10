@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { adminApi } from '../../services/adminApi'
+import Pagination from '../../components/ui/Pagination'
 
 export default function AdminWorkspaces() {
   const [data, setData] = useState({ items: [], total: 0, page: 1, size: 20 })
@@ -56,6 +57,7 @@ export default function AdminWorkspaces() {
             </tbody>
           </table>
         </div>
+        <Pagination page={data.page} pages={data.pages} onPageChange={fetchWorkspaces} />
       </div>
     </div>
   )

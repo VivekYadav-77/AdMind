@@ -15,6 +15,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_superadmin = Column(Boolean, default=False)
     is_banned = Column(Boolean, default=False)
+    last_seen_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     analysis_jobs = relationship("AnalysisJob", back_populates="user")
