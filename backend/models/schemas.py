@@ -67,13 +67,19 @@ class ABTestVariant(BaseModel):
     description: str
 
 
+class PosterPrompts(BaseModel):
+    ideogram: str
+    midjourney: str
+    canva: str
+
+
 class CopyVariant(BaseModel):
     keyword: str
     campaign_name: str
     test_a: ABTestVariant
     test_b: ABTestVariant
     test_rationale: str
-    visual_prompt: Optional[str] = None
+    poster_prompts: Optional[PosterPrompts] = None
 
 
 class CopyResult(BaseModel):

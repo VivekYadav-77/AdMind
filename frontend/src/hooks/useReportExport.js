@@ -1,0 +1,472 @@
+import { useState } from 'react';
+import { API } from '../services/api';
+import {
+  Document,
+  Packer,
+  Paragraph,
+  TextRun,
+  HeadingLevel,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
+  BorderStyle,
+  AlignmentType,
+} from 'docx';
+
+export function useReportExport(job) {
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportType, setExportType] = useState(null); // 'pdf' | 'docx'
+
+  const downloadPDF = async () => {
+    if (!job) return;
+    
+    setIsExporting(true);
+    setExportType('pdf');
+    
+    try {
+      const doc = generateWordDocument(job);
+      const docxBlob = await Packer.toBlob(doc);
+      
+      const pdfBlob = await API.exportPDF(docxBlob);
+      
+      const url = window.URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `admind-report-${job.id}-${new Date().toISOString().split('T')[0]}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("PDF generation failed", error);
+      alert("Failed to generate PDF. Please try again.");
+    } finally {
+      setIsExporting(false);
+      setExportType(null);
+    }
+  };
+
+  const downloadDOCX = async () => {
+    if (!job) return;
+    
+    setIsExporting(true);
+    setExportType('docx');
+    
+    try {
+      const doc = generateWordDocument(job);
+      const blob = await Packer.toBlob(doc);
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `admind-report-${job.id}-${new Date().toISOString().split('T')[0]}.docx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("DOCX generation failed", error);
+      alert("Failed to generate DOCX. Please try again.");
+    } finally {
+      setIsExporting(false);
+      setExportType(null);
+    }
+  };
+
+  return { downloadPDF, downloadDOCX, isExporting, exportType };
+}
+
+// DOCX generation helper
+function generateWordDocument(job) {
+  // Helper to safely format currency
+  const formatMoney = (val) => `$${Number(val || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+
+  const sections = [];
+  
+  const agencyName = localStorage.getItem('agencyName') || 'AdMind';
+
+  // 1. Cover / Meta
+  sections.push(
+    new Paragraph({
+      text: `${agencyName} Analysis Report`,
+      heading: HeadingLevel.TITLE,
+      alignment: AlignmentType.CENTER,
+    }),
+    new Paragraph({ text: "" }),
+    new Paragraph({
+      children: [
+        new TextRun({ text: `Report ID: `, bold: true }),
+        new TextRun(`${job.id}`),
+      ],
+    }),
+    new Paragraph({
+      children: [
+        new TextRun({ text: `Date: `, bold: true }),
+        new TextRun(`${new Date(job.created_at).toLocaleString()}`),
+      ],
+    }),
+    new Paragraph({ text: "" })
+  );
+
+  // 2. Audit Section
+  if (job.audit_data) {
+    const audit = job.audit_data;
+    const inefficientSpend = audit.inefficient_spend || 0;
+
+    sections.push(
+      new Paragraph({ text: "Audit Intelligence", heading: HeadingLevel.HEADING_1 }),
+      new Paragraph({ text: "" }),
+      
+      new Paragraph({ children: [new TextRun({ text: "Overview", bold: true })] }),
+      new Paragraph({ text: audit.summary?.overview || "No overview available." }),
+      new Paragraph({ text: "" }),
+
+      new Paragraph({ children: [new TextRun({ text: "Critical Finding", bold: true })] }),
+      new Paragraph({ text: audit.summary?.critical_finding || "None." }),
+      new Paragraph({ text: "" }),
+
+      new Paragraph({ children: [new TextRun({ text: "Immediate Action", bold: true })] }),
+      new Paragraph({ text: audit.summary?.action_required || "None." }),
+      new Paragraph({ text: "" }),
+
+      new Paragraph({ children: [new TextRun({ text: "Key Metrics", bold: true })] }),
+      createMetricsTable([
+        ["Total Spend", formatMoney(audit.total_spend)],
+        ["Total Revenue", formatMoney(audit.total_revenue)],
+        ["ROAS", `${Number(audit.total_roas || 0).toFixed(2)}x`],
+        ["Inefficient Spend", formatMoney(inefficientSpend)]
+      ]),
+      new Paragraph({ text: "" }),
+    );
+
+    // Issues table
+    if (audit.issues && audit.issues.length > 0) {
+      sections.push(
+        new Paragraph({ children: [new TextRun({ text: "Underperforming Keywords", bold: true })] }),
+        createIssuesTable(audit.issues),
+        new Paragraph({ text: "" })
+      );
+    }
+    
+    // Segment Anomalies
+    if (audit.segment_anomalies && audit.segment_anomalies.length > 0) {
+      sections.push(
+        new Paragraph({ children: [new TextRun({ text: "Segment Anomalies", bold: true })] }),
+        createAnomaliesTable(audit.segment_anomalies),
+        new Paragraph({ text: "" })
+      );
+    }
+  }
+
+  // 3. Strategy Section
+  if (job.strategy_data && job.strategy_data.recommendations) {
+    sections.push(
+      new Paragraph({ text: "Strategy Recommendations", heading: HeadingLevel.HEADING_1, pageBreakBefore: true }),
+      new Paragraph({ text: "" }),
+      new Paragraph({ children: [new TextRun({ text: "AI Strategist Summary", bold: true })] }),
+      new Paragraph({ text: job.strategy_data.summary || "" }),
+      new Paragraph({ text: "" }),
+      createStrategyTable(job.strategy_data.recommendations),
+      new Paragraph({ text: "" })
+    );
+  }
+
+  // 4. A/B Copy Section
+  if (job.copy_data && job.copy_data.variants) {
+    sections.push(
+      new Paragraph({ text: "A/B Copy Frameworks", heading: HeadingLevel.HEADING_1, pageBreakBefore: true }),
+      new Paragraph({ text: "" }),
+      new Paragraph({ children: [new TextRun({ text: "Copywriter Summary", bold: true })] }),
+      new Paragraph({ text: job.copy_data.summary || "" }),
+      new Paragraph({ text: "" })
+    );
+
+    job.copy_data.variants.forEach((variant) => {
+      sections.push(
+        new Paragraph({ text: `Target: ${variant.keyword} (${variant.campaign_name})`, heading: HeadingLevel.HEADING_2 }),
+        new Paragraph({ children: [new TextRun({ text: "Strategic Rationale:", bold: true })] }),
+        new Paragraph({ text: variant.test_rationale || variant.improvement_reason || "" }),
+        new Paragraph({ text: "" }),
+        createCopyVariantTable(variant),
+        new Paragraph({ text: "" })
+      );
+
+      if (variant.poster_prompts) {
+        sections.push(
+          new Paragraph({ children: [new TextRun({ text: "AI Poster Generation Prompts", bold: true })] }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: "Ideogram: ", bold: true }),
+              new TextRun({ text: variant.poster_prompts.ideogram || "N/A" })
+            ]
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: "Midjourney: ", bold: true }),
+              new TextRun({ text: variant.poster_prompts.midjourney || "N/A" })
+            ]
+          }),
+          new Paragraph({
+            children: [
+              new TextRun({ text: "Canva: ", bold: true }),
+              new TextRun({ text: variant.poster_prompts.canva || "N/A" })
+            ]
+          }),
+          new Paragraph({ text: "" })
+        );
+      }
+    });
+  }
+
+  // 5. Footer / Generator Branding stamp
+  sections.push(
+    new Paragraph({ text: "" }),
+    new Paragraph({ text: "" }),
+    new Paragraph({
+      children: [
+        new TextRun({ text: `Report generated on ${new Date().toLocaleString()} by AdMind Analysis Platform.`, italic: true, size: 18 })
+      ],
+      alignment: AlignmentType.CENTER
+    })
+  );
+
+  return new Document({
+    sections: [{
+      properties: {
+        page: {
+          margin: {
+            top: 1440,
+            bottom: 1440,
+            left: 1440,
+            right: 1440,
+          },
+        },
+      },
+      children: sections
+    }]
+  });
+}
+
+function createMetricsTable(rowsData) {
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: {
+      top: { style: BorderStyle.SINGLE, size: 1 },
+      bottom: { style: BorderStyle.SINGLE, size: 1 },
+      left: { style: BorderStyle.SINGLE, size: 1 },
+      right: { style: BorderStyle.SINGLE, size: 1 },
+      insideHorizontal: { style: BorderStyle.SINGLE, size: 1 },
+      insideVertical: { style: BorderStyle.SINGLE, size: 1 },
+    },
+    rows: rowsData.map(row => (
+      new TableRow({
+        children: row.map(cellText => (
+          new TableCell({
+            margins: { top: 120, bottom: 120, left: 120, right: 120 },
+            children: [new Paragraph({ text: cellText })]
+          })
+        ))
+      })
+    ))
+  });
+}
+
+function createIssuesTable(issues) {
+  const formatMoney = (val) => `$${Number(val || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+  
+  const headers = ["Keyword", "Campaign", "Severity", "Issue Type", "Impacted Spend"];
+  const headerRow = new TableRow({
+    children: headers.map(h => new TableCell({
+      shading: { fill: "F3F4F6" },
+      margins: { top: 120, bottom: 120, left: 120, right: 120 },
+      children: [new Paragraph({ children: [new TextRun({ text: h, bold: true })] })]
+    }))
+  });
+  
+  const rows = issues.map(issue => {
+    return new TableRow({
+      children: [
+        issue.keyword,
+        issue.campaign_name,
+        issue.severity,
+        issue.issue_type.replace(/_/g, ' '),
+        formatMoney(issue.spend)
+      ].map(text => new TableCell({
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ text: String(text || '') })]
+      }))
+    });
+  });
+
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [headerRow, ...rows]
+  });
+}
+
+function createAnomaliesTable(anomalies) {
+  const formatMoney = (val) => `$${Number(val || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+  
+  const headers = ["Segment Type", "Value", "Keyword", "Campaign", "Severity", "Spend"];
+  const headerRow = new TableRow({
+    children: headers.map(h => new TableCell({
+      shading: { fill: "F3F4F6" },
+      margins: { top: 120, bottom: 120, left: 120, right: 120 },
+      children: [new Paragraph({ children: [new TextRun({ text: h, bold: true })] })]
+    }))
+  });
+  
+  const rows = anomalies.map(anomaly => {
+    return new TableRow({
+      children: [
+        anomaly.segment_type,
+        anomaly.segment_value,
+        anomaly.keyword,
+        anomaly.campaign_name,
+        anomaly.severity,
+        formatMoney(anomaly.spend)
+      ].map(text => new TableCell({
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ text: String(text || '') })]
+      }))
+    });
+  });
+
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [headerRow, ...rows]
+  });
+}
+
+function createStrategyTable(recommendations) {
+  const getPriorityLabel = (priority) => {
+    const p = String(priority).toLowerCase();
+    if (p === 'high' || p === '1') return 'High';
+    if (p === 'medium' || p === '2') return 'Medium';
+    return 'Low';
+  };
+
+  const formatAction = (act) => {
+    return String(act || '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  // Sort recommendations: High (1) -> Medium (2) -> Low (3)
+  const sortedRecs = [...recommendations].sort((a, b) => {
+    const getPVal = (r) => {
+      const p = String(r.priority).toLowerCase();
+      if (p === 'high' || p === '1') return 1;
+      if (p === 'medium' || p === '2') return 2;
+      return 3;
+    };
+    return getPVal(a) - getPVal(b);
+  });
+
+  const headers = ["Priority", "Action", "Target", "Reasoning", "Expected Impact"];
+  const headerRow = new TableRow({
+    children: headers.map(h => new TableCell({
+      shading: { fill: "F3F4F6" },
+      margins: { top: 120, bottom: 120, left: 120, right: 120 },
+      children: [new Paragraph({ children: [new TextRun({ text: h, bold: true })] })]
+    }))
+  });
+
+  const rows = sortedRecs.map(rec => {
+    return new TableRow({
+      children: [
+        getPriorityLabel(rec.priority),
+        formatAction(rec.action),
+        rec.target,
+        rec.reasoning,
+        rec.expected_impact
+      ].map(text => new TableCell({
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ text: String(text || '') })]
+      }))
+    });
+  });
+
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [headerRow, ...rows]
+  });
+}
+
+function createCopyVariantTable(variant) {
+  const headerRow = new TableRow({
+    children: [
+      new TableCell({
+        shading: { fill: "F3F4F6" },
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ children: [new TextRun({ text: "Element", bold: true })] })]
+      }),
+      new TableCell({
+        shading: { fill: "F3F4F6" },
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ children: [new TextRun({ text: `Test A: ${variant.test_a?.label || "Variant A"}`, bold: true })] })]
+      }),
+      new TableCell({
+        shading: { fill: "F3F4F6" },
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ children: [new TextRun({ text: `Test B: ${variant.test_b?.label || "Variant B"}`, bold: true })] })]
+      })
+    ]
+  });
+
+  const angleRow = new TableRow({
+    children: [
+      new TableCell({
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ children: [new TextRun({ text: "Creative Angle", bold: true })] })]
+      }),
+      new TableCell({
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ text: variant.test_a?.angle || "" })]
+      }),
+      new TableCell({
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ text: variant.test_b?.angle || "" })]
+      })
+    ]
+  });
+
+  const headlineRow = new TableRow({
+    children: [
+      new TableCell({
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ children: [new TextRun({ text: "Headline", bold: true })] })]
+      }),
+      new TableCell({
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ text: variant.test_a?.headline || "" })]
+      }),
+      new TableCell({
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ text: variant.test_b?.headline || "" })]
+      })
+    ]
+  });
+
+  const descriptionRow = new TableRow({
+    children: [
+      new TableCell({
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ children: [new TextRun({ text: "Description", bold: true })] })]
+      }),
+      new TableCell({
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ text: variant.test_a?.description || "" })]
+      }),
+      new TableCell({
+        margins: { top: 120, bottom: 120, left: 120, right: 120 },
+        children: [new Paragraph({ text: variant.test_b?.description || "" })]
+      })
+    ]
+  });
+
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    rows: [headerRow, angleRow, headlineRow, descriptionRow]
+  });
+}

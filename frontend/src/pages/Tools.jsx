@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Users, Swords, Loader2, Link2, FileText, ArrowRight, CheckCircle2 } from 'lucide-react'
 import clsx from 'clsx'
@@ -6,7 +7,8 @@ import { API } from '../services/api'
 import TabBar from '../components/ui/TabBar'
 
 export default function Tools() {
-  const [activeTab, setActiveTab] = useState('landing-page')
+  const location = useLocation()
+  const [activeTab, setActiveTab] = useState(location.state?.activeTab || 'landing-page')
   const [loading, setLoading] = useState(false)
   const [inputUrl, setInputUrl] = useState('')
   const [inputDesc, setInputDesc] = useState('')
