@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { KeyRound, Check, AlertCircle, Briefcase, Wifi, WifiOff, LogOut } from 'lucide-react'
+import { KeyRound, Check, AlertCircle, Briefcase, Wifi, WifiOff, LogOut, MessageSquare, Star } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { API } from '../services/api'
@@ -286,6 +286,26 @@ export default function Settings() {
                 </motion.button>
               </div>
             </form>
+          </div>
+
+          {/* Share Feedback / Community */}
+          <div className="bg-bgpanel rounded-2xl p-8 border border-borderwarm shadow-sm">
+            <h3 className="text-lg font-bold text-textprimary mb-4 flex items-center gap-2">
+              <MessageSquare size={20} className="text-brand-500" />
+              Community & Feedback
+            </h3>
+            <p className="text-sm text-textmuted mb-6 leading-relaxed">
+              Help us improve and let other marketers know how AdMind has impacted your campaigns. Your feedback means the world to us!
+            </p>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate('/community')}
+                className="btn-secondary px-5 py-2.5 rounded-xl font-medium flex items-center gap-2"
+              >
+                <Star size={16} className="text-amber-400" fill="currentColor" />
+                Write a Review
+              </button>
+            </div>
           </div>
 
         </div>

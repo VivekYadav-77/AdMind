@@ -1,4 +1,4 @@
-import { History, LayoutDashboard, LogOut, Settings, ChevronDown, Plus, Wrench, FlaskConical, Zap, Sun, Moon } from 'lucide-react'
+import { History, LayoutDashboard, LogOut, Settings, ChevronDown, Plus, Wrench, FlaskConical, Zap, Sun, Moon, MessageSquare } from 'lucide-react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useWorkspace } from '../context/WorkspaceContext'
@@ -77,6 +77,7 @@ export default function Layout() {
     { name: 'History', path: '/app/history', icon: History },
     { name: 'AI Tools', path: '/app/tools', icon: Wrench },
     { name: 'A/B Tracker', path: '/app/tests', icon: FlaskConical },
+    { name: 'Community', path: '/community', icon: MessageSquare },
     { name: 'Settings', path: '/app/settings', icon: Settings }
   ]
 

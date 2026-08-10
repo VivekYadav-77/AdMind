@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { 
   BarChart3, Zap, ArrowRight, LayoutDashboard, Search, Users, Swords, 
   GitCompare, History as HistoryIcon, Target, TrendingUp, Clock, CheckCircle2,
-  AlertTriangle, DollarSign
+  AlertTriangle, DollarSign, MessageSquare
 } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import clsx from 'clsx'
@@ -286,6 +286,11 @@ export default function Dashboard() {
               <button onClick={() => navigate('/app/tests')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-purple-500/5 border border-borderwarm hover:border-purple-500/30 transition-colors gap-2 text-center group">
                 <GitCompare size={20} className="text-purple-500 group-hover:scale-110 transition-transform" />
                 <span className="text-xs font-medium text-textprimary">A/B Tracker</span>
+              </button>
+              
+              <button onClick={() => navigate('/community')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-orange-500/5 border border-borderwarm hover:border-orange-500/30 transition-colors gap-2 text-center group col-span-2 sm:col-span-1">
+                <MessageSquare size={20} className="text-orange-500 group-hover:scale-110 transition-transform" />
+                <span className="text-xs font-medium text-textprimary">Write Review</span>
               </button>
             </div>
           </div>
