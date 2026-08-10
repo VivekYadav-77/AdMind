@@ -659,26 +659,45 @@ class ReviewCreate(BaseModel):
 
 @app.get("/reviews")
 def get_reviews(db: Session = Depends(get_db)):
-    # Wait, the user wants admin permission to approve, but since this is a demo, let's fetch all. Wait, I should fetch only approved ones, but let's fetch all or approved. The user said: "admin permission". So I'll filter by is_approved == 1 or something. Or just return all to see them? "authorized people can see the reviews written by the user which are authorized" -> "unautherized people can see the reviews written by the user which are authorized". So anyone can see authorized reviews.
-    # We will fetch is_approved == 1. Wait, there's no admin panel to approve them right now. I will fetch all reviews for now or we won't see anything. Actually, let me just fetch all reviews to avoid them being hidden forever. Wait, the prompt says "which are authorized". So I must only return is_approved == 1.
+    """Public endpoint — returns only admin-approved reviews."""
     reviews = db.query(CommunityReview).filter(CommunityReview.is_approved == 1).order_by(desc(CommunityReview.created_at)).all()
     return reviews
 
+@app.get("/reviews/my")
+def get_my_review(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Returns the current user's own review (pending or approved), or null if none."""
+    review = db.query(CommunityReview).filter(CommunityReview.user_id == current_user.id).first()
+    if not review:
+        return None
+    return {
+        "id": review.id,
+        "rating": review.rating,
+        "content": review.content,
+        "is_approved": review.is_approved,
+        "author_name": review.author_name,
+        "created_at": review.created_at.isoformat() if review.created_at else ""
+    }
+
 @app.post("/reviews")
 def create_review(req: ReviewCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    # To mask the email:
+    # Prevent duplicate submissions
+    existing = db.query(CommunityReview).filter(CommunityReview.user_id == current_user.id).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="You have already submitted a review. Please wait for admin approval.")
+
+    # Mask the email for display
     email_parts = current_user.email.split("@")
     if len(email_parts) == 2 and len(email_parts[0]) > 1:
         masked_name = f"{email_parts[0][0]}***@{email_parts[1]}"
     else:
         masked_name = "User"
-        
+
     review = CommunityReview(
         user_id=current_user.id,
         author_name=masked_name,
         rating=req.rating,
         content=req.content,
-        is_approved=0  # Requires admin approval per user request
+        is_approved=0  # Requires admin approval
     )
     db.add(review)
     db.commit()
@@ -692,7 +711,7 @@ def delete_review(review_id: int, current_user: User = Depends(get_current_user)
         raise HTTPException(status_code=404, detail="Review not found")
     if review.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this review")
-    
+
     db.delete(review)
     db.commit()
     return {"message": "Review deleted"}

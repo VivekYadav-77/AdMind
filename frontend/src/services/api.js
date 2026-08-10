@@ -302,6 +302,17 @@ export const API = {
     return res.json()
   },
 
+  getMyReview: async () => {
+    const res = await fetch(apiUrl('/reviews/my'), {
+      method: 'GET',
+      headers: getAuthHeaders()
+    })
+    // 401 means not logged in — return null gracefully
+    if (res.status === 401) return null
+    if (!res.ok) throw new Error('Could not fetch your review')
+    return res.json()
+  },
+
   submitReview: async (rating, content) => {
     const res = await fetch(apiUrl('/reviews'), {
       method: 'POST',

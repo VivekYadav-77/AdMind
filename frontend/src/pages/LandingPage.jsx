@@ -5,7 +5,7 @@ import {
   Zap, BarChart3, TrendingUp, Target, Megaphone, 
   Search, ShieldCheck, Cpu, ArrowRight, CheckCircle2, Play,
   ChevronDown, Building2, Briefcase, User, Star,
-  Check, X, FileSpreadsheet, ArrowDown, Activity, Sparkles, AlertTriangle
+  Check, X, FileSpreadsheet, ArrowDown, Activity, Sparkles, AlertTriangle, Quote
 } from 'lucide-react'
 
 import LandingNav from '../components/LandingNav'
@@ -47,6 +47,7 @@ export default function LandingPage() {
 
   const [activeFaq, setActiveFaq] = useState(null)
   const [activeTab, setActiveTab] = useState('audit')
+  const [reviews, setReviews] = useState([])
 
   // Auto-rotate tabs in preview
   useEffect(() => {
@@ -58,6 +59,14 @@ export default function LandingPage() {
       })
     }, 5000)
     return () => clearInterval(interval)
+  }, [])
+
+  // Fetch approved reviews for Wall of Love
+  useEffect(() => {
+    fetch((import.meta.env.VITE_API_BASE_URL || '/api') + '/reviews')
+      .then(r => r.ok ? r.json() : [])
+      .then(data => setReviews(Array.isArray(data) ? data.slice(0, 8) : []))
+      .catch(() => {})
   }, [])
 
   const faqs = [
@@ -510,11 +519,132 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
-      
+        {/* 8. Wall of Love — Live Reviews from API */}
+      {reviews.length > 0 && (
+        <section className="relative z-10 py-24 overflow-hidden border-y border-borderwarm bg-bgpanel/20">
+          {/* Fade-out edges */}
+          <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-bgbase to-transparent z-10 pointer-events-none" />
+          <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-bgbase to-transparent z-10 pointer-events-none" />
 
-    
+          <div className="max-w-7xl mx-auto px-6 lg:px-8 mb-12 text-center">
+            <motion.div
+              initial="hidden" whileInView="visible" viewport={{ once: true }}
+              variants={FADE_UP_VARIANTS}
+            >
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-bgpanel/50 border border-brand-500/30 text-brand-400 text-sm font-medium backdrop-blur-sm mb-6">
+                <Star size={14} fill="currentColor" />
+                <span>Wall of Love</span>
+              </div>
+              <h2 className="text-3xl md:text-5xl font-serif font-bold text-textprimary mb-4">
+                Loved by marketers worldwide.
+              </h2>
+              <p className="text-textmuted">
+                {reviews.length} verified review{reviews.length !== 1 ? 's' : ''} from real users &mdash;
+                {reviews.length > 0 && (
+                  <span className="text-yellow-500 font-medium ml-1">
+                    {(reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)} ★ avg
+                  </span>
+                )}
+              </p>
+            </motion.div>
+          </div>
 
-      {/* 10. FAQ Section */}
+          {/* Marquee Row 1 */}
+          <div className="relative overflow-hidden mb-4">
+            <div
+              className="flex gap-4 w-max"
+              style={{
+                animation: 'marquee-ltr 35s linear infinite',
+              }}
+            >
+              {[...reviews, ...reviews].map((review, i) => (
+                <div
+                  key={i}
+                  className="w-80 shrink-0 bg-bgpanel border border-borderwarm rounded-2xl p-5 flex flex-col gap-3"
+                >
+                  <div className="flex items-center gap-0.5">
+                    {[1,2,3,4,5].map(s => (
+                      <Star key={s} size={13}
+                        fill={s <= review.rating ? '#EAB308' : 'none'}
+                        stroke={s <= review.rating ? '#EAB308' : '#6b7280'}
+                        strokeWidth={1.5}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-textsecondary text-sm leading-relaxed italic flex-1">
+                    "{review.content.length > 120 ? review.content.slice(0, 120) + '…' : review.content}"
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 text-white flex items-center justify-center font-bold text-xs">
+                      {review.author_name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold text-textprimary">{review.author_name}</p>
+                      <p className="text-[10px] text-brand-500/80 flex items-center gap-0.5">
+                        <CheckCircle2 size={9} /> Verified User
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Marquee Row 2 (reverse) */}
+          {reviews.length > 1 && (
+            <div className="relative overflow-hidden">
+              <div
+                className="flex gap-4 w-max"
+                style={{
+                  animation: 'marquee-rtl 40s linear infinite',
+                }}
+              >
+                {[...reviews, ...reviews].reverse().map((review, i) => (
+                  <div
+                    key={i}
+                    className="w-80 shrink-0 bg-bgpanel border border-borderwarm rounded-2xl p-5 flex flex-col gap-3"
+                  >
+                    <div className="flex items-center gap-0.5">
+                      {[1,2,3,4,5].map(s => (
+                        <Star key={s} size={13}
+                          fill={s <= review.rating ? '#EAB308' : 'none'}
+                          stroke={s <= review.rating ? '#EAB308' : '#6b7280'}
+                          strokeWidth={1.5}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-textsecondary text-sm leading-relaxed italic flex-1">
+                      "{review.content.length > 120 ? review.content.slice(0, 120) + '…' : review.content}"
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 text-white flex items-center justify-center font-bold text-xs">
+                        {review.author_name.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-textprimary">{review.author_name}</p>
+                        <p className="text-[10px] text-brand-500/80 flex items-center gap-0.5">
+                          <CheckCircle2 size={9} /> Verified User
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* CTA */}
+          <div className="text-center mt-12">
+            <Link
+              to="/community"
+              className="inline-flex items-center gap-2 text-brand-400 hover:text-brand-300 font-semibold text-sm transition-colors group"
+            >
+              Share your experience
+              <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
+        </section>
+      )}
       <section id="faq" className="relative z-10 py-32 px-6 lg:px-8 max-w-3xl mx-auto scroll-mt-20">
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={FADE_UP_VARIANTS} className="text-center mb-16">
           <h2 className="text-3xl md:text-5xl font-serif font-bold text-textprimary mb-6">Frequently asked questions.</h2>
