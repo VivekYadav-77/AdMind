@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse, StreamingResponse, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 import tempfile
 from docx2pdf import convert as docx_to_pdf
 
@@ -23,7 +23,7 @@ from agents.audience_builder import run_audience_builder
 from agents.competitor_teardown import run_competitor_teardown
 from db.database import Base, engine, get_db, SessionLocal
 from db.models import AnalysisJob, User, Workspace, WorkspaceMember, ChatMessage, RecommendationComment, ABTestCampaign, CommunityReview
-from models.schemas import PipelineResult, UserCreate, Token
+from models.schemas import PipelineResult, UserCreate, Token, AdminUserOut, AdminJobOut, AdminReviewOut, AdminWorkspaceOut, AdminStats
 from services.csv_parser import parse_csv
 from services.gemini import GeminiError, call_gemini_chat
 
@@ -74,6 +74,8 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     user = db.query(User).filter(User.email == email).first()
     if user is None:
         raise credentials_exception
+    if user.is_banned:
+        raise HTTPException(status_code=403, detail="Your account has been banned.")
     return user
 
 
@@ -688,6 +690,232 @@ def delete_review(review_id: int, current_user: User = Depends(get_current_user)
     db.delete(review)
     db.commit()
     return {"message": "Review deleted"}
+
+# -----------------------------------------------------------------------------
+# Admin Dashboard Endpoints
+# -----------------------------------------------------------------------------
+
+def require_admin(current_user: User = Depends(get_current_user)):
+    if not current_user.is_superadmin:
+        raise HTTPException(status_code=403, detail="Superadmin access required")
+    return current_user
+
+@app.get("/admin/me")
+def verify_admin(admin: User = Depends(require_admin)):
+    return {"isAdmin": True, "email": admin.email}
+
+@app.get("/admin/stats", response_model=AdminStats)
+def get_admin_stats(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    from datetime import datetime, date
+    today = date.today()
+    total_users = db.query(User).count()
+    active_today = db.query(User).filter(func.date(User.created_at) == today).count() # simplistic proxy for active
+    total_jobs = db.query(AnalysisJob).count()
+    total_spend_analyzed = db.query(func.sum(AnalysisJob.input_spend)).scalar() or 0.0
+    reviews_pending = db.query(CommunityReview).filter(CommunityReview.is_approved == 0).count()
+    total_workspaces = db.query(Workspace).count()
+    return {
+        "total_users": total_users,
+        "active_today": active_today,
+        "total_jobs": total_jobs,
+        "total_spend_analyzed": total_spend_analyzed,
+        "reviews_pending": reviews_pending,
+        "total_workspaces": total_workspaces
+    }
+
+@app.get("/admin/users", response_model=dict)
+def get_admin_users(page: int = 1, size: int = 20, search: str = "", db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    query = db.query(User)
+    if search:
+        query = query.filter(User.email.ilike(f"%{search}%"))
+    total = query.count()
+    users = query.order_by(desc(User.created_at)).offset((page - 1) * size).limit(size).all()
+    items = []
+    for u in users:
+        jobs_count = db.query(AnalysisJob).filter(AnalysisJob.user_id == u.id).count()
+        ws_count = db.query(WorkspaceMember).filter(WorkspaceMember.user_id == u.id).count()
+        items.append({
+            "id": u.id,
+            "email": u.email,
+            "is_superadmin": u.is_superadmin,
+            "is_banned": u.is_banned,
+            "created_at": u.created_at.isoformat() if u.created_at else "",
+            "jobs_count": jobs_count,
+            "workspaces_count": ws_count
+        })
+    return {"items": items, "total": total, "page": page, "size": size, "pages": (total + size - 1) // size}
+
+@app.post("/admin/users/{user_id}/toggle-ban")
+def toggle_user_ban(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    if user_id == admin.id:
+        raise HTTPException(status_code=400, detail="Cannot ban yourself")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.is_banned = not user.is_banned
+    db.commit()
+    return {"message": "User ban status updated", "is_banned": user.is_banned}
+
+@app.post("/admin/users/{user_id}/make-admin")
+def toggle_user_admin(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    if user_id == admin.id:
+        raise HTTPException(status_code=400, detail="Cannot revoke your own admin rights")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.is_superadmin = not user.is_superadmin
+    db.commit()
+    return {"message": "User admin status updated", "is_superadmin": user.is_superadmin}
+
+@app.delete("/admin/users/{user_id}")
+def delete_user_admin(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    if user_id == admin.id:
+        raise HTTPException(status_code=400, detail="Cannot delete yourself")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    db.query(AnalysisJob).filter(AnalysisJob.user_id == user.id).delete()
+    db.query(WorkspaceMember).filter(WorkspaceMember.user_id == user.id).delete()
+    db.query(Workspace).filter(Workspace.owner_id == user.id).delete()
+    db.query(CommunityReview).filter(CommunityReview.user_id == user.id).delete()
+    db.delete(user)
+    db.commit()
+    return {"message": "User deleted"}
+
+@app.get("/admin/jobs", response_model=dict)
+def get_admin_jobs(page: int = 1, size: int = 20, status: str = "", db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    query = db.query(AnalysisJob)
+    if status and status != "all":
+        query = query.filter(AnalysisJob.status == status)
+    total = query.count()
+    jobs = query.order_by(desc(AnalysisJob.created_at)).offset((page - 1) * size).limit(size).all()
+    items = []
+    for j in jobs:
+        user = db.query(User).filter(User.id == j.user_id).first()
+        ws = db.query(Workspace).filter(Workspace.id == j.workspace_id).first()
+        items.append({
+            "id": j.id,
+            "user_email": user.email if user else "Unknown",
+            "workspace_name": ws.name if ws else None,
+            "status": j.status,
+            "input_spend": j.input_spend,
+            "input_revenue": j.input_revenue,
+            "created_at": j.created_at.isoformat() if j.created_at else ""
+        })
+    return {"items": items, "total": total, "page": page, "size": size, "pages": (total + size - 1) // size}
+
+@app.get("/admin/jobs/{job_id}")
+def get_admin_job_detail(job_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    job = db.query(AnalysisJob).filter(AnalysisJob.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    user = db.query(User).filter(User.id == job.user_id).first()
+    return {
+        "id": job.id,
+        "user_email": user.email if user else "Unknown",
+        "status": job.status,
+        "audit_data": job.audit_data,
+        "strategy_data": job.strategy_data,
+        "copy_data": job.copy_data
+    }
+
+@app.delete("/admin/jobs/{job_id}")
+def delete_job_admin(job_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    job = db.query(AnalysisJob).filter(AnalysisJob.id == job_id).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    db.query(ChatMessage).filter(ChatMessage.job_id == job.id).delete()
+    db.query(RecommendationComment).filter(RecommendationComment.job_id == job.id).delete()
+    db.delete(job)
+    db.commit()
+    return {"message": "Job deleted"}
+
+@app.get("/admin/reviews", response_model=dict)
+def get_admin_reviews(page: int = 1, size: int = 20, status: str = "pending", db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    query = db.query(CommunityReview)
+    if status == "pending":
+        query = query.filter(CommunityReview.is_approved == 0)
+    elif status == "approved":
+        query = query.filter(CommunityReview.is_approved == 1)
+        
+    total = query.count()
+    reviews = query.order_by(desc(CommunityReview.created_at)).offset((page - 1) * size).limit(size).all()
+    items = []
+    for r in reviews:
+        user = db.query(User).filter(User.id == r.user_id).first()
+        items.append({
+            "id": r.id,
+            "user_email": user.email if user else "Unknown",
+            "author_name": r.author_name,
+            "rating": r.rating,
+            "content": r.content,
+            "is_approved": r.is_approved,
+            "created_at": r.created_at.isoformat() if r.created_at else ""
+        })
+    return {"items": items, "total": total, "page": page, "size": size, "pages": (total + size - 1) // size}
+
+@app.post("/admin/reviews/{review_id}/approve")
+def approve_review(review_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    review = db.query(CommunityReview).filter(CommunityReview.id == review_id).first()
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+    review.is_approved = 1
+    db.commit()
+    return {"message": "Review approved"}
+
+@app.delete("/admin/reviews/{review_id}/reject")
+def reject_review(review_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    review = db.query(CommunityReview).filter(CommunityReview.id == review_id).first()
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+    db.delete(review)
+    db.commit()
+    return {"message": "Review deleted"}
+
+@app.get("/admin/workspaces", response_model=dict)
+def get_admin_workspaces(page: int = 1, size: int = 20, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    query = db.query(Workspace)
+    total = query.count()
+    workspaces = query.order_by(desc(Workspace.created_at)).offset((page - 1) * size).limit(size).all()
+    items = []
+    for w in workspaces:
+        owner = db.query(User).filter(User.id == w.owner_id).first()
+        member_count = db.query(WorkspaceMember).filter(WorkspaceMember.workspace_id == w.id).count()
+        job_count = db.query(AnalysisJob).filter(AnalysisJob.workspace_id == w.id).count()
+        items.append({
+            "id": w.id,
+            "name": w.name,
+            "owner_email": owner.email if owner else "Unknown",
+            "member_count": member_count,
+            "job_count": job_count,
+            "created_at": w.created_at.isoformat() if w.created_at else ""
+        })
+    return {"items": items, "total": total, "page": page, "size": size, "pages": (total + size - 1) // size}
+
+@app.get("/admin/activity", response_model=list)
+def get_admin_activity(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    recent_users = db.query(User).order_by(desc(User.created_at)).limit(20).all()
+    recent_jobs = db.query(AnalysisJob).order_by(desc(AnalysisJob.created_at)).limit(20).all()
+    recent_reviews = db.query(CommunityReview).order_by(desc(CommunityReview.created_at)).limit(20).all()
+    
+    feed = []
+    for u in recent_users:
+        feed.append({"type": "user_registered", "message": f"New user registered: {u.email}", "timestamp": u.created_at})
+    for j in recent_jobs:
+        user = db.query(User).filter(User.id == j.user_id).first()
+        email = user.email if user else "Unknown"
+        feed.append({"type": f"job_{j.status}", "message": f"Job {j.status} for {email}", "timestamp": j.created_at})
+    for r in recent_reviews:
+        user = db.query(User).filter(User.id == r.user_id).first()
+        email = user.email if user else "Unknown"
+        action = "New review submitted" if r.is_approved == 0 else "Review approved"
+        feed.append({"type": "review_submitted", "message": f"{action} by {email}", "timestamp": r.created_at})
+        
+    feed.sort(key=lambda x: x["timestamp"], reverse=True)
+    return feed[:100]
+
+
 
 if __name__ == "__main__":
     import uvicorn

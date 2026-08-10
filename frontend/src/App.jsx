@@ -17,6 +17,15 @@ import PrivacyPolicy from './pages/PrivacyPolicy'
 import TermsOfService from './pages/TermsOfService'
 import Community from './pages/Community'
 import AboutUs from './pages/AboutUs'
+
+import AdminLayout from './components/AdminLayout'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminUsers from './pages/admin/AdminUsers'
+import AdminJobs from './pages/admin/AdminJobs'
+import AdminReviews from './pages/admin/AdminReviews'
+import AdminWorkspaces from './pages/admin/AdminWorkspaces'
+import AdminActivity from './pages/admin/AdminActivity'
+
 import ScrollToTop from './components/ScrollToTop'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
@@ -33,6 +42,17 @@ function ProtectedRoute({ children }) {
 function PublicOnlyRoute({ children }) {
   const { isAuthenticated } = useAuth()
   if (isAuthenticated) {
+    return <Navigate to="/app" replace />
+  }
+  return children
+}
+
+function AdminRoute({ children }) {
+  const { isAuthenticated, isAdmin } = useAuth()
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />
+  }
+  if (!isAdmin) {
     return <Navigate to="/app" replace />
   }
   return children
@@ -76,6 +96,21 @@ export default function App() {
                 <Route path="*" element={<Dashboard />} />
               </Route>
               
+              {/* Admin Routes */}
+              <Route path="/admin" element={
+                <AdminRoute>
+                  <AdminLayout />
+                </AdminRoute>
+              }>
+                <Route index element={<AdminDashboard />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="jobs" element={<AdminJobs />} />
+                <Route path="reviews" element={<AdminReviews />} />
+                <Route path="workspaces" element={<AdminWorkspaces />} />
+                <Route path="activity" element={<AdminActivity />} />
+                <Route path="*" element={<Navigate to="/admin" replace />} />
+              </Route>
+
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </BrowserRouter>

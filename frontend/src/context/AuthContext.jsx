@@ -20,6 +20,19 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(initialToken)
   const [isAuthenticated, setIsAuthenticated] = useState(!!initialToken)
   const [user, setUser] = useState(decodeToken(initialToken))
+  const [isAdmin, setIsAdmin] = useState(false)
+
+  useEffect(() => {
+    if (token) {
+      import('../services/adminApi').then(({ adminApi }) => {
+        adminApi.checkAdminStatus()
+          .then(res => setIsAdmin(res.isAdmin))
+          .catch(() => setIsAdmin(false))
+      })
+    } else {
+      setIsAdmin(false)
+    }
+  }, [token])
 
   const login = (newToken) => {
     localStorage.setItem('token', newToken)
@@ -36,7 +49,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ token, isAuthenticated, user, login, logout }}>
+    <AuthContext.Provider value={{ token, isAuthenticated, isAdmin, user, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

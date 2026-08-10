@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, Float, Integer, JSON, String, ForeignKey
+from sqlalchemy import Column, DateTime, Float, Integer, JSON, String, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -13,6 +13,8 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
+    is_superadmin = Column(Boolean, default=False)
+    is_banned = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     analysis_jobs = relationship("AnalysisJob", back_populates="user")

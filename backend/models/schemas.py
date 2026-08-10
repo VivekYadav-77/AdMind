@@ -112,3 +112,52 @@ class Token(BaseModel):
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str
+
+
+class AdminUserOut(BaseModel):
+    id: int
+    email: str
+    is_superadmin: bool
+    is_banned: bool
+    created_at: str
+    jobs_count: int
+    workspaces_count: int
+
+
+class AdminJobOut(BaseModel):
+    id: int
+    user_email: str
+    workspace_name: Optional[str] = None
+    status: str
+    input_spend: float
+    input_revenue: float
+    created_at: str
+
+
+class AdminReviewOut(BaseModel):
+    id: int
+    user_email: str
+    author_name: str
+    rating: int
+    content: str
+    is_approved: int
+    created_at: str
+
+
+class AdminWorkspaceOut(BaseModel):
+    id: int
+    name: str
+    owner_email: str
+    member_count: int
+    job_count: int
+    created_at: str
+
+
+class AdminStats(BaseModel):
+    total_users: int
+    active_today: int
+    total_jobs: int
+    total_spend_analyzed: float
+    reviews_pending: int
+    total_workspaces: int
+
