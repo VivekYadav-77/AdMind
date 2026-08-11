@@ -340,7 +340,7 @@ export default function Community() {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="How has AdMind helped your campaigns? Tell us about your results, the features you love, or how it changed your workflow..."
-                className="w-full bg-bgbase/50 border border-borderwarm rounded-2xl px-4 py-4 text-textprimary placeholder-textmuted focus:border-brand-500/60 focus:ring-2 focus:ring-brand-500/20 transition-all duration-200 min-h-[140px] resize-y outline-none text-sm leading-relaxed"
+                className="w-full bg-bgbase border border-borderwarm rounded-2xl px-4 py-4 text-textprimary placeholder-textmuted focus:border-brand-500/60 focus:ring-2 focus:ring-brand-500/20 transition-all duration-200 min-h-[140px] resize-y outline-none text-sm leading-relaxed"
                 maxLength={1000}
                 required
               />
