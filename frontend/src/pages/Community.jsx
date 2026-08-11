@@ -503,7 +503,8 @@ export default function Community() {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 bg-bgbase border-t border-borderwarm py-16 px-6 lg:px-8">
+      {!isAuthenticated && (
+        <footer className="relative z-10 bg-bgbase border-t border-borderwarm py-16 px-6 lg:px-8">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div className="md:col-span-2">
             <div className="flex items-center gap-3 mb-6">
@@ -538,6 +539,7 @@ export default function Community() {
           </div>
         </div>
       </footer>
+      )}
     </div>
   )
 }
