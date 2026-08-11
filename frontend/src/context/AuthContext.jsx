@@ -48,6 +48,12 @@ export const AuthProvider = ({ children }) => {
     setUser(null)
   }
 
+  useEffect(() => {
+    const handleAuthError = () => logout();
+    window.addEventListener('auth-error', handleAuthError);
+    return () => window.removeEventListener('auth-error', handleAuthError);
+  }, []);
+
   return (
     <AuthContext.Provider value={{ token, isAuthenticated, isAdmin, user, login, logout }}>
       {children}
