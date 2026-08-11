@@ -145,6 +145,7 @@ export default function Community() {
   const [rating, setRating] = useState(5)
   const [content, setContent] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
 
   useEffect(() => {
     fetchReviews()
@@ -192,17 +193,20 @@ export default function Community() {
 
     try {
       setIsSubmitting(true)
-      const newReview = await API.submitReview(rating, content.trim())
-      addToast('Review submitted! It will appear once approved by an admin.', 'success')
-      // Refresh "my review" state so UI transitions to pending card
-      await fetchMyReview()
-      setContent('')
-      setRating(5)
+      await API.submitReview(rating, content.trim())
+      setShowSuccess(true)
     } catch (error) {
       addToast(error.message || 'Failed to submit review.', 'error')
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleViewStatus = async () => {
+    setShowSuccess(false)
+    setContent('')
+    setRating(5)
+    await fetchMyReview()
   }
 
   const handleDelete = async (id) => {
@@ -227,6 +231,44 @@ export default function Community() {
 
   // ─── Render the Write/Status Section ────────────────────────────────────────
   const renderReviewSection = () => {
+    if (showSuccess) {
+      return (
+        <motion.div
+          initial="hidden" animate="visible" variants={FADE_UP_VARIANTS}
+          className="bg-bgpanel/40 border border-emerald-500/25 rounded-3xl p-10 backdrop-blur-sm shadow-xl text-center flex flex-col items-center justify-center min-h-[380px]"
+        >
+          <motion.div 
+            initial={{ scale: 0, opacity: 0 }} 
+            animate={{ scale: 1, opacity: 1 }} 
+            transition={{ type: 'spring', bounce: 0.5, duration: 0.6, delay: 0.1 }}
+            className="w-20 h-20 rounded-full bg-emerald-500/10 border-2 border-emerald-500/20 flex items-center justify-center mb-6"
+          >
+            <CheckCircle2 size={40} className="text-emerald-500" />
+          </motion.div>
+          <motion.h3 
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+            className="text-3xl font-serif font-bold text-textprimary mb-4"
+          >
+            Thank You!
+          </motion.h3>
+          <motion.p 
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+            className="text-textsecondary mb-8 max-w-md mx-auto leading-relaxed"
+          >
+            Your review has been successfully submitted. It is now pending admin approval and will appear on the wall of love once verified.
+          </motion.p>
+          <motion.button
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+            onClick={handleViewStatus}
+            whileTap={{ scale: 0.97 }}
+            className="btn-primary bg-emerald-500 hover:bg-emerald-600 px-8 py-3 rounded-xl font-semibold shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all duration-300"
+          >
+            View Status
+          </motion.button>
+        </motion.div>
+      )
+    }
+
     if (!isAuthenticated) {
       return (
         <motion.div
