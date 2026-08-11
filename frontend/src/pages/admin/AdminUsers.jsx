@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react'
 import { adminApi } from '../../services/adminApi'
 import { Search, ShieldAlert, ShieldCheck, Trash2, Ban } from 'lucide-react'
 import Pagination from '../../components/ui/Pagination'
+import ConfirmModal from '../../components/ui/ConfirmModal'
 
 export default function AdminUsers() {
   const [data, setData] = useState({ items: [], total: 0, page: 1, size: 20 })
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
+  const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, title: '', message: '', onConfirm: null, type: 'danger', confirmText: 'Confirm' })
 
   const fetchUsers = async (page = 1) => {
     setLoading(true)
@@ -28,33 +30,60 @@ export default function AdminUsers() {
   }, [search])
 
   const toggleBan = async (id) => {
-    if (!window.confirm("Are you sure you want to toggle ban for this user?")) return
-    try {
-      await adminApi.toggleUserBan(id)
-      fetchUsers(data.page)
-    } catch (e) {
-      alert(e.message)
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: "Toggle Ban",
+      message: "Are you sure you want to toggle the ban status for this user?",
+      type: "warning",
+      confirmText: "Toggle Ban",
+      onConfirm: async () => {
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }))
+        try {
+          await adminApi.toggleUserBan(id)
+          fetchUsers(data.page)
+        } catch (e) {
+          alert(e.message)
+        }
+      }
+    })
   }
 
   const toggleAdmin = async (id) => {
-    if (!window.confirm("Are you sure you want to toggle admin rights?")) return
-    try {
-      await adminApi.toggleUserAdmin(id)
-      fetchUsers(data.page)
-    } catch (e) {
-      alert(e.message)
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: "Toggle Admin Rights",
+      message: "Are you sure you want to toggle admin rights for this user?",
+      type: "warning",
+      confirmText: "Toggle Admin",
+      onConfirm: async () => {
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }))
+        try {
+          await adminApi.toggleUserAdmin(id)
+          fetchUsers(data.page)
+        } catch (e) {
+          alert(e.message)
+        }
+      }
+    })
   }
 
   const deleteUser = async (id) => {
-    if (!window.confirm("CRITICAL: Hard delete this user and ALL their data?")) return
-    try {
-      await adminApi.deleteUser(id)
-      fetchUsers(data.page)
-    } catch (e) {
-      alert(e.message)
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: "Delete User",
+      message: "CRITICAL: Are you sure you want to hard delete this user and ALL their data? This action is irreversible.",
+      type: "danger",
+      confirmText: "Hard Delete",
+      onConfirm: async () => {
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }))
+        try {
+          await adminApi.deleteUser(id)
+          fetchUsers(data.page)
+        } catch (e) {
+          alert(e.message)
+        }
+      }
+    })
   }
 
   return (
@@ -120,6 +149,16 @@ export default function AdminUsers() {
         </div>
         <Pagination page={data.page} pages={data.pages} onPageChange={fetchUsers} />
       </div>
+
+      <ConfirmModal
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        type={confirmConfig.type}
+        confirmText={confirmConfig.confirmText}
+      />
     </div>
   )
 }

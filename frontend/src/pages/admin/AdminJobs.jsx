@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { adminApi } from '../../services/adminApi'
 import { Search, Trash2, Eye } from 'lucide-react'
 import Modal from '../../components/ui/Modal'
+import ConfirmModal from '../../components/ui/ConfirmModal'
 import Pagination from '../../components/ui/Pagination'
 
 export default function AdminJobs() {
@@ -10,6 +11,7 @@ export default function AdminJobs() {
   const [loading, setLoading] = useState(true)
   const [selectedJob, setSelectedJob] = useState(null)
   const [showModal, setShowModal] = useState(false)
+  const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, title: '', message: '', onConfirm: null, type: 'danger', confirmText: 'Confirm' })
 
   const fetchJobs = async (page = 1) => {
     setLoading(true)
@@ -28,13 +30,22 @@ export default function AdminJobs() {
   }, [statusFilter])
 
   const deleteJob = async (id) => {
-    if (!window.confirm("Delete this job?")) return
-    try {
-      await adminApi.deleteJob(id)
-      fetchJobs(data.page)
-    } catch (e) {
-      alert(e.message)
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: "Delete Job",
+      message: "Are you sure you want to delete this job? This action cannot be undone.",
+      type: "danger",
+      confirmText: "Delete",
+      onConfirm: async () => {
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }))
+        try {
+          await adminApi.deleteJob(id)
+          fetchJobs(data.page)
+        } catch (e) {
+          alert(e.message)
+        }
+      }
+    })
   }
 
   const viewDetail = async (id) => {
@@ -122,6 +133,16 @@ export default function AdminJobs() {
           </div>
         )}
       </Modal>
+
+      <ConfirmModal
+        isOpen={confirmConfig.isOpen}
+        onClose={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmConfig.onConfirm}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        type={confirmConfig.type}
+        confirmText={confirmConfig.confirmText}
+      />
     </div>
   )
 }
