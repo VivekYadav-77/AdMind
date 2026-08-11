@@ -4,8 +4,10 @@ import { motion, useScroll, AnimatePresence } from 'framer-motion'
 import { Menu, X, Sun, Moon } from 'lucide-react'
 import clsx from 'clsx'
 import Logo from './Logo'
+import { useAuth } from '../context/AuthContext'
 
 export default function LandingNav() {
+  const { isAuthenticated } = useAuth()
   const { scrollY } = useScroll()
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -117,18 +119,29 @@ export default function LandingNav() {
             >
               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
             </button>
-            <Link
-              to="/login"
-              className="text-sm font-medium text-textsecondary hover:text-textprimary transition-colors px-4 py-2"
-            >
-              Log in
-            </Link>
-            <Link
-              to="/signup"
-              className="btn-primary text-sm px-5 py-2.5 rounded-xl shadow-[0_0_15px_var(--brand-glow-light)]"
-            >
-              Get Started Free
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                to="/app"
+                className="btn-primary text-sm px-5 py-2.5 rounded-xl shadow-[0_0_15px_var(--brand-glow-light)]"
+              >
+                Go to Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="text-sm font-medium text-textsecondary hover:text-textprimary transition-colors px-4 py-2"
+                >
+                  Log in
+                </Link>
+                <Link
+                  to="/signup"
+                  className="btn-primary text-sm px-5 py-2.5 rounded-xl shadow-[0_0_15px_var(--brand-glow-light)]"
+                >
+                  Get Started Free
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -198,18 +211,29 @@ export default function LandingNav() {
               </nav>
 
               <div className="flex flex-col gap-4 mt-8 pb-8">
-                <Link
-                  to="/login"
-                  className="btn-secondary w-full text-center py-4"
-                >
-                  Log in
-                </Link>
-                <Link
-                  to="/signup"
-                  className="btn-primary w-full text-center py-4 text-lg"
-                >
-                  Get Started Free
-                </Link>
+                {isAuthenticated ? (
+                  <Link
+                    to="/app"
+                    className="btn-primary w-full text-center py-4 text-lg"
+                  >
+                    Go to Dashboard
+                  </Link>
+                ) : (
+                  <>
+                    <Link
+                      to="/login"
+                      className="btn-secondary w-full text-center py-4"
+                    >
+                      Log in
+                    </Link>
+                    <Link
+                      to="/signup"
+                      className="btn-primary w-full text-center py-4 text-lg"
+                    >
+                      Get Started Free
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>
