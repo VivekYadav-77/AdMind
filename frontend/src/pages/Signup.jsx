@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { UserPlus, ArrowRight, Sun, Moon, Eye, EyeOff } from 'lucide-react'
+import { UserPlus, ArrowRight, ArrowLeft, Sun, Moon, Eye, EyeOff } from 'lucide-react'
 import { API } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import AnimatedBackground from '../components/AnimatedBackground'
@@ -50,6 +50,15 @@ export default function Signup() {
 
   return (
     <div className="flex min-h-screen bg-bgbase text-textprimary relative selection:bg-brand-500/30">
+      <div className="absolute top-6 left-6 z-50">
+        <Link
+          to="/"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-bgpanel/80 hover:bg-bgpanel border border-borderwarm text-textmuted hover:text-textprimary transition-all duration-300 shadow-sm backdrop-blur-sm group"
+        >
+          <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform duration-300" />
+          <span className="font-medium hidden sm:inline">Back to Home</span>
+        </Link>
+      </div>
       <div className="absolute top-6 right-6 z-50">
         <button
           onClick={() => setIsDarkMode(!isDarkMode)}
