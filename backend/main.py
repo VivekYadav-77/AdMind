@@ -22,8 +22,8 @@ from agents.landing_page_auditor import run_landing_page_auditor
 from agents.audience_builder import run_audience_builder
 from agents.competitor_teardown import run_competitor_teardown
 from db.database import Base, engine, get_db, SessionLocal
-from db.models import AnalysisJob, User, Workspace, WorkspaceMember, ChatMessage, RecommendationComment, ABTestCampaign, CommunityReview
-from models.schemas import PipelineResult, UserCreate, Token, AdminUserOut, AdminJobOut, AdminReviewOut, AdminWorkspaceOut, AdminStats
+from db.models import AnalysisJob, User, Workspace, WorkspaceMember, ChatMessage, RecommendationComment, ABTestCampaign, CommunityReview, SupportTicket, TicketMessage
+from models.schemas import PipelineResult, UserCreate, Token, AdminUserOut, AdminJobOut, AdminReviewOut, AdminWorkspaceOut, AdminStats, TicketCreate, TicketOut, TicketReplyCreate, TicketListItem, TicketStatusUpdate
 from services.csv_parser import parse_csv
 from services.gemini import GeminiError, call_gemini_chat
 
@@ -968,7 +968,241 @@ def get_admin_activity(db: Session = Depends(get_db), admin: User = Depends(requ
     return feed[:100]
 
 
+# --- TICKET SYSTEM ---
 
+@app.post("/contact", status_code=201)
+def create_guest_ticket(ticket: TicketCreate, db: Session = Depends(get_db)):
+    if not ticket.guest_name or not ticket.guest_email:
+        raise HTTPException(status_code=400, detail="Guest name and email are required")
+    
+    db_ticket = SupportTicket(
+        guest_name=ticket.guest_name,
+        guest_email=ticket.guest_email,
+        category=ticket.category,
+        subject=ticket.subject
+    )
+    db.add(db_ticket)
+    db.commit()
+    db.refresh(db_ticket)
+
+    # Initial message
+    db_msg = TicketMessage(
+        ticket_id=db_ticket.id,
+        sender_type="guest",
+        message=ticket.message
+    )
+    db.add(db_msg)
+    db.commit()
+
+    return {"message": "Ticket created successfully"}
+
+
+@app.post("/tickets", status_code=201)
+def create_user_ticket(ticket: TicketCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    db_ticket = SupportTicket(
+        user_id=current_user.id,
+        category=ticket.category,
+        subject=ticket.subject
+    )
+    db.add(db_ticket)
+    db.commit()
+    db.refresh(db_ticket)
+
+    # Initial message
+    db_msg = TicketMessage(
+        ticket_id=db_ticket.id,
+        sender_type="user",
+        message=ticket.message
+    )
+    db.add(db_msg)
+    db.commit()
+
+    return {"message": "Ticket created successfully", "ticket_id": db_ticket.id}
+
+
+@app.get("/tickets/mine", response_model=dict)
+def get_my_tickets(page: int = 1, size: int = 20, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    query = db.query(SupportTicket).filter(SupportTicket.user_id == current_user.id)
+    total = query.count()
+    tickets = query.order_by(desc(SupportTicket.created_at)).offset((page - 1) * size).limit(size).all()
+    
+    items = []
+    for t in tickets:
+        items.append({
+            "id": t.id,
+            "category": t.category,
+            "subject": t.subject,
+            "status": t.status,
+            "created_at": t.created_at.isoformat() if t.created_at else "",
+            "updated_at": t.updated_at.isoformat() if t.updated_at else ""
+        })
+    
+    return {"items": items, "total": total, "page": page, "size": size, "pages": (total + size - 1) // size}
+
+
+@app.get("/tickets/{ticket_id}", response_model=TicketOut)
+def get_ticket_detail(ticket_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    ticket = db.query(SupportTicket).filter(SupportTicket.id == ticket_id).first()
+    if not ticket or ticket.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    
+    return {
+        "id": ticket.id,
+        "user_id": ticket.user_id,
+        "guest_name": ticket.guest_name,
+        "guest_email": ticket.guest_email,
+        "category": ticket.category,
+        "subject": ticket.subject,
+        "status": ticket.status,
+        "created_at": ticket.created_at.isoformat() if ticket.created_at else "",
+        "updated_at": ticket.updated_at.isoformat() if ticket.updated_at else "",
+        "messages": [
+            {
+                "id": m.id,
+                "sender_type": m.sender_type,
+                "message": m.message,
+                "created_at": m.created_at.isoformat() if m.created_at else ""
+            } for m in ticket.messages
+        ]
+    }
+
+
+@app.post("/tickets/{ticket_id}/reply")
+def reply_ticket(ticket_id: int, reply: TicketReplyCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    ticket = db.query(SupportTicket).filter(SupportTicket.id == ticket_id).first()
+    if not ticket or ticket.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+    
+    if ticket.status == "closed":
+        raise HTTPException(status_code=400, detail="Cannot reply to a closed ticket")
+    
+    db_msg = TicketMessage(
+        ticket_id=ticket.id,
+        sender_type="user",
+        message=reply.message
+    )
+    db.add(db_msg)
+    
+    # Optionally update ticket status to "open" if it was "resolved"
+    if ticket.status == "resolved":
+        ticket.status = "open"
+        
+    db.commit()
+    
+    return {"message": "Reply added successfully"}
+
+
+# Admin Ticket Routes
+@app.get("/admin/tickets", response_model=dict)
+def get_admin_tickets(page: int = 1, size: int = 20, status: str = "", db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    query = db.query(SupportTicket)
+    if status and status != "all":
+        query = query.filter(SupportTicket.status == status)
+    
+    total = query.count()
+    tickets = query.order_by(desc(SupportTicket.created_at)).offset((page - 1) * size).limit(size).all()
+    
+    items = []
+    for t in tickets:
+        if t.user_id:
+            user = db.query(User).filter(User.id == t.user_id).first()
+            user_email = user.email if user else "Unknown User"
+        else:
+            user_email = f"{t.guest_name} (Guest)"
+            
+        items.append({
+            "id": t.id,
+            "user_id": t.user_id,
+            "guest_name": t.guest_name,
+            "guest_email": t.guest_email,
+            "user_email": user_email,
+            "category": t.category,
+            "subject": t.subject,
+            "status": t.status,
+            "created_at": t.created_at.isoformat() if t.created_at else "",
+            "updated_at": t.updated_at.isoformat() if t.updated_at else ""
+        })
+        
+    return {"items": items, "total": total, "page": page, "size": size, "pages": (total + size - 1) // size}
+
+
+@app.get("/admin/tickets/stats")
+def get_admin_ticket_stats(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    open_count = db.query(SupportTicket).filter(SupportTicket.status == "open").count()
+    return {"open_count": open_count}
+
+
+@app.get("/admin/tickets/{ticket_id}", response_model=TicketOut)
+def get_admin_ticket_detail(ticket_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    ticket = db.query(SupportTicket).filter(SupportTicket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+        
+    return {
+        "id": ticket.id,
+        "user_id": ticket.user_id,
+        "guest_name": ticket.guest_name,
+        "guest_email": ticket.guest_email,
+        "category": ticket.category,
+        "subject": ticket.subject,
+        "status": ticket.status,
+        "created_at": ticket.created_at.isoformat() if ticket.created_at else "",
+        "updated_at": ticket.updated_at.isoformat() if ticket.updated_at else "",
+        "messages": [
+            {
+                "id": m.id,
+                "sender_type": m.sender_type,
+                "message": m.message,
+                "created_at": m.created_at.isoformat() if m.created_at else ""
+            } for m in ticket.messages
+        ]
+    }
+
+
+@app.post("/admin/tickets/{ticket_id}/reply")
+def reply_admin_ticket(ticket_id: int, reply: TicketReplyCreate, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    ticket = db.query(SupportTicket).filter(SupportTicket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+        
+    db_msg = TicketMessage(
+        ticket_id=ticket.id,
+        sender_type="admin",
+        message=reply.message
+    )
+    db.add(db_msg)
+    db.commit()
+    
+    return {"message": "Reply added successfully"}
+
+
+@app.patch("/admin/tickets/{ticket_id}/status")
+def update_admin_ticket_status(ticket_id: int, request: TicketStatusUpdate, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    ticket = db.query(SupportTicket).filter(SupportTicket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+        
+    if request.status not in ["open", "in_progress", "resolved", "closed"]:
+        raise HTTPException(status_code=400, detail="Invalid status")
+        
+    ticket.status = request.status
+    db.commit()
+    
+    return {"message": "Ticket status updated successfully"}
+
+
+@app.delete("/admin/tickets/{ticket_id}")
+def delete_admin_ticket(ticket_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    ticket = db.query(SupportTicket).filter(SupportTicket.id == ticket_id).first()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Ticket not found")
+        
+    # Cascade delete is handled by relationship, but we can do it explicitly
+    db.query(TicketMessage).filter(TicketMessage.ticket_id == ticket.id).delete()
+    db.delete(ticket)
+    db.commit()
+    
+    return {"message": "Ticket deleted successfully"}
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=False)

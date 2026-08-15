@@ -40,6 +40,7 @@ export default function LandingNav() {
     { name: 'Blog', href: '/blog', isAnchor: false },
     { name: 'Community', href: '/community', isAnchor: false },
     { name: 'FAQ', href: '/#faq', isAnchor: true },
+    { name: 'Contact', href: '/contact', isAnchor: false },
   ]
 
   const scrollToSection = (e, link) => {

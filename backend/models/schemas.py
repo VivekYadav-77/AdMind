@@ -161,3 +161,51 @@ class AdminStats(BaseModel):
     reviews_pending: int
     total_workspaces: int
 
+
+class TicketMessageOut(BaseModel):
+    id: int
+    sender_type: str
+    message: str
+    created_at: str
+
+
+class TicketCreate(BaseModel):
+    category: str
+    subject: str
+    message: str
+    guest_name: Optional[str] = None
+    guest_email: Optional[str] = None
+
+
+class TicketOut(BaseModel):
+    id: int
+    user_id: Optional[int] = None
+    guest_name: Optional[str] = None
+    guest_email: Optional[str] = None
+    category: str
+    subject: str
+    status: str
+    created_at: str
+    updated_at: str
+    messages: List[TicketMessageOut]
+
+
+class TicketReplyCreate(BaseModel):
+    message: str
+
+
+class TicketListItem(BaseModel):
+    id: int
+    user_id: Optional[int] = None
+    guest_name: Optional[str] = None
+    guest_email: Optional[str] = None
+    category: str
+    subject: str
+    status: str
+    created_at: str
+    updated_at: str
+
+
+class TicketStatusUpdate(BaseModel):
+    status: str
+

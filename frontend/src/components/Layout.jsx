@@ -84,6 +84,7 @@ export default function Layout() {
     { name: 'AI Tools', path: '/app/tools', icon: Wrench },
     { name: 'A/B Tracker', path: '/app/tests', icon: FlaskConical },
     { name: 'Community', path: '/community', icon: MessageSquare },
+    { name: 'Support', path: '/app/support', icon: MessageSquare },
     { name: 'Settings', path: '/app/settings', icon: Settings }
   ]
 

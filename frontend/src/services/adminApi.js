@@ -124,5 +124,62 @@ export const adminApi = {
     const res = await fetch(`${API_URL}/admin/activity`, { headers: getHeaders() })
     if (!res.ok) throw new Error('Failed to fetch activity')
     return res.json()
+  },
+
+  // Ticket System Methods
+  getTickets: async (page = 1, size = 20, status = '') => {
+    const res = await fetch(`${API_URL}/admin/tickets?page=${page}&size=${size}&status=${status}`, { headers: getHeaders() })
+    if (!res.ok) throw new Error('Failed to fetch tickets')
+    return res.json()
+  },
+
+  getTicketStats: async () => {
+    const res = await fetch(`${API_URL}/admin/tickets/stats`, { headers: getHeaders() })
+    if (!res.ok) throw new Error('Failed to fetch ticket stats')
+    return res.json()
+  },
+
+  getTicket: async (ticketId) => {
+    const res = await fetch(`${API_URL}/admin/tickets/${ticketId}`, { headers: getHeaders() })
+    if (!res.ok) throw new Error('Failed to fetch ticket')
+    return res.json()
+  },
+
+  replyToTicket: async (ticketId, message) => {
+    const res = await fetch(`${API_URL}/admin/tickets/${ticketId}/reply`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ message })
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      throw new Error(err.detail || 'Failed to reply to ticket')
+    }
+    return res.json()
+  },
+
+  changeTicketStatus: async (ticketId, status) => {
+    const res = await fetch(`${API_URL}/admin/tickets/${ticketId}/status`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify({ status })
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      throw new Error(err.detail || 'Failed to update ticket status')
+    }
+    return res.json()
+  },
+
+  deleteTicket: async (ticketId) => {
+    const res = await fetch(`${API_URL}/admin/tickets/${ticketId}`, {
+      method: 'DELETE',
+      headers: getHeaders()
+    })
+    if (!res.ok) {
+      const err = await res.json()
+      throw new Error(err.detail || 'Failed to delete ticket')
+    }
+    return res.json()
   }
 }

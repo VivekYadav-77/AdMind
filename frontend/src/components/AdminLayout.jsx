@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, BarChart3, Star, Briefcase, Activity, LogOut, Moon, Sun, ArrowLeft } from 'lucide-react'
+import { LayoutDashboard, Users, BarChart3, Star, Briefcase, Activity, LogOut, Moon, Sun, ArrowLeft, MessageSquare } from 'lucide-react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useState, useEffect } from 'react'
@@ -38,6 +38,7 @@ export default function AdminLayout() {
     { name: 'Analysis Jobs', path: '/admin/jobs', icon: BarChart3 },
     { name: 'Reviews', path: '/admin/reviews', icon: Star },
     { name: 'Workspaces', path: '/admin/workspaces', icon: Briefcase },
+    { name: 'Tickets', path: '/admin/tickets', icon: MessageSquare },
     { name: 'Activity Log', path: '/admin/activity', icon: Activity },
   ]
 
