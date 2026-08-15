@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { LogIn, ArrowRight, ArrowLeft, Sun, Moon, Eye, EyeOff } from 'lucide-react'
 import { API } from '../services/api'
@@ -14,7 +14,10 @@ export default function Login() {
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
   const { login } = useAuth()
+  
+  const successMessage = location.state?.message
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('theme')
@@ -116,6 +119,12 @@ export default function Login() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {successMessage && (
+              <div className="rounded-xl bg-green-500/10 p-4 text-sm text-green-500 border border-green-500/20 font-medium">
+                {successMessage}
+              </div>
+            )}
+            
             {error && (
               <div className="rounded-xl bg-red-500/10 p-4 text-sm text-red-400 border border-red-500/20 font-medium">
                 {error}

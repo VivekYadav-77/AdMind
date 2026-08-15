@@ -38,9 +38,8 @@ export default function Signup() {
     setError(null)
     setLoading(true)
     try {
-      const data = await API.register(email, password)
-      login(data.access_token)
-      navigate('/app')
+      await API.register(email, password)
+      navigate('/login', { state: { message: 'Account created successfully! Please log in.' } })
     } catch (err) {
       setError(err.message)
     } finally {
