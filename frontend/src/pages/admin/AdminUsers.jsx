@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { adminApi } from '../../services/adminApi'
-import { Search, ShieldAlert, ShieldCheck, Trash2, Ban } from 'lucide-react'
+import { Search, ShieldAlert, ShieldCheck, Trash2, Ban, RefreshCw } from 'lucide-react'
 import Pagination from '../../components/ui/Pagination'
 import ConfirmModal from '../../components/ui/ConfirmModal'
 
@@ -89,7 +89,17 @@ export default function AdminUsers() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">User Management</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl font-bold">User Management</h2>
+          <button 
+            onClick={() => fetchUsers(data.page)} 
+            disabled={loading}
+            className="p-1.5 rounded-lg bg-bgpanel border border-borderwarm text-textmuted hover:text-brand-500 hover:border-brand-500/50 transition-colors disabled:opacity-50"
+            title="Refresh Users"
+          >
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          </button>
+        </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-textmuted" size={16} />
           <input 

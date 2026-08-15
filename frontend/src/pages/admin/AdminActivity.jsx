@@ -1,22 +1,24 @@
 import { useState, useEffect } from 'react'
 import { adminApi } from '../../services/adminApi'
+import { RefreshCw } from 'lucide-react'
 
 export default function AdminActivity() {
   const [activity, setActivity] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    const fetchActivity = async () => {
-      setLoading(true)
-      try {
-        const data = await adminApi.getActivity()
-        setActivity(data)
-      } catch (err) {
-        console.error(err)
-      } finally {
-        setLoading(false)
-      }
+  const fetchActivity = async () => {
+    setLoading(true)
+    try {
+      const data = await adminApi.getActivity()
+      setActivity(data)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
     }
+  }
+
+  useEffect(() => {
     fetchActivity()
   }, [])
 
@@ -34,7 +36,17 @@ export default function AdminActivity() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">Platform Activity Feed</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl font-bold">Platform Activity Feed</h2>
+          <button 
+            onClick={() => fetchActivity()} 
+            disabled={loading}
+            className="p-1.5 rounded-lg bg-bgpanel border border-borderwarm text-textmuted hover:text-brand-500 hover:border-brand-500/50 transition-colors disabled:opacity-50"
+            title="Refresh Activity"
+          >
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          </button>
+        </div>
       </div>
 
       <div className="bg-bgpanel border border-borderwarm rounded-2xl p-6">

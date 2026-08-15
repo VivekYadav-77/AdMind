@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { adminApi } from '../../services/adminApi'
+import { RefreshCw } from 'lucide-react'
 import Pagination from '../../components/ui/Pagination'
 
 export default function AdminWorkspaces() {
@@ -25,7 +26,17 @@ export default function AdminWorkspaces() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">Workspace Directory</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl font-bold">Workspace Directory</h2>
+          <button 
+            onClick={() => fetchWorkspaces(data.page)} 
+            disabled={loading}
+            className="p-1.5 rounded-lg bg-bgpanel border border-borderwarm text-textmuted hover:text-brand-500 hover:border-brand-500/50 transition-colors disabled:opacity-50"
+            title="Refresh Workspaces"
+          >
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          </button>
+        </div>
       </div>
 
       <div className="bg-bgpanel border border-borderwarm rounded-2xl overflow-hidden">

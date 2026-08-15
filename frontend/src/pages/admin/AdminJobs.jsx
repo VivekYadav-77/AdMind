@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { adminApi } from '../../services/adminApi'
-import { Search, Trash2, Eye } from 'lucide-react'
+import { Search, Trash2, Eye, RefreshCw } from 'lucide-react'
 import Modal from '../../components/ui/Modal'
 import ConfirmModal from '../../components/ui/ConfirmModal'
 import Pagination from '../../components/ui/Pagination'
@@ -61,7 +61,17 @@ export default function AdminJobs() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold">Analysis Jobs</h2>
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl font-bold">Analysis Jobs</h2>
+          <button 
+            onClick={() => fetchJobs(data.page)} 
+            disabled={loading}
+            className="p-1.5 rounded-lg bg-bgpanel border border-borderwarm text-textmuted hover:text-brand-500 hover:border-brand-500/50 transition-colors disabled:opacity-50"
+            title="Refresh Jobs"
+          >
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          </button>
+        </div>
         <select 
           value={statusFilter} 
           onChange={(e) => setStatusFilter(e.target.value)}
