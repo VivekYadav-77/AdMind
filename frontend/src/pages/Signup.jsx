@@ -50,15 +50,6 @@ export default function Signup() {
 
   return (
     <div className="flex min-h-screen bg-bgbase text-textprimary relative selection:bg-brand-500/30">
-      <div className="absolute top-6 left-6 z-50">
-        <Link
-          to="/"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-bgpanel/80 hover:bg-bgpanel border border-borderwarm text-textmuted hover:text-textprimary transition-all duration-300 shadow-sm backdrop-blur-sm group"
-        >
-          <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform duration-300" />
-          <span className="font-medium hidden sm:inline">Back to Home</span>
-        </Link>
-      </div>
       <div className="absolute top-6 right-6 z-50">
         <button
           onClick={() => setIsDarkMode(!isDarkMode)}
@@ -107,6 +98,14 @@ export default function Signup() {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md"
         >
+          <Link 
+            to="/" 
+            className="inline-flex items-center gap-2 text-sm font-medium text-textmuted hover:text-textprimary transition-colors mb-8 group w-fit"
+          >
+            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform duration-300" />
+            Back to home
+          </Link>
+
           <div className="lg:hidden flex items-center gap-3 mb-10">
             <Logo className="h-10 w-10 text-brand-500" />
             <span className="text-2xl font-serif tracking-tight text-textprimary">AdMind</span>
