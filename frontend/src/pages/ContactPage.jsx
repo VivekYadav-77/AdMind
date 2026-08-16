@@ -82,7 +82,7 @@ export default function ContactPage() {
                   value={formData.guest_name}
                   onChange={(e) => setFormData({ ...formData, guest_name: e.target.value })}
                   className="w-full bg-bgbase border border-borderwarm rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500 transition-colors"
-                  placeholder="John Doe"
+                  placeholder="XYZ"
                 />
               </div>
               <div>
@@ -93,7 +93,7 @@ export default function ContactPage() {
                   value={formData.guest_email}
                   onChange={(e) => setFormData({ ...formData, guest_email: e.target.value })}
                   className="w-full bg-bgbase border border-borderwarm rounded-xl px-4 py-3 focus:outline-none focus:border-brand-500 transition-colors"
-                  placeholder="john@example.com"
+                  placeholder="xyz@example.com"
                 />
               </div>
             </div>

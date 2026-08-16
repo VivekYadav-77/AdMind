@@ -82,11 +82,7 @@ export default function LandingPage() {
     { icon: User, title: "For Solo Media Buyers", desc: "Get an AI second opinion on your strategies. Ensure you haven't missed negative keywords or budget reallocation opportunities." }
   ]
 
-  const testimonials = [
-    { name: "Sarah Jenkins", role: "Head of Growth, TechNova", content: "AdMind caught $2,400 in wasted spend on our Google Ads account in literally 5 seconds. It paid for itself immediately.", rating: 5 },
-    { name: "Marcus Thorne", role: "Founder, Apex Agency", content: "We use the audit feature as a lead magnet. We run prospects' data through AdMind and hand them a strategy that blows them away.", rating: 5 },
-    { name: "Elena Rostova", role: "E-com Store Owner", content: "The copywriter agent is incredible. It rewrote our underperforming Facebook ads and our CTR jumped by 42% in a week.", rating: 5 }
-  ]
+  
 
   return (
     <div className="min-h-screen bg-bgbase text-textprimary overflow-hidden selection:bg-brand-500/30 font-sans">
@@ -717,7 +713,7 @@ export default function LandingPage() {
               <li><a href="#how-it-works" className="hover:text-brand-500 transition-colors">How it works</a></li>
               <li><a href="#features" className="hover:text-brand-500 transition-colors">Features</a></li>
               
-              <li><a href="#" className="hover:text-brand-500 transition-colors">Integrations</a></li>
+              
             </ul>
           </div>
           <div>
@@ -731,7 +727,7 @@ export default function LandingPage() {
             <h4 className="font-bold text-textprimary mb-4">Company</h4>
             <ul className="space-y-3 text-textmuted text-sm">
               <li><Link to="/about" className="hover:text-brand-500 transition-colors">About Us</Link></li>
-              <li><a href="#" className="hover:text-brand-500 transition-colors">Contact</a></li>
+              <li><Link to="/contact" className="hover:text-brand-500 transition-colors">Contact</Link></li>
               <li><Link to="/privacy" className="hover:text-brand-500 transition-colors">Privacy Policy</Link></li>
               <li><Link to="/terms" className="hover:text-brand-500 transition-colors">Terms of Service</Link></li>
             </ul>

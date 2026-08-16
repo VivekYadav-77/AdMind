@@ -36,7 +36,6 @@ export default function LandingNav() {
   const navLinks = [
     { name: 'Features', href: '/#features', isAnchor: true },
     { name: 'Use Cases', href: '/#use-cases', isAnchor: true },
-    { name: 'Testimonials', href: '/#testimonials', isAnchor: true },
     { name: 'Blog', href: '/blog', isAnchor: false },
     { name: 'Community', href: '/community', isAnchor: false },
     { name: 'FAQ', href: '/#faq', isAnchor: true },
