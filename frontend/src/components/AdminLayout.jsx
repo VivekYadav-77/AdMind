@@ -43,7 +43,7 @@ export default function AdminLayout() {
     { name: 'Email Analytics', path: '/admin/email-analytics', icon: Mail },
   ]
 
-  const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : 'A'
+  const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : user?.email ? user.email.charAt(0).toUpperCase() : 'A'
 
   return (
     <div className="relative flex min-h-screen bg-bgbase text-textprimary font-sans selection:bg-orange-500/30 transition-colors duration-300">
@@ -126,7 +126,7 @@ export default function AdminLayout() {
               <div className="h-8 w-8 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center font-bold">
                 {userInitial}
               </div>
-              <span className="text-sm font-medium">{user?.email}</span>
+              <span className="text-sm font-medium">{user?.name || user?.email}</span>
             </div>
           </div>
         </header>

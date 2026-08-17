@@ -88,7 +88,7 @@ export default function Layout() {
     { name: 'Settings', path: '/app/settings', icon: Settings }
   ]
 
-  const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : 'U'
+  const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : user?.email ? user.email.charAt(0).toUpperCase() : 'U'
 
   return (
     <div className="relative flex flex-col min-h-screen bg-bgbase text-textprimary font-sans selection:bg-brand-500/30 transition-colors duration-300" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>

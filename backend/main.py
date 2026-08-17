@@ -271,7 +271,7 @@ async def login_for_access_token(request: Request, form_data: OAuth2PasswordRequ
     if not user.is_verified:
         raise HTTPException(status_code=403, detail="Please verify your email. Check your inbox or request a new verification link.")
     
-    access_token = create_access_token(data={"sub": user.email}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    access_token = create_access_token(data={"sub": user.email, "name": user.name}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     return {"access_token": access_token, "token_type": "bearer"}
 
 @app.post("/auth/resend-verification")

@@ -22,7 +22,7 @@ export default function Dashboard() {
   const { activeWorkspace } = useWorkspace()
   const navigate = useNavigate()
   
-  const firstName = user?.email?.split('@')[0] || 'User'
+  const firstName = user?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'User'
   const getGreeting = () => {
     const hour = new Date().getHours()
     if (hour < 12) return 'Good morning'

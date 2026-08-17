@@ -108,15 +108,15 @@ export default function Settings() {
           <div className="bg-bgpanel rounded-2xl p-6 border border-borderwarm shadow-sm flex flex-col items-center text-center">
             <div className="relative mb-4">
               <div className="h-20 w-20 rounded-full bg-brand-50 dark:bg-brand-500/10 flex items-center justify-center text-brand-500 text-3xl font-bold shadow-sm border border-brand-100 dark:border-brand-500/20">
-                {user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
+                {user?.name ? user.name.charAt(0).toUpperCase() : user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
               </div>
               <div className={`absolute bottom-0 right-0 h-5 w-5 rounded-full border-4 border-bgpanel transition-colors ${
                 apiStatus === 'online' ? 'bg-emerald-500' : apiStatus === 'offline' ? 'bg-red-500' : 'bg-amber-400 animate-pulse'
               }`} />
             </div>
 
-            <h2 className="text-xl font-bold text-textprimary tracking-tight truncate w-full px-2" title={user?.email || 'User Account'}>
-              {user?.email || 'User Account'}
+            <h2 className="text-xl font-bold text-textprimary tracking-tight truncate w-full px-2" title={user?.name || user?.email || 'User Account'}>
+              {user?.name || user?.email || 'User Account'}
             </h2>
 
             <div className="mt-6 pt-6 border-t border-borderwarm w-full space-y-3 text-left text-sm">
