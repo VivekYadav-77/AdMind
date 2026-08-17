@@ -1,4 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+import { apiFetch } from './apiFetch'
+import { API_BASE_URL } from './api'
 
 const getHeaders = (requireAuth = true) => {
   const headers = {
@@ -15,57 +16,43 @@ const getHeaders = (requireAuth = true) => {
 
 export const ticketApi = {
   submitGuestTicket: async (data) => {
-    const res = await fetch(`${API_URL}/contact`, {
+    const res = await apiFetch(`${API_BASE_URL}/contact`, {
       method: 'POST',
       headers: getHeaders(false),
       body: JSON.stringify(data)
-    })
-    if (!res.ok) {
-      const err = await res.json()
-      throw new Error(err.detail || 'Failed to submit ticket')
-    }
+    }, 'Failed to submit ticket')
     return res.json()
   },
 
   createTicket: async (data) => {
-    const res = await fetch(`${API_URL}/tickets`, {
+    const res = await apiFetch(`${API_BASE_URL}/tickets`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(data)
-    })
-    if (!res.ok) {
-      const err = await res.json()
-      throw new Error(err.detail || 'Failed to create ticket')
-    }
+    }, 'Failed to create ticket')
     return res.json()
   },
 
   getMyTickets: async (page = 1, size = 20) => {
-    const res = await fetch(`${API_URL}/tickets/mine?page=${page}&size=${size}`, {
+    const res = await apiFetch(`${API_BASE_URL}/tickets/mine?page=${page}&size=${size}`, {
       headers: getHeaders()
-    })
-    if (!res.ok) throw new Error('Failed to fetch tickets')
+    }, 'Failed to fetch tickets')
     return res.json()
   },
 
   getTicket: async (id) => {
-    const res = await fetch(`${API_URL}/tickets/${id}`, {
+    const res = await apiFetch(`${API_BASE_URL}/tickets/${id}`, {
       headers: getHeaders()
-    })
-    if (!res.ok) throw new Error('Failed to fetch ticket')
+    }, 'Failed to fetch ticket')
     return res.json()
   },
 
   replyToTicket: async (id, message) => {
-    const res = await fetch(`${API_URL}/tickets/${id}/reply`, {
+    const res = await apiFetch(`${API_BASE_URL}/tickets/${id}/reply`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({ message })
-    })
-    if (!res.ok) {
-      const err = await res.json()
-      throw new Error(err.detail || 'Failed to reply to ticket')
-    }
+    }, 'Failed to reply to ticket')
     return res.json()
   }
 }
