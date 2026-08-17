@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Lock, Eye, EyeOff } from 'lucide-react'
+import { Lock, Eye, EyeOff, Sun, Moon } from 'lucide-react'
 import { API } from '../services/api'
 import AnimatedBackground from '../components/AnimatedBackground'
 import Logo from '../components/Logo'
@@ -16,6 +16,17 @@ export default function ResetPassword() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem('theme')
+    if (saved) return saved === 'dark'
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  })
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDark)
+    localStorage.setItem('theme', isDark ? 'dark' : 'light')
+  }, [isDark])
 
   useEffect(() => {
     if (!token) {
@@ -60,6 +71,14 @@ export default function ResetPassword() {
         className="w-full max-w-md bg-bgpanel border border-borderwarm p-8 rounded-2xl shadow-xl z-10 relative overflow-hidden"
       >
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-500 to-amber-500" />
+        
+        <button 
+          onClick={() => setIsDark(!isDark)} 
+          className="absolute top-6 right-6 p-2 text-textmuted hover:text-brand-500 transition-colors"
+          aria-label="Toggle theme"
+        >
+          {isDark ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
         
         <div className="flex justify-center mb-6">
           <Logo className="h-12 w-12 text-brand-500" />

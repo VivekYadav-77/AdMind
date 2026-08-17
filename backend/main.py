@@ -337,7 +337,7 @@ async def forgot_password(req: ForgotPasswordRequest, request: Request, backgrou
 
     user = db.query(User).filter(User.email == req.email).first()
     if not user or not user.is_verified:
-        return {"message": "If that email exists in our system, a password reset link has been sent."}
+        return {"message": "If that email exists in our system, a password reset link has been sent.", "account_found": False}
 
     import hashlib
     plain, hashed = generate_token()
@@ -359,7 +359,7 @@ async def forgot_password(req: ForgotPasswordRequest, request: Request, backgrou
         db_session.close()
 
     background_tasks.add_task(send_reset, user.email, user.name, plain, user.id)
-    return {"message": "If that email exists in our system, a password reset link has been sent."}
+    return {"message": "If that email exists in our system, a password reset link has been sent.", "account_found": True}
 
 @app.post("/auth/reset-password")
 async def reset_password(req: ResetPasswordRequest, request: Request, db: Session = Depends(get_db)):

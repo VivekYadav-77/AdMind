@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Mail, ArrowLeft, Loader2, CheckCircle, XCircle } from 'lucide-react'
+import { Mail, ArrowLeft, Loader2, CheckCircle, XCircle, Sun, Moon } from 'lucide-react'
 import { API } from '../services/api'
 import AnimatedBackground from '../components/AnimatedBackground'
 import Logo from '../components/Logo'
@@ -11,6 +11,17 @@ export default function CheckEmail() {
   const email = location.state?.email || ''
   const [resendStatus, setResendStatus] = useState('idle') // idle, loading, success, error
   const [errorMessage, setErrorMessage] = useState('')
+
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem('theme')
+    if (saved) return saved === 'dark'
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  })
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDark)
+    localStorage.setItem('theme', isDark ? 'dark' : 'light')
+  }, [isDark])
 
   // If no email in state, this was accessed directly, but we still show the page
   // just without the specific email.
@@ -43,6 +54,14 @@ export default function CheckEmail() {
         className="w-full max-w-md bg-bgpanel border border-borderwarm p-10 rounded-2xl shadow-xl z-10 text-center relative overflow-hidden"
       >
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-500 to-amber-500" />
+        
+        <button 
+          onClick={() => setIsDark(!isDark)} 
+          className="absolute top-6 right-6 p-2 text-textmuted hover:text-brand-500 transition-colors"
+          aria-label="Toggle theme"
+        >
+          {isDark ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
         
         <div className="flex justify-center mb-8">
           <div className="w-16 h-16 bg-brand-500/10 rounded-full flex items-center justify-center">
