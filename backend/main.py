@@ -336,8 +336,28 @@ async def forgot_password(req: ForgotPasswordRequest, request: Request, backgrou
     await check_rate_limit(f"ratelimit:auth_global:{ip}", 20, 60)
 
     user = db.query(User).filter(User.email == req.email).first()
-    if not user or not user.is_verified:
-        return {"message": "If that email exists in our system, a password reset link has been sent.", "account_found": False}
+    if not user:
+        return {"message": "If that email exists in our system, a password reset link has been sent.", "account_found": False, "account_unverified": False, "cooldown_seconds_remaining": 0}
+    if not user.is_verified:
+        return {"message": "If that email exists in our system, a password reset link has been sent.", "account_found": False, "account_unverified": True, "cooldown_seconds_remaining": 0}
+
+    RESET_COOLDOWN_MINUTES = 10
+    cooldown_cutoff = datetime.utcnow() - timedelta(minutes=RESET_COOLDOWN_MINUTES)
+    recent_token = db.query(EmailToken).filter(
+        EmailToken.user_id == user.id,
+        EmailToken.token_type == "reset",
+        EmailToken.created_at >= cooldown_cutoff,
+        EmailToken.used_at == None
+    ).order_by(EmailToken.created_at.desc()).first()
+
+    if recent_token:
+        elapsed = (datetime.utcnow() - recent_token.created_at.replace(tzinfo=None)).total_seconds()
+        remaining = max(0, int(RESET_COOLDOWN_MINUTES * 60 - elapsed))
+        return {
+            "message": "A reset link was recently sent.",
+            "account_found": True,
+            "cooldown_seconds_remaining": remaining
+        }
 
     import hashlib
     plain, hashed = generate_token()
@@ -359,7 +379,7 @@ async def forgot_password(req: ForgotPasswordRequest, request: Request, backgrou
         db_session.close()
 
     background_tasks.add_task(send_reset, user.email, user.name, plain, user.id)
-    return {"message": "If that email exists in our system, a password reset link has been sent.", "account_found": True}
+    return {"message": "If that email exists in our system, a password reset link has been sent.", "account_found": True, "cooldown_seconds_remaining": RESET_COOLDOWN_MINUTES * 60}
 
 @app.post("/auth/reset-password")
 async def reset_password(req: ResetPasswordRequest, request: Request, db: Session = Depends(get_db)):

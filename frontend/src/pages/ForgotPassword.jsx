@@ -12,7 +12,7 @@ const RESEND_COOLDOWN_SECONDS = RESEND_COOLDOWN_MINUTES * 60;
 export default function ForgotPassword() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
-  const [status, setStatus] = useState('idle') // idle, loading, success_found, success_not_found, error
+  const [status, setStatus] = useState('idle') // idle, loading, success_found, success_not_found, unverified, error
   const [message, setMessage] = useState('')
   
   const [cooldownSeconds, setCooldownSeconds] = useState(0)
@@ -47,7 +47,7 @@ export default function ForgotPassword() {
     };
   }, [cooldownSeconds]);
 
-  // Check initial cooldown when component loads or email changes after a send attempt
+  // Check initial cooldown when component loads or email changes
   useEffect(() => {
     if (email) {
       const lastSent = localStorage.getItem(`fp_last_sent_${email}`)
@@ -68,7 +68,7 @@ export default function ForgotPassword() {
     if (e) e.preventDefault()
     
     // If we're already in a success state and clicking resend, check cooldown
-    if ((status === 'success_found' || status === 'success_not_found') && cooldownSeconds > 0) {
+    if ((status === 'success_found') && cooldownSeconds > 0) {
       return;
     }
     
@@ -82,8 +82,17 @@ export default function ForgotPassword() {
         setStatus('success_found')
         setMessage('Reset link sent to your email.')
         
-        localStorage.setItem(`fp_last_sent_${email}`, Date.now().toString())
-        setCooldownSeconds(RESEND_COOLDOWN_SECONDS)
+        if (res.cooldown_seconds_remaining > 0) {
+          setCooldownSeconds(res.cooldown_seconds_remaining)
+          // Sync localStorage based on server authoritative time
+          const estimatedSentTime = Date.now() - ((RESEND_COOLDOWN_SECONDS - res.cooldown_seconds_remaining) * 1000)
+          localStorage.setItem(`fp_last_sent_${email}`, estimatedSentTime.toString())
+        } else {
+          setCooldownSeconds(0)
+        }
+      } else if (res.account_unverified) {
+        setStatus('unverified')
+        setMessage('Your account is not verified yet.')
       } else {
         setStatus('success_not_found')
         setMessage('No account found with this email.')
@@ -136,38 +145,58 @@ export default function ForgotPassword() {
 
         <h2 className="text-3xl font-serif text-textprimary text-center mb-2">Reset Password</h2>
         
-        {(status === 'success_found' || status === 'success_not_found') ? (
+        {(status === 'success_found' || status === 'success_not_found' || status === 'unverified') ? (
           <div className="text-center py-6">
             {status === 'success_found' ? (
               <>
                 <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
                 <p className="text-textprimary font-medium mb-2">{message}</p>
                 <p className="text-sm text-textmuted mb-8">Please check your inbox and spam folder.</p>
+                
+                <button
+                  onClick={handleSubmit}
+                  disabled={loading || cooldownSeconds > 0}
+                  className="w-full btn-primary flex items-center justify-center gap-2 py-3.5 disabled:opacity-70 disabled:hover:translate-y-0 disabled:cursor-not-allowed"
+                >
+                  {loading ? (
+                    'Sending...'
+                  ) : cooldownSeconds > 0 ? (
+                    <>
+                      <Clock size={18} />
+                      Resend available in {formatTime(cooldownSeconds)}
+                    </>
+                  ) : (
+                    'Resend link'
+                  )}
+                </button>
+              </>
+            ) : status === 'unverified' ? (
+              <>
+                <AlertTriangle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
+                <p className="text-textprimary font-medium mb-2">{message}</p>
+                <p className="text-sm text-textmuted mb-8">You need to verify your email before you can reset your password.</p>
+                
+                <Link
+                  to="/check-email"
+                  state={{ email }}
+                  className="w-full btn-primary flex items-center justify-center gap-2 py-3.5"
+                >
+                  Go to Verification
+                </Link>
               </>
             ) : (
               <>
                 <AlertTriangle className="w-16 h-16 text-amber-500 mx-auto mb-4" />
                 <p className="text-textprimary font-medium mb-2">{message}</p>
                 <p className="text-sm text-textmuted mb-8">Please check the email address or sign up for a new account.</p>
+                <Link
+                  to="/signup"
+                  className="w-full btn-primary flex items-center justify-center gap-2 py-3.5"
+                >
+                  Create an account
+                </Link>
               </>
             )}
-            
-            <button
-              onClick={handleSubmit}
-              disabled={loading || (status === 'success_found' && cooldownSeconds > 0)}
-              className="w-full btn-primary flex items-center justify-center gap-2 py-3.5 disabled:opacity-70 disabled:hover:translate-y-0 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                 'Sending...'
-              ) : status === 'success_found' && cooldownSeconds > 0 ? (
-                <>
-                  <Clock size={18} />
-                  Resend available in {formatTime(cooldownSeconds)}
-                </>
-              ) : (
-                'Resend link'
-              )}
-            </button>
           </div>
         ) : (
           <>
