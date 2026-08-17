@@ -328,58 +328,57 @@ def verify_email(token: str, db: Session = Depends(get_db)):
     
     return {"message": "Email verified successfully"}
 
+RESET_COOLDOWN_MINUTES = 10
+RESET_COOLDOWN_SECONDS = RESET_COOLDOWN_MINUTES * 60
+_reset_cooldown_store: dict[str, float] = {}
+
 @app.post("/auth/forgot-password")
 async def forgot_password(req: ForgotPasswordRequest, request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    import time
     ip = request.client.host if request.client else "unknown"
     await check_rate_limit(f"ratelimit:forgot:{ip}", 3, 3600)
-    await check_rate_limit(f"ratelimit:forgot_email:{req.email}", 3, 3600)
     await check_rate_limit(f"ratelimit:auth_global:{ip}", 20, 60)
 
+    email_key = req.email.strip().lower()
+    now = time.time()
+
+    # --- 1. Check per-email cooldown (unconditional, regardless of account existence) ---
+    last_sent = _reset_cooldown_store.get(email_key)
+    if last_sent is not None:
+        elapsed = now - last_sent
+        if elapsed < RESET_COOLDOWN_SECONDS:
+            remaining = int(RESET_COOLDOWN_SECONDS - elapsed)
+            return {"cooldown_seconds_remaining": remaining}
+
+    # --- 2. Record the cooldown timestamp NOW (before any DB check) ---
+    _reset_cooldown_store[email_key] = now
+
+    # --- 3. Silently try to send email — only if account exists and is verified ---
     user = db.query(User).filter(User.email == req.email).first()
-    if not user:
-        return {"message": "If that email exists in our system, a password reset link has been sent.", "account_found": False, "account_unverified": False, "cooldown_seconds_remaining": 0}
-    if not user.is_verified:
-        return {"message": "If that email exists in our system, a password reset link has been sent.", "account_found": False, "account_unverified": True, "cooldown_seconds_remaining": 0}
+    if user and user.is_verified:
+        import hashlib
+        plain, hashed = generate_token()
+        token_record = EmailToken(user_id=user.id, token_hash=hashed, token_type="reset", expires_at=datetime.utcnow() + timedelta(minutes=15))
+        db.add(token_record)
+        db.commit()
 
-    RESET_COOLDOWN_MINUTES = 10
-    cooldown_cutoff = datetime.utcnow() - timedelta(minutes=RESET_COOLDOWN_MINUTES)
-    recent_token = db.query(EmailToken).filter(
-        EmailToken.user_id == user.id,
-        EmailToken.token_type == "reset",
-        EmailToken.created_at >= cooldown_cutoff,
-        EmailToken.used_at == None
-    ).order_by(EmailToken.created_at.desc()).first()
+        async def send_reset(email, name, plain_token, uid):
+            html = password_reset_email(name, plain_token)
+            try:
+                res = await send_email_via_gas(email, "Password Reset Request", html)
+                status = "sent" if res.get("status") == "ok" else "failed"
+                log = EmailLog(user_id=uid, email_to=email, email_type="password_reset", status=status, ip_address=ip, gas_response=str(res))
+            except Exception as e:
+                log = EmailLog(user_id=uid, email_to=email, email_type="password_reset", status="failed", ip_address=ip, gas_response=str(e))
+            db_session = SessionLocal()
+            db_session.add(log)
+            db_session.commit()
+            db_session.close()
 
-    if recent_token:
-        elapsed = (datetime.utcnow() - recent_token.created_at.replace(tzinfo=None)).total_seconds()
-        remaining = max(0, int(RESET_COOLDOWN_MINUTES * 60 - elapsed))
-        return {
-            "message": "A reset link was recently sent.",
-            "account_found": True,
-            "cooldown_seconds_remaining": remaining
-        }
+        background_tasks.add_task(send_reset, user.email, user.name, plain, user.id)
 
-    import hashlib
-    plain, hashed = generate_token()
-    token_record = EmailToken(user_id=user.id, token_hash=hashed, token_type="reset", expires_at=datetime.utcnow() + timedelta(minutes=15))
-    db.add(token_record)
-    db.commit()
-
-    async def send_reset(email, name, plain_token, uid):
-        html = password_reset_email(name, plain_token)
-        try:
-            res = await send_email_via_gas(email, "Password Reset Request", html)
-            status = "sent" if res.get("status") == "ok" else "failed"
-            log = EmailLog(user_id=uid, email_to=email, email_type="password_reset", status=status, ip_address=ip, gas_response=str(res))
-        except Exception as e:
-            log = EmailLog(user_id=uid, email_to=email, email_type="password_reset", status="failed", ip_address=ip, gas_response=str(e))
-        db_session = SessionLocal()
-        db_session.add(log)
-        db_session.commit()
-        db_session.close()
-
-    background_tasks.add_task(send_reset, user.email, user.name, plain, user.id)
-    return {"message": "If that email exists in our system, a password reset link has been sent.", "account_found": True, "cooldown_seconds_remaining": RESET_COOLDOWN_MINUTES * 60}
+    # --- 4. Always return the same response ---
+    return {"cooldown_seconds_remaining": RESET_COOLDOWN_SECONDS}
 
 @app.post("/auth/reset-password")
 async def reset_password(req: ResetPasswordRequest, request: Request, db: Session = Depends(get_db)):
