@@ -1,41 +1,38 @@
-import os
+"""
+In-memory sliding window rate limiter.
+No Redis or external dependencies required.
+To upgrade to Redis later, replace this file only — the API (check_rate_limit) stays identical.
+"""
 import time
-import redis.asyncio as aioredis
+import asyncio
+from collections import defaultdict, deque
 from fastapi import HTTPException
 
-REDIS_URL = os.getenv("REDIS_URL")
-
-_redis = None
-
-async def get_redis():
-    global _redis
-    if _redis is None:
-        if not REDIS_URL:
-            # If no redis is configured, we fallback to no rate limiting for local dev
-            print("WARNING: REDIS_URL not set, rate limiting disabled")
-            return None
-        _redis = aioredis.from_url(REDIS_URL, decode_responses=True)
-    return _redis
+# Global store: { key -> deque of timestamps }
+_request_log: dict[str, deque] = defaultdict(deque)
+_lock = asyncio.Lock()
 
 async def check_rate_limit(key: str, limit: int, window_seconds: int):
-    r = await get_redis()
-    if r is None:
-        return
-        
-    now = int(time.time())
-    # Upstash free tier can be slow sometimes, pipeline ensures atomicity
-    pipe = r.pipeline()
-    pipe.zremrangebyscore(key, 0, now - window_seconds)
-    pipe.zadd(key, {str(now * 1000): now})
-    pipe.zcard(key)
-    pipe.expire(key, window_seconds)
-    
-    results = await pipe.execute()
-    count = results[2]
-    
-    if count > limit:
-        raise HTTPException(
-            status_code=429,
-            detail="Too many requests. Please try again later.",
-            headers={"Retry-After": str(window_seconds)}
-        )
+    """
+    Sliding window rate limiter.
+    Raises HTTP 429 if `key` has exceeded `limit` requests within `window_seconds`.
+    """
+    now = time.time()
+    cutoff = now - window_seconds
+
+    async with _lock:
+        window = _request_log[key]
+
+        # Evict timestamps outside the current window
+        while window and window[0] < cutoff:
+            window.popleft()
+
+        if len(window) >= limit:
+            raise HTTPException(
+                status_code=429,
+                detail="Too many requests. Please try again later.",
+                headers={"Retry-After": str(window_seconds)}
+            )
+
+        # Record this request
+        window.append(now)
