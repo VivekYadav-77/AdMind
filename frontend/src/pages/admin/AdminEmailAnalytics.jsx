@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Mail, CheckCircle, XCircle, AlertTriangle, Activity } from 'lucide-react'
+import { Mail, CheckCircle, XCircle, AlertTriangle, Activity, Loader2 } from 'lucide-react'
 import { API } from '../../services/api'
-import LoadingSpinner from '../../components/LoadingSpinner'
-
 
 export default function AdminEmailAnalytics() {
   const [data, setData] = useState(null)
@@ -27,7 +25,8 @@ export default function AdminEmailAnalytics() {
     }
   }
 
-  if (loading) return <div className="p-8"><LoadingSpinner /></div>
+  if (loading) return <div className="p-8 flex items-center justify-center min-h-[400px]"><Loader2 className="w-8 h-8 text-brand-500 animate-spin" /></div>
+
   if (error) return <div className="p-8 text-red-500">Error: {error}</div>
   if (!data) return null
 
