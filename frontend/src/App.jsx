@@ -10,6 +10,9 @@ import Signup from './pages/Signup'
 import ReportDetail from './pages/ReportDetail'
 import Settings from './pages/Settings'
 import TestTracker from './pages/TestTracker'
+import VerifyEmail from './pages/VerifyEmail'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 import LandingPage from './pages/LandingPage'
 import BlogPage from './pages/BlogPage'
 import BlogPost from './pages/BlogPost'
@@ -31,6 +34,7 @@ import AdminWorkspaces from './pages/admin/AdminWorkspaces'
 import AdminActivity from './pages/admin/AdminActivity'
 import AdminTickets from './pages/admin/AdminTickets'
 import AdminTicketDetail from './pages/admin/AdminTicketDetail'
+import AdminEmailAnalytics from './pages/admin/AdminEmailAnalytics'
 
 import ScrollToTop from './components/ScrollToTop'
 import { AuthProvider, useAuth } from './context/AuthContext'
@@ -77,6 +81,9 @@ export default function App() {
               
               <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
               <Route path="/signup" element={<PublicOnlyRoute><Signup /></PublicOnlyRoute>} />
+              <Route path="/verify-email" element={<PublicOnlyRoute><VerifyEmail /></PublicOnlyRoute>} />
+              <Route path="/forgot-password" element={<PublicOnlyRoute><ForgotPassword /></PublicOnlyRoute>} />
+              <Route path="/reset-password" element={<PublicOnlyRoute><ResetPassword /></PublicOnlyRoute>} />
               
               {/* New Public Routes (No Auth Needed to View) */}
               <Route path="/blog" element={<BlogPage />} />
@@ -119,6 +126,7 @@ export default function App() {
                 <Route path="activity" element={<AdminActivity />} />
                 <Route path="tickets" element={<AdminTickets />} />
                 <Route path="tickets/:id" element={<AdminTicketDetail />} />
+                <Route path="email-analytics" element={<AdminEmailAnalytics />} />
                 <Route path="*" element={<Navigate to="/admin" replace />} />
               </Route>
 

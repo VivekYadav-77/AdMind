@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, BarChart3, Star, Briefcase, Activity, LogOut, Moon, Sun, ArrowLeft, MessageSquare } from 'lucide-react'
+import { LayoutDashboard, Users, BarChart3, Star, Briefcase, Activity, LogOut, Moon, Sun, ArrowLeft, MessageSquare, Mail } from 'lucide-react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useState, useEffect } from 'react'
@@ -40,6 +40,7 @@ export default function AdminLayout() {
     { name: 'Workspaces', path: '/admin/workspaces', icon: Briefcase },
     { name: 'Tickets', path: '/admin/tickets', icon: MessageSquare },
     { name: 'Activity Log', path: '/admin/activity', icon: Activity },
+    { name: 'Email Analytics', path: '/admin/email-analytics', icon: Mail },
   ]
 
   const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : 'A'

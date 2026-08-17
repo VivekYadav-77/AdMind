@@ -95,8 +95,19 @@ class PipelineResult(BaseModel):
 
 
 class UserCreate(BaseModel):
+    name: Optional[str] = None
     email: str
     password: str
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str
+
+class ResendVerificationRequest(BaseModel):
+    email: str
 
 
 class UserLogin(BaseModel):

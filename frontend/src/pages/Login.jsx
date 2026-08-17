@@ -128,6 +128,22 @@ export default function Login() {
             {error && (
               <div className="rounded-xl bg-red-500/10 p-4 text-sm text-red-400 border border-red-500/20 font-medium">
                 {error}
+                {error.includes('verify your email') && (
+                  <button 
+                    type="button" 
+                    onClick={async () => {
+                      try {
+                        const res = await API.resendVerification(email)
+                        alert(res.message)
+                      } catch (err) {
+                        alert(err.message)
+                      }
+                    }}
+                    className="block mt-2 text-brand-400 hover:text-brand-300 underline"
+                  >
+                    Resend verification email
+                  </button>
+                )}
               </div>
             )}
             
@@ -144,7 +160,12 @@ export default function Login() {
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-textsecondary">Password</label>
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-textsecondary">Password</label>
+                <Link to="/forgot-password" className="text-sm text-brand-400 hover:text-brand-300 font-medium transition-colors">
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}

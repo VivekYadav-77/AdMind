@@ -12,8 +12,10 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
+    name = Column(String, nullable=True)
     hashed_password = Column(String, nullable=False)
     is_superadmin = Column(Boolean, default=False)
+    is_verified = Column(Boolean, default=False)
     is_banned = Column(Boolean, default=False)
     last_seen_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -151,3 +153,33 @@ class TicketMessage(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     ticket = relationship("SupportTicket", back_populates="messages")
+
+
+class EmailToken(Base):
+    __tablename__ = "email_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    token_hash = Column(String, unique=True, index=True, nullable=False)
+    token_type = Column(String, nullable=False) # "verify" or "reset"
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    used_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
+
+
+class EmailLog(Base):
+    __tablename__ = "email_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    email_to = Column(String, nullable=False)
+    email_type = Column(String, nullable=False)
+    status = Column(String, nullable=False)
+    ip_address = Column(String, nullable=True)
+    user_agent = Column(String, nullable=True)
+    gas_response = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")

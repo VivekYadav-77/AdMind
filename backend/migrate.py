@@ -37,6 +37,21 @@ def migrate():
         except Exception as e:
             print("error_message might already exist")
 
+    # 3. Add columns to users if they don't exist
+    print("Altering users table...")
+    with engine.begin() as conn:
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN name VARCHAR;"))
+            print("Added name to users")
+        except Exception as e:
+            print("name column might already exist on users")
+            
+        try:
+            conn.execute(text("ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT FALSE;"))
+            print("Added is_verified to users")
+        except Exception as e:
+            print("is_verified column might already exist on users")
+
     print("Migration complete.")
 
 if __name__ == "__main__":

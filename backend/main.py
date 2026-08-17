@@ -22,9 +22,13 @@ from agents.landing_page_auditor import run_landing_page_auditor
 from agents.audience_builder import run_audience_builder
 from agents.competitor_teardown import run_competitor_teardown
 from db.database import Base, engine, get_db, SessionLocal
-from db.models import AnalysisJob, User, Workspace, WorkspaceMember, ChatMessage, RecommendationComment, ABTestCampaign, CommunityReview, SupportTicket, TicketMessage
-from models.schemas import PipelineResult, UserCreate, Token, AdminUserOut, AdminJobOut, AdminReviewOut, AdminWorkspaceOut, AdminStats, TicketCreate, TicketOut, TicketReplyCreate, TicketListItem, TicketStatusUpdate
+from db.models import AnalysisJob, User, Workspace, WorkspaceMember, ChatMessage, RecommendationComment, ABTestCampaign, CommunityReview, SupportTicket, TicketMessage, EmailToken, EmailLog
+from models.schemas import PipelineResult, UserCreate, Token, AdminUserOut, AdminJobOut, AdminReviewOut, AdminWorkspaceOut, AdminStats, TicketCreate, TicketOut, TicketReplyCreate, TicketListItem, TicketStatusUpdate, ForgotPasswordRequest, ResetPasswordRequest, ResendVerificationRequest
 from services.csv_parser import parse_csv
+from services.email_service import send_email_via_gas, generate_token
+from services.email_templates import verification_email, password_reset_email
+from middleware.rate_limit import check_rate_limit
+
 from services.gemini import GeminiError, call_gemini_chat
 
 from auth import (
@@ -200,14 +204,18 @@ async def health_check():
     return {"status": "ok", "version": "1.0.0"}
 
 
-@app.post("/register", response_model=Token)
-def register_user(user: UserCreate, db: Session = Depends(get_db)):
+@app.post("/register")
+async def register_user(user: UserCreate, request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    ip = request.client.host if request.client else "unknown"
+    await check_rate_limit(f"ratelimit:register:{ip}", 5, 3600)
+    await check_rate_limit(f"ratelimit:auth_global:{ip}", 20, 60)
+
     db_user = db.query(User).filter(User.email == user.email).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
     hashed_password = get_password_hash(user.password)
-    new_user = User(email=user.email, hashed_password=hashed_password)
+    new_user = User(email=user.email, name=user.name, hashed_password=hashed_password, is_verified=False)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -220,26 +228,176 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     
     ws_member = WorkspaceMember(workspace_id=ws.id, user_id=new_user.id, role="admin")
     db.add(ws_member)
+    
+    # Generate token
+    import hashlib
+    plain, hashed = generate_token()
+    token_record = EmailToken(user_id=new_user.id, token_hash=hashed, token_type="verify", expires_at=datetime.utcnow() + timedelta(hours=24))
+    db.add(token_record)
+    
     db.commit()
 
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": new_user.email}, expires_delta=access_token_expires
-    )
-    return {"access_token": access_token, "token_type": "bearer"}
+    async def send_verification(email, name, plain_token, uid):
+        html = verification_email(name, plain_token)
+        try:
+            res = await send_email_via_gas(email, "Verify your AdMind account", html)
+            status = "sent" if res.get("status") == "ok" else "failed"
+            log = EmailLog(user_id=uid, email_to=email, email_type="verification", status=status, ip_address=ip, gas_response=str(res))
+        except Exception as e:
+            log = EmailLog(user_id=uid, email_to=email, email_type="verification", status="failed", ip_address=ip, gas_response=str(e))
+        db_session = SessionLocal()
+        db_session.add(log)
+        db_session.commit()
+        db_session.close()
+
+    background_tasks.add_task(send_verification, new_user.email, new_user.name, plain, new_user.id)
+    
+    return {"message": "Account created successfully. Please verify your email."}
 
 
 @app.post("/login", response_model=Token)
-def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    ip = request.client.host if request.client else "unknown"
+    await check_rate_limit(f"ratelimit:login:{ip}", 10, 900)
+    await check_rate_limit(f"ratelimit:auth_global:{ip}", 20, 60)
+
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password", headers={"WWW-Authenticate": "Bearer"})
     
     if user.is_banned:
         raise HTTPException(status_code=403, detail="Your account has been banned.")
+        
+    if not user.is_verified:
+        raise HTTPException(status_code=403, detail="Please verify your email. Check your inbox or request a new verification link.")
     
     access_token = create_access_token(data={"sub": user.email}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     return {"access_token": access_token, "token_type": "bearer"}
+
+@app.post("/auth/resend-verification")
+async def resend_verification(req: ResendVerificationRequest, request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    ip = request.client.host if request.client else "unknown"
+    await check_rate_limit(f"ratelimit:resend_verify:{ip}", 3, 3600)
+    await check_rate_limit(f"ratelimit:auth_global:{ip}", 20, 60)
+
+    user = db.query(User).filter(User.email == req.email).first()
+    if not user or user.is_verified:
+        # Silently return success to avoid enumeration
+        return {"message": "If your email is unregistered or already verified, no email will be sent. Otherwise, check your inbox."}
+        
+    import hashlib
+    plain, hashed = generate_token()
+    token_record = EmailToken(user_id=user.id, token_hash=hashed, token_type="verify", expires_at=datetime.utcnow() + timedelta(hours=24))
+    db.add(token_record)
+    db.commit()
+
+    async def send_verification(email, name, plain_token, uid):
+        html = verification_email(name, plain_token)
+        try:
+            res = await send_email_via_gas(email, "Verify your AdMind account", html)
+            status = "sent" if res.get("status") == "ok" else "failed"
+            log = EmailLog(user_id=uid, email_to=email, email_type="verification", status=status, ip_address=ip, gas_response=str(res))
+        except Exception as e:
+            log = EmailLog(user_id=uid, email_to=email, email_type="verification", status="failed", ip_address=ip, gas_response=str(e))
+        db_session = SessionLocal()
+        db_session.add(log)
+        db_session.commit()
+        db_session.close()
+
+    background_tasks.add_task(send_verification, user.email, user.name, plain, user.id)
+    return {"message": "If your email is unregistered or already verified, no email will be sent. Otherwise, check your inbox."}
+
+@app.get("/auth/verify-email")
+def verify_email(token: str, db: Session = Depends(get_db)):
+    import hashlib
+    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    record = db.query(EmailToken).filter(EmailToken.token_hash == token_hash, EmailToken.token_type == "verify").first()
+    
+    if not record:
+        raise HTTPException(status_code=400, detail="Invalid token")
+    if record.used_at:
+        raise HTTPException(status_code=400, detail="Token already used")
+    if record.expires_at.replace(tzinfo=None) < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Token expired")
+        
+    record.used_at = datetime.utcnow()
+    user = db.query(User).filter(User.id == record.user_id).first()
+    if user:
+        user.is_verified = True
+    db.commit()
+    
+    return {"message": "Email verified successfully"}
+
+@app.post("/auth/forgot-password")
+async def forgot_password(req: ForgotPasswordRequest, request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    ip = request.client.host if request.client else "unknown"
+    await check_rate_limit(f"ratelimit:forgot:{ip}", 3, 3600)
+    await check_rate_limit(f"ratelimit:forgot_email:{req.email}", 3, 3600)
+    await check_rate_limit(f"ratelimit:auth_global:{ip}", 20, 60)
+
+    user = db.query(User).filter(User.email == req.email).first()
+    if not user or not user.is_verified:
+        return {"message": "If that email exists in our system, a password reset link has been sent."}
+
+    import hashlib
+    plain, hashed = generate_token()
+    token_record = EmailToken(user_id=user.id, token_hash=hashed, token_type="reset", expires_at=datetime.utcnow() + timedelta(minutes=15))
+    db.add(token_record)
+    db.commit()
+
+    async def send_reset(email, name, plain_token, uid):
+        html = password_reset_email(name, plain_token)
+        try:
+            res = await send_email_via_gas(email, "Password Reset Request", html)
+            status = "sent" if res.get("status") == "ok" else "failed"
+            log = EmailLog(user_id=uid, email_to=email, email_type="password_reset", status=status, ip_address=ip, gas_response=str(res))
+        except Exception as e:
+            log = EmailLog(user_id=uid, email_to=email, email_type="password_reset", status="failed", ip_address=ip, gas_response=str(e))
+        db_session = SessionLocal()
+        db_session.add(log)
+        db_session.commit()
+        db_session.close()
+
+    background_tasks.add_task(send_reset, user.email, user.name, plain, user.id)
+    return {"message": "If that email exists in our system, a password reset link has been sent."}
+
+@app.post("/auth/reset-password")
+async def reset_password(req: ResetPasswordRequest, request: Request, db: Session = Depends(get_db)):
+    ip = request.client.host if request.client else "unknown"
+    await check_rate_limit(f"ratelimit:reset_password:{ip}", 5, 900)
+    await check_rate_limit(f"ratelimit:auth_global:{ip}", 20, 60)
+    
+    import hashlib
+    token_hash = hashlib.sha256(req.token.encode()).hexdigest()
+    record = db.query(EmailToken).filter(EmailToken.token_hash == token_hash, EmailToken.token_type == "reset").first()
+    
+    if not record:
+        raise HTTPException(status_code=400, detail="Invalid token")
+    if record.used_at:
+        raise HTTPException(status_code=400, detail="Token already used")
+    if record.expires_at.replace(tzinfo=None) < datetime.utcnow():
+        raise HTTPException(status_code=400, detail="Token expired")
+        
+    if len(req.new_password) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
+        
+    user = db.query(User).filter(User.id == record.user_id).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="User not found")
+        
+    user.hashed_password = get_password_hash(req.new_password)
+    record.used_at = datetime.utcnow()
+    
+    # Invalidate all other unused reset tokens for this user
+    db.query(EmailToken).filter(
+        EmailToken.user_id == user.id, 
+        EmailToken.token_type == "reset", 
+        EmailToken.used_at == None
+    ).update({"used_at": datetime.utcnow()})
+    
+    db.commit()
+    
+    return {"message": "Password reset successfully"}
 
 
 class ChangePasswordRequest(BaseModel):
@@ -1203,6 +1361,57 @@ def delete_admin_ticket(ticket_id: int, db: Session = Depends(get_db), admin: Us
     db.commit()
     
     return {"message": "Ticket deleted successfully"}
+
+@app.get("/admin/email-analytics")
+def get_email_analytics(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    from sqlalchemy import func
+    
+    total = db.query(EmailLog).count()
+    
+    # Today's count
+    today = datetime.utcnow().date()
+    today_count = db.query(EmailLog).filter(func.date(EmailLog.created_at) == today).count()
+    
+    # By type
+    verify_count = db.query(EmailLog).filter(EmailLog.email_type == "verification").count()
+    reset_count = db.query(EmailLog).filter(EmailLog.email_type == "password_reset").count()
+    
+    # Success rate
+    success_count = db.query(EmailLog).filter(EmailLog.status == "sent").count()
+    success_rate = round(success_count / total, 2) if total > 0 else 1.0
+    
+    # Top IPs
+    top_ips_query = db.query(EmailLog.ip_address, func.count(EmailLog.id).label("count"))\
+                      .filter(EmailLog.ip_address != None)\
+                      .group_by(EmailLog.ip_address)\
+                      .order_by(desc("count"))\
+                      .limit(10).all()
+                      
+    top_ips = [{"ip": ip, "count": count, "flagged": count > 50} for ip, count in top_ips_query]
+    
+    # Recent logs
+    recent = db.query(EmailLog).order_by(desc(EmailLog.created_at)).limit(50).all()
+    recent_logs = []
+    for r in recent:
+        recent_logs.append({
+            "id": r.id,
+            "email_to": r.email_to,
+            "type": r.email_type,
+            "status": r.status,
+            "ip_address": r.ip_address,
+            "user_agent": r.user_agent,
+            "created_at": r.created_at.isoformat() if r.created_at else ""
+        })
+        
+    return {
+        "total": total,
+        "today": today_count,
+        "by_type": {"verification": verify_count, "password_reset": reset_count},
+        "success_rate": success_rate,
+        "top_ips": top_ips,
+        "recent_logs": recent_logs
+    }
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=False)

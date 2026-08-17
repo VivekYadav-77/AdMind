@@ -21,11 +21,11 @@ function getAuthHeaders() {
 }
 
 export const API = {
-  register: async (email, password) => {
+  register: async (name, email, password) => {
     const res = await fetch(apiUrl('/register'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ name, email, password })
     })
     if (!res.ok) {
       let errorMessage = 'Registration failed'
@@ -35,6 +35,63 @@ export const API = {
       } catch (e) {
         errorMessage = `Server Error: ${res.status} ${res.statusText}`
       }
+      throw new Error(errorMessage)
+    }
+    return res.json()
+  },
+
+  verifyEmail: async (token) => {
+    const res = await fetch(apiUrl(`/auth/verify-email?token=${token}`))
+    if (!res.ok) {
+      let errorMessage = 'Verification failed'
+      try {
+        const data = await res.json()
+        errorMessage = data.detail || errorMessage
+      } catch (e) {}
+      throw new Error(errorMessage)
+    }
+    return res.json()
+  },
+
+  resendVerification: async (email) => {
+    const res = await fetch(apiUrl('/auth/resend-verification'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    })
+    if (!res.ok) {
+      let errorMessage = 'Failed to resend'
+      try {
+        const data = await res.json()
+        errorMessage = data.detail || errorMessage
+      } catch (e) {}
+      throw new Error(errorMessage)
+    }
+    return res.json()
+  },
+
+  forgotPassword: async (email) => {
+    const res = await fetch(apiUrl('/auth/forgot-password'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    })
+    if (!res.ok) throw new Error('Failed to request password reset')
+    return res.json()
+  },
+
+  resetPassword: async (token, newPassword) => {
+    const res = await fetch(apiUrl('/auth/reset-password'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, new_password: newPassword })
+    })
+    if (!res.ok) {
+      let errorMessage = 'Failed to reset password'
+      try {
+        const data = await res.json()
+        errorMessage = data.detail || errorMessage
+      } catch (e) {}
       throw new Error(errorMessage)
     }
     return res.json()
@@ -175,6 +232,15 @@ export const API = {
     if (!res.ok) {
       throw new Error('Could not fetch historical trends')
     }
+    return res.json()
+  },
+
+  getEmailAnalytics: async () => {
+    const res = await fetch(apiUrl('/admin/email-analytics'), {
+      method: 'GET',
+      headers: getAuthHeaders()
+    })
+    if (!res.ok) throw new Error('Could not fetch email analytics')
     return res.json()
   },
 
