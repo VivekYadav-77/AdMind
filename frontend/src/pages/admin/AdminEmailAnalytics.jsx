@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Mail, CheckCircle, XCircle, AlertTriangle, Activity } from 'lucide-react'
-import { API } from '../../../services/api'
-import LoadingSpinner from '../../../components/LoadingSpinner'
+import { API } from '../../services/api'
+import LoadingSpinner from '../../components/LoadingSpinner'
+
 
 export default function AdminEmailAnalytics() {
   const [data, setData] = useState(null)
