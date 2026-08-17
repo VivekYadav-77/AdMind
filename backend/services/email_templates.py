@@ -1,6 +1,6 @@
 import os
 
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5174")
 
 def verification_email(name: str, plain_token: str) -> str:
     verify_url = f"{FRONTEND_URL}/verify-email?token={plain_token}"

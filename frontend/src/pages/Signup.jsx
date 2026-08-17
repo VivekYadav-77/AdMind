@@ -39,7 +39,7 @@ export default function Signup() {
     setLoading(true)
     try {
       await API.register(name, email, password)
-      navigate('/login', { state: { message: 'Account created! Please check your inbox (and spam) for the verification link before logging in.' } })
+      navigate('/check-email', { state: { email } })
     } catch (err) {
       setError(err.message)
     } finally {

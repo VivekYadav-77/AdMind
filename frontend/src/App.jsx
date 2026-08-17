@@ -11,6 +11,7 @@ import ReportDetail from './pages/ReportDetail'
 import Settings from './pages/Settings'
 import TestTracker from './pages/TestTracker'
 import VerifyEmail from './pages/VerifyEmail'
+import CheckEmail from './pages/CheckEmail'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
 import LandingPage from './pages/LandingPage'
@@ -81,6 +82,7 @@ export default function App() {
               
               <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
               <Route path="/signup" element={<PublicOnlyRoute><Signup /></PublicOnlyRoute>} />
+              <Route path="/check-email" element={<PublicOnlyRoute><CheckEmail /></PublicOnlyRoute>} />
               <Route path="/verify-email" element={<PublicOnlyRoute><VerifyEmail /></PublicOnlyRoute>} />
               <Route path="/forgot-password" element={<PublicOnlyRoute><ForgotPassword /></PublicOnlyRoute>} />
               <Route path="/reset-password" element={<PublicOnlyRoute><ResetPassword /></PublicOnlyRoute>} />
