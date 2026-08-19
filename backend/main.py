@@ -12,6 +12,7 @@ from fastapi.responses import PlainTextResponse, StreamingResponse, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, func
+from sqlalchemy.exc import IntegrityError
 import tempfile
 from docx2pdf import convert as docx_to_pdf
 
@@ -43,8 +44,6 @@ from auth import (
 from pydantic import BaseModel
 
 load_dotenv()
-
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="AdMind API", version="1.0.0")
 
@@ -204,72 +203,134 @@ async def health_check():
     return {"status": "ok", "version": "1.0.0"}
 
 
+VERIFY_COOLDOWN_MINUTES = 5
+VERIFY_COOLDOWN_SECONDS = VERIFY_COOLDOWN_MINUTES * 60
+_verify_cooldown_store: dict[str, float] = {}
+
 @app.post("/register")
 async def register_user(user: UserCreate, request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     ip = request.client.host if request.client else "unknown"
+    normalized_email = user.email.strip().lower()
+    
     await check_rate_limit(f"ratelimit:register:{ip}", 5, 3600)
     await check_rate_limit(f"ratelimit:auth_global:{ip}", 20, 60)
+    await check_rate_limit(f"ratelimit:register_email:{normalized_email}", 3, 3600)
 
-    db_user = db.query(User).filter(User.email == user.email).first()
-    if db_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    
-    hashed_password = get_password_hash(user.password)
-    new_user = User(email=user.email, name=user.name, hashed_password=hashed_password, is_verified=False)
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    
-    # Create default workspace
-    ws = Workspace(name="My Workspace", owner_id=new_user.id)
-    db.add(ws)
-    db.commit()
-    db.refresh(ws)
-    
-    ws_member = WorkspaceMember(workspace_id=ws.id, user_id=new_user.id, role="admin")
-    db.add(ws_member)
-    
-    # Generate token
-    import hashlib
-    plain, hashed = generate_token()
-    token_record = EmailToken(user_id=new_user.id, token_hash=hashed, token_type="verify", expires_at=datetime.utcnow() + timedelta(hours=24))
-    db.add(token_record)
-    
-    db.commit()
+    GENERIC_RESPONSE = {"message": "If this email can be used for an account, check your inbox for further instructions."}
 
-    async def send_verification(email, name, plain_token, uid):
+    async def _send_verification_email(email, name, plain_token, uid, client_ip):
         html = verification_email(name, plain_token)
         try:
             res = await send_email_via_gas(email, "Verify your AdMind account", html)
             status = "sent" if res.get("status") == "ok" else "failed"
-            log = EmailLog(user_id=uid, email_to=email, email_type="verification", status=status, ip_address=ip, gas_response=str(res))
+            log = EmailLog(user_id=uid, email_to=email, email_type="verification", status=status, ip_address=client_ip, gas_response=str(res))
         except Exception as e:
-            log = EmailLog(user_id=uid, email_to=email, email_type="verification", status="failed", ip_address=ip, gas_response=str(e))
+            log = EmailLog(user_id=uid, email_to=email, email_type="verification", status="failed", ip_address=client_ip, gas_response=str(e))
         db_session = SessionLocal()
         db_session.add(log)
         db_session.commit()
         db_session.close()
 
-    background_tasks.add_task(send_verification, new_user.email, new_user.name, plain, new_user.id)
-    
-    return {"message": "Account created successfully. Please verify your email."}
+    try:
+        existing = db.query(User).filter(User.email == normalized_email).first()
+
+        if existing is None:
+            # CASE 1: Brand new email
+            hashed_password = get_password_hash(user.password)
+            new_user = User(email=normalized_email, name=user.name, hashed_password=hashed_password, is_verified=False)
+            db.add(new_user)
+            db.flush()
+            
+            ws = Workspace(name="My Workspace", owner_id=new_user.id)
+            db.add(ws)
+            db.flush()
+            ws_member = WorkspaceMember(workspace_id=ws.id, user_id=new_user.id, role="admin")
+            db.add(ws_member)
+            
+            import hashlib
+            plain, hashed = generate_token()
+            db.add(EmailToken(user_id=new_user.id, token_hash=hashed, token_type="verify", expires_at=datetime.utcnow() + timedelta(hours=24)))
+            db.commit()
+            background_tasks.add_task(_send_verification_email, normalized_email, new_user.name, plain, new_user.id, ip)
+            
+        elif not existing.is_verified:
+            # CASE 2: PENDING re-registration
+            existing.hashed_password = get_password_hash(user.password)
+            if user.name:
+                existing.name = user.name
+                
+            import time
+            now = time.time()
+            last_sent = _verify_cooldown_store.get(normalized_email)
+            if last_sent is None or (now - last_sent) >= VERIFY_COOLDOWN_SECONDS:
+                _verify_cooldown_store[normalized_email] = now
+                
+                db.query(EmailToken).filter(
+                    EmailToken.user_id == existing.id,
+                    EmailToken.token_type == "verify",
+                    EmailToken.used_at == None
+                ).update({"used_at": datetime.utcnow()})
+                
+                import hashlib
+                plain, hashed = generate_token()
+                db.add(EmailToken(user_id=existing.id, token_hash=hashed, token_type="verify", expires_at=datetime.utcnow() + timedelta(hours=24)))
+                background_tasks.add_task(_send_verification_email, normalized_email, existing.name, plain, existing.id, ip)
+                
+            db.commit()
+            
+        else:
+            # CASE 3: ACTIVE account
+            pass
+            
+    except IntegrityError:
+        db.rollback()
+        existing = db.query(User).filter(User.email == normalized_email).first()
+        if existing and not existing.is_verified:
+            existing.hashed_password = get_password_hash(user.password)
+            import time
+            now = time.time()
+            last_sent = _verify_cooldown_store.get(normalized_email)
+            if last_sent is None or (now - last_sent) >= VERIFY_COOLDOWN_SECONDS:
+                _verify_cooldown_store[normalized_email] = now
+                
+                db.query(EmailToken).filter(
+                    EmailToken.user_id == existing.id,
+                    EmailToken.token_type == "verify",
+                    EmailToken.used_at == None
+                ).update({"used_at": datetime.utcnow()})
+                import hashlib
+                plain, hashed = generate_token()
+                db.add(EmailToken(user_id=existing.id, token_hash=hashed, token_type="verify", expires_at=datetime.utcnow() + timedelta(hours=24)))
+                background_tasks.add_task(_send_verification_email, normalized_email, existing.name, plain, existing.id, ip)
+                
+            db.commit()
+
+    return GENERIC_RESPONSE
 
 
 @app.post("/login", response_model=Token)
 async def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     ip = request.client.host if request.client else "unknown"
+    normalized_email = form_data.username.strip().lower()
+    
     await check_rate_limit(f"ratelimit:login:{ip}", 10, 900)
     await check_rate_limit(f"ratelimit:auth_global:{ip}", 20, 60)
 
-    user = db.query(User).filter(User.email == form_data.username).first()
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    user = db.query(User).filter(User.email == normalized_email).first()
+    password_ok = user is not None and verify_password(form_data.password, user.hashed_password)
+    
+    if not password_ok:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password", headers={"WWW-Authenticate": "Bearer"})
     
     if user.is_banned:
         raise HTTPException(status_code=403, detail="Your account has been banned.")
         
     if not user.is_verified:
-        raise HTTPException(status_code=403, detail="Please verify your email. Check your inbox or request a new verification link.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer", "X-Verification-Required": "true"}
+        )
     
     access_token = create_access_token(data={"sub": user.email, "name": user.name}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     return {"access_token": access_token, "token_type": "bearer"}
@@ -277,13 +338,31 @@ async def login_for_access_token(request: Request, form_data: OAuth2PasswordRequ
 @app.post("/auth/resend-verification")
 async def resend_verification(req: ResendVerificationRequest, request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     ip = request.client.host if request.client else "unknown"
+    normalized_email = req.email.strip().lower()
+    
     await check_rate_limit(f"ratelimit:resend_verify:{ip}", 3, 3600)
+    await check_rate_limit(f"ratelimit:resend_verify_email:{normalized_email}", 3, 3600)
     await check_rate_limit(f"ratelimit:auth_global:{ip}", 20, 60)
 
-    user = db.query(User).filter(User.email == req.email).first()
+    GENERIC_RESPONSE = {"message": "If your email is unregistered or already verified, no email will be sent. Otherwise, check your inbox."}
+
+    user = db.query(User).filter(User.email == normalized_email).first()
     if not user or user.is_verified:
-        # Silently return success to avoid enumeration
-        return {"message": "If your email is unregistered or already verified, no email will be sent. Otherwise, check your inbox."}
+        return GENERIC_RESPONSE
+        
+    import time
+    now = time.time()
+    last_sent = _verify_cooldown_store.get(normalized_email)
+    if last_sent is not None and (now - last_sent) < VERIFY_COOLDOWN_SECONDS:
+        return GENERIC_RESPONSE
+        
+    _verify_cooldown_store[normalized_email] = now
+        
+    db.query(EmailToken).filter(
+        EmailToken.user_id == user.id,
+        EmailToken.token_type == "verify",
+        EmailToken.used_at == None
+    ).update({"used_at": datetime.utcnow()})
         
     import hashlib
     plain, hashed = generate_token()
@@ -305,7 +384,7 @@ async def resend_verification(req: ResendVerificationRequest, request: Request, 
         db_session.close()
 
     background_tasks.add_task(send_verification, user.email, user.name, plain, user.id)
-    return {"message": "If your email is unregistered or already verified, no email will be sent. Otherwise, check your inbox."}
+    return GENERIC_RESPONSE
 
 @app.get("/auth/verify-email")
 def verify_email(token: str, db: Session = Depends(get_db)):
@@ -324,6 +403,13 @@ def verify_email(token: str, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.id == record.user_id).first()
     if user:
         user.is_verified = True
+        
+    db.query(EmailToken).filter(
+        EmailToken.user_id == record.user_id,
+        EmailToken.token_type == "verify",
+        EmailToken.used_at == None
+    ).update({"used_at": datetime.utcnow()})
+    
     db.commit()
     
     return {"message": "Email verified successfully"}

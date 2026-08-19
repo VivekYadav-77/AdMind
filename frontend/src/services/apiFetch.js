@@ -24,7 +24,9 @@ export async function apiFetch(url, options = {}, fallbackMessage = 'Something w
         const data = await res.json()
         detail = data.detail || detail
       } catch (_) {}
-      throw new Error(detail)
+      const error = new Error(detail)
+      error.verificationRequired = res.headers.get('X-Verification-Required') === 'true'
+      throw error
     }
 
     // Server-side errors — don't trust the body, give a generic safe message

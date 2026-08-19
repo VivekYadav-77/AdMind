@@ -24,7 +24,8 @@ def seed_admin():
                 email=email,
                 hashed_password=hashed_password,
                 is_superadmin=True,
-                is_banned=False
+                is_banned=False,
+                is_verified=True
             )
             db.add(user)
             db.commit()

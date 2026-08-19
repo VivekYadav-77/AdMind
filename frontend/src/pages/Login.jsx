@@ -44,7 +44,7 @@ export default function Login() {
       login(data.access_token)
       navigate('/app')
     } catch (err) {
-      setError(err.message)
+      setError(err)
     } finally {
       setLoading(false)
     }
@@ -127,8 +127,8 @@ export default function Login() {
             
             {error && (
               <div className="rounded-xl bg-red-500/10 p-4 text-sm text-red-400 border border-red-500/20 font-medium">
-                {error}
-                {error.includes('verify your email') && (
+                {error.message || String(error)}
+                {error.verificationRequired && (
                   <button 
                     type="button" 
                     onClick={async () => {
