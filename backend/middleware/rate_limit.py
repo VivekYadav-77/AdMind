@@ -34,5 +34,10 @@ async def check_rate_limit(key: str, limit: int, window_seconds: int):
                 headers={"Retry-After": str(window_seconds)}
             )
 
+        # Evict to prevent unbounded memory growth if dictionary grows too large
+        if len(_request_log) > 10000:
+            oldest_key = next(iter(_request_log))
+            del _request_log[oldest_key]
+
         # Record this request
         window.append(now)

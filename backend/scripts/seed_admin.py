@@ -13,8 +13,10 @@ def seed_admin():
     
     db = SessionLocal()
     try:
-        email = "shivam@gmail.com"
-        password = "shivam@123"
+        email = os.getenv("ADMIN_EMAIL")
+        password = os.getenv("ADMIN_PASSWORD")
+        if not email or not password:
+            raise RuntimeError("ADMIN_EMAIL and ADMIN_PASSWORD must be set in .env")
         
         user = db.query(User).filter(User.email == email).first()
         if not user:
