@@ -11,6 +11,8 @@ export default function CheckEmail() {
   const email = location.state?.email || ''
   const [resendStatus, setResendStatus] = useState('idle') // idle, loading, success, error
   const [errorMessage, setErrorMessage] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
+  const [cooldown, setCooldown] = useState(0)
 
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem('theme')
@@ -22,6 +24,12 @@ export default function CheckEmail() {
     document.documentElement.classList.toggle('dark', isDark)
     localStorage.setItem('theme', isDark ? 'dark' : 'light')
   }, [isDark])
+
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const timer = setInterval(() => setCooldown(c => c - 1), 1000)
+    return () => clearInterval(timer)
+  }, [cooldown])
 
   // If no email in state, this was accessed directly, but we still show the page
   // just without the specific email.
@@ -35,7 +43,9 @@ export default function CheckEmail() {
 
     setResendStatus('loading')
     try {
-      await API.resendVerification(email)
+      const response = await API.resendVerification(email)
+      setSuccessMessage(response.message || 'Verification email sent. Check your inbox.')
+      setCooldown(60)
       setResendStatus('success')
     } catch (err) {
       setErrorMessage(err.message || 'Failed to resend verification email.')
@@ -107,9 +117,23 @@ export default function CheckEmail() {
             )}
 
             {resendStatus === 'success' && (
-              <div className="flex items-center justify-center gap-2 text-sm text-green-500">
-                <CheckCircle className="w-4 h-4" />
-                <span>Verification email resent!</span>
+              <div className="space-y-2 text-center">
+                <div className="flex items-center justify-center gap-2 text-sm text-brand-500">
+                  <CheckCircle className="w-4 h-4 shrink-0" />
+                  <span>{successMessage}</span>
+                </div>
+                {cooldown > 0 ? (
+                  <p className="text-xs text-textmuted">
+                    You can resend again in {cooldown}s
+                  </p>
+                ) : (
+                  <button 
+                    onClick={handleResend} 
+                    className="text-sm text-brand-400 hover:text-brand-300 font-medium transition-colors"
+                  >
+                    Resend again
+                  </button>
+                )}
               </div>
             )}
 
