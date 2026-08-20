@@ -13,6 +13,9 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [resendStatus, setResendStatus] = useState('idle')  // idle, loading, success, error
+  const [resendCooldown, setResendCooldown] = useState(0)
+  const [resendMessage, setResendMessage] = useState('')
   const navigate = useNavigate()
   const location = useLocation()
   const { login } = useAuth()
@@ -35,6 +38,12 @@ export default function Login() {
     }
   }, [isDarkMode])
 
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const timer = setInterval(() => setResendCooldown(c => c - 1), 1000)
+    return () => clearInterval(timer)
+  }, [resendCooldown])
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError(null)
@@ -47,6 +56,19 @@ export default function Login() {
       setError(err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleResendVerification = async () => {
+    setResendStatus('loading')
+    try {
+      const res = await API.resendVerification(email)
+      setResendMessage(res.message || 'Check your inbox for further instructions.')
+      setResendCooldown(60)
+      setResendStatus('success')
+    } catch (err) {
+      setResendMessage(err.message || 'Failed to resend.')
+      setResendStatus('error')
     }
   }
 
@@ -129,20 +151,48 @@ export default function Login() {
               <div className="rounded-xl bg-red-500/10 p-4 text-sm text-red-400 border border-red-500/20 font-medium">
                 {error.message || String(error)}
                 {error.verificationRequired && (
-                  <button 
-                    type="button" 
-                    onClick={async () => {
-                      try {
-                        const res = await API.resendVerification(email)
-                        alert(res.message)
-                      } catch (err) {
-                        alert(err.message)
-                      }
-                    }}
-                    className="block mt-2 text-brand-400 hover:text-brand-300 underline"
-                  >
-                    Resend verification email
-                  </button>
+                  <div className="mt-2">
+                    {resendStatus === 'idle' && (
+                      <button 
+                        type="button" 
+                        onClick={handleResendVerification}
+                        className="text-brand-400 hover:text-brand-300 underline transition-colors"
+                      >
+                        Resend verification email
+                      </button>
+                    )}
+                    {resendStatus === 'loading' && (
+                      <span className="text-brand-400 text-sm block">Sending...</span>
+                    )}
+                    {resendStatus === 'success' && (
+                      <div className="space-y-1">
+                        <span className="text-green-500 text-sm block">{resendMessage}</span>
+                        {resendCooldown > 0 ? (
+                          <span className="text-textmuted text-sm block">Resend again in {resendCooldown}s</span>
+                        ) : (
+                          <button 
+                            type="button" 
+                            onClick={handleResendVerification}
+                            className="text-brand-400 hover:text-brand-300 underline text-sm block transition-colors"
+                          >
+                            Resend again
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    {resendStatus === 'error' && (
+                      <div className="space-y-1">
+                        <span className="text-red-400 text-sm block">{resendMessage}</span>
+                        <button 
+                          type="button" 
+                          onClick={() => setResendStatus('idle')}
+                          className="text-brand-400 hover:text-brand-300 underline text-sm block transition-colors"
+                        >
+                          Try again
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             )}
