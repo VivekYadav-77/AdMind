@@ -267,7 +267,7 @@ async def register_user(user: UserCreate, request: Request, background_tasks: Ba
             background_tasks.add_task(_send_verification_email, normalized_email, new_user.name, plain, new_user.id, ip)
             
         elif not existing.is_verified:
-            if getattr(existing, 'email_blocked', False):
+            if existing.email_blocked:
                 return GENERIC_RESPONSE
             # CASE 2: PENDING re-registration
             existing.hashed_password = get_password_hash(user.password)
@@ -337,7 +337,7 @@ async def login_for_access_token(request: Request, form_data: OAuth2PasswordRequ
     if not password_ok:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password", headers={"WWW-Authenticate": "Bearer"})
     
-    if getattr(user, 'login_blocked', False):
+    if user.login_blocked:
         raise HTTPException(status_code=403, detail="Login has been restricted for this account.")
     
     if user.is_banned:
@@ -365,7 +365,7 @@ async def resend_verification(req: ResendVerificationRequest, request: Request, 
     GENERIC_RESPONSE = {"message": "If your email is unregistered or already verified, no email will be sent. Otherwise, check your inbox."}
 
     user = db.query(User).filter(User.email == normalized_email).first()
-    if not user or user.is_verified or getattr(user, 'email_blocked', False):
+    if not user or user.is_verified or user.email_blocked:
         return GENERIC_RESPONSE
         
     import time
@@ -465,7 +465,7 @@ async def forgot_password(req: ForgotPasswordRequest, request: Request, backgrou
 
     # --- 3. Silently try to send email — only if account exists and is verified ---
     user = db.query(User).filter(User.email == req.email).first()
-    if user and user.is_verified and not getattr(user, 'email_blocked', False):
+    if user and user.is_verified and not user.email_blocked:
         import hashlib
         plain, hashed = generate_token()
         token_record = EmailToken(user_id=user.id, token_hash=hashed, token_type="reset", expires_at=datetime.utcnow() + timedelta(minutes=15))
@@ -1125,23 +1125,6 @@ def toggle_user_admin(user_id: int, db: Session = Depends(get_db), admin: User =
     db.commit()
     return {"message": "User admin status updated", "is_superadmin": user.is_superadmin}
 
-@app.delete("/admin/users/{user_id}")
-def delete_user_admin(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
-    if user_id == admin.id:
-        raise HTTPException(status_code=400, detail="Cannot delete yourself")
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    db.query(AnalysisJob).filter(AnalysisJob.user_id == user.id).delete()
-    db.query(WorkspaceMember).filter(WorkspaceMember.user_id == user.id).delete()
-    db.query(Workspace).filter(Workspace.owner_id == user.id).delete()
-    db.query(CommunityReview).filter(CommunityReview.user_id == user.id).delete()
-    db.delete(user)
-    db.commit()
-    return {"message": "User deleted"}
-
-
 class FeatureControlUpdate(BaseModel):
     feature: str
     is_blocked: bool
@@ -1168,8 +1151,8 @@ def get_user_controls(user_id: int, db: Session = Depends(get_db), admin: User =
     return {
         "user_id": user.id,
         "email": user.email,
-        "login_blocked": getattr(user, 'login_blocked', False),
-        "email_blocked": getattr(user, 'email_blocked', False),
+        "login_blocked": user.login_blocked,
+        "email_blocked": user.email_blocked,
         "features": res_features
     }
 
@@ -1209,7 +1192,7 @@ def toggle_login_block(user_id: int, db: Session = Depends(get_db), admin: User 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    user.login_blocked = not getattr(user, 'login_blocked', False)
+    user.login_blocked = not user.login_blocked
     db.commit()
     return {"message": "Login block status updated", "login_blocked": user.login_blocked}
 
@@ -1219,9 +1202,26 @@ def toggle_email_block(user_id: int, db: Session = Depends(get_db), admin: User 
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
         
-    user.email_blocked = not getattr(user, 'email_blocked', False)
+    user.email_blocked = not user.email_blocked
     db.commit()
     return {"message": "Email block status updated", "email_blocked": user.email_blocked}
+
+
+@app.delete("/admin/users/{user_id}")
+def delete_user_admin(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    if user_id == admin.id:
+        raise HTTPException(status_code=400, detail="Cannot delete yourself")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    db.query(AnalysisJob).filter(AnalysisJob.user_id == user.id).delete()
+    db.query(WorkspaceMember).filter(WorkspaceMember.user_id == user.id).delete()
+    db.query(Workspace).filter(Workspace.owner_id == user.id).delete()
+    db.query(CommunityReview).filter(CommunityReview.user_id == user.id).delete()
+    db.delete(user)
+    db.commit()
+    return {"message": "User deleted"}
 
 @app.get("/admin/jobs", response_model=dict)
 def get_admin_jobs(page: int = 1, size: int = 20, status: str = "", search: str = "", db: Session = Depends(get_db), admin: User = Depends(require_admin)):
