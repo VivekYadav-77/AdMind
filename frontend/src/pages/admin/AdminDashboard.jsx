@@ -18,7 +18,7 @@ export default function AdminDashboard() {
           adminApi.getGrowthStats()
         ])
         setStats(statsData)
-        setActivity(activityData)
+        setActivity(activityData.items || [])
         setGrowth(growthData)
       } catch (err) {
         console.error('Failed to fetch admin stats', err)
