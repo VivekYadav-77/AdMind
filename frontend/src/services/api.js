@@ -33,7 +33,11 @@ export const API = {
   },
 
   verifyEmail: async (token) => {
-    const res = await apiFetch(apiUrl(`/auth/verify-email?token=${token}`), {}, 'Verification failed')
+    const res = await apiFetch(apiUrl('/auth/verify-email'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token })
+    }, 'Verification failed')
     return res.json()
   },
 

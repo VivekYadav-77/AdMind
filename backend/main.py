@@ -24,7 +24,7 @@ from agents.audience_builder import run_audience_builder
 from agents.competitor_teardown import run_competitor_teardown
 from db.database import Base, engine, get_db, SessionLocal
 from db.models import AnalysisJob, User, Workspace, WorkspaceMember, ChatMessage, RecommendationComment, ABTestCampaign, CommunityReview, SupportTicket, TicketMessage, EmailToken, EmailLog
-from models.schemas import PipelineResult, UserCreate, Token, AdminUserOut, AdminJobOut, AdminReviewOut, AdminWorkspaceOut, AdminStats, TicketCreate, TicketOut, TicketReplyCreate, TicketListItem, TicketStatusUpdate, ForgotPasswordRequest, ResetPasswordRequest, ResendVerificationRequest
+from models.schemas import PipelineResult, UserCreate, Token, AdminUserOut, AdminJobOut, AdminReviewOut, AdminWorkspaceOut, AdminStats, TicketCreate, TicketOut, TicketReplyCreate, TicketListItem, TicketStatusUpdate, ForgotPasswordRequest, ResetPasswordRequest, ResendVerificationRequest, VerifyEmailRequest
 from services.csv_parser import parse_csv
 from services.email_service import send_email_via_gas, generate_token
 from services.email_templates import verification_email, password_reset_email
@@ -386,18 +386,24 @@ async def resend_verification(req: ResendVerificationRequest, request: Request, 
     background_tasks.add_task(send_verification, user.email, user.name, plain, user.id)
     return GENERIC_RESPONSE
 
-@app.get("/auth/verify-email")
-def verify_email(token: str, db: Session = Depends(get_db)):
+@app.post("/auth/verify-email")
+async def verify_email(body: VerifyEmailRequest, request: Request, db: Session = Depends(get_db)):
+    ip = request.client.host if request.client else "unknown"
+    await check_rate_limit(f"ratelimit:verify_token:{ip}", 20, 3600)
+    
     import hashlib
-    token_hash = hashlib.sha256(token.encode()).hexdigest()
+    token_hash = hashlib.sha256(body.token.encode()).hexdigest()
     record = db.query(EmailToken).filter(EmailToken.token_hash == token_hash, EmailToken.token_type == "verify").first()
     
+    # Unified error message to prevent token state enumeration
+    invalid_error = HTTPException(status_code=400, detail="This verification link is invalid or has already been used.")
+    
     if not record:
-        raise HTTPException(status_code=400, detail="Invalid token")
+        raise invalid_error
     if record.used_at:
-        raise HTTPException(status_code=400, detail="Token already used")
+        raise invalid_error
     if record.expires_at.replace(tzinfo=None) < datetime.utcnow():
-        raise HTTPException(status_code=400, detail="Token expired")
+        raise invalid_error
         
     record.used_at = datetime.utcnow()
     user = db.query(User).filter(User.id == record.user_id).first()

@@ -110,6 +110,10 @@ class ResendVerificationRequest(BaseModel):
     email: str
 
 
+class VerifyEmailRequest(BaseModel):
+    token: str
+
+
 class UserLogin(BaseModel):
     email: str
     password: str

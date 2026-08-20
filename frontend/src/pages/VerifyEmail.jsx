@@ -35,13 +35,17 @@ export default function VerifyEmail() {
     const verify = async () => {
       try {
         await API.verifyEmail(token)
-        setStatus('success')
-        setTimeout(() => {
-          navigate('/login', { state: { message: 'Email verified successfully! You can now log in.' } })
-        }, 3000)
+        // Redirect immediately — no 3s wait, no flash window
+        navigate('/login', { state: { message: 'Email verified! You can now log in.' } })
       } catch (err) {
         setStatus('error')
-        setMessage(err.message || 'Verification failed. The link may have expired.')
+        const msg = err.message || ''
+        // Unified message for used/invalid/expired token
+        if (msg.includes('invalid or has already been used') || msg.includes('already used') || msg.includes('Invalid token') || msg.includes('expired')) {
+          setMessage('This link has already been used or has expired. Please request a new verification email from the login page.')
+        } else {
+          setMessage(msg || 'Verification failed. Please try again.')
+        }
       }
     }
 
