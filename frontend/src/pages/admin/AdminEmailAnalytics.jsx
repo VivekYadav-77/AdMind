@@ -197,14 +197,14 @@ export default function AdminEmailAnalytics() {
                 </tr>
               </thead>
               <tbody className={`divide-y divide-borderwarm text-textprimary ${logsLoading ? 'opacity-50' : ''}`}>
-                {data.recent_logs.items.length === 0 ? (
+                {(!data.recent_logs || !data.recent_logs.items || data.recent_logs.items.length === 0) ? (
                   <tr>
                     <td colSpan="5" className="px-5 py-8 text-center text-textmuted italic">
                       No emails logged yet.
                     </td>
                   </tr>
                 ) : (
-                  data.recent_logs.items.map((log) => (
+                  (data.recent_logs.items || []).map((log) => (
                     <tr key={log.id} className="hover:bg-bgbase/30 transition-colors">
                       <td className="px-5 py-3 text-textmuted">
                         {new Date(log.created_at).toLocaleString()}

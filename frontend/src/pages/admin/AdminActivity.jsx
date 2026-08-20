@@ -72,11 +72,11 @@ export default function AdminActivity() {
         <div className="p-6 flex-1">
           {loading ? (
             <div className="text-textmuted text-center py-8">Loading activity...</div>
-          ) : data.items.length === 0 ? (
+          ) : (!data.items || data.items.length === 0) ? (
             <div className="text-textmuted text-center py-8">No recent activity.</div>
           ) : (
             <div className="space-y-6">
-              {data.items.map((act, idx) => (
+              {(data.items || []).map((act, idx) => (
                 <div key={idx} className="flex items-start gap-4">
                   <div className={`mt-1 text-xs font-bold px-2 py-1 rounded w-32 text-center uppercase ${getBadgeColor(act.type)}`}>
                     {act.type.replace('_', ' ')}
