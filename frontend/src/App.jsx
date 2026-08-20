@@ -29,6 +29,7 @@ import SupportTicketDetail from './pages/SupportTicketDetail'
 import AdminLayout from './components/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUsers from './pages/admin/AdminUsers'
+import AdminUserControls from './pages/admin/AdminUserControls'
 import AdminJobs from './pages/admin/AdminJobs'
 import AdminReviews from './pages/admin/AdminReviews'
 import AdminWorkspaces from './pages/admin/AdminWorkspaces'
@@ -122,6 +123,7 @@ export default function App() {
               }>
                 <Route index element={<AdminDashboard />} />
                 <Route path="users" element={<AdminUsers />} />
+                <Route path="users/:id/controls" element={<AdminUserControls />} />
                 <Route path="jobs" element={<AdminJobs />} />
                 <Route path="reviews" element={<AdminReviews />} />
                 <Route path="workspaces" element={<AdminWorkspaces />} />

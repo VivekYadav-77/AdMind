@@ -17,6 +17,8 @@ class User(Base):
     is_superadmin = Column(Boolean, default=False)
     is_verified = Column(Boolean, default=False)
     is_banned = Column(Boolean, default=False)
+    login_blocked = Column(Boolean, default=False)
+    email_blocked = Column(Boolean, default=False)
     last_seen_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
@@ -183,3 +185,18 @@ class EmailLog(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User")
+
+
+class UserFeatureControl(Base):
+    __tablename__ = "user_feature_controls"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    feature = Column(String, nullable=False)   # e.g. "analyze", "tools", "chat", etc.
+    is_blocked = Column(Boolean, default=False)
+    reason = Column(String, nullable=True)     # optional admin note
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    updated_by = Column(Integer, ForeignKey("users.id"), nullable=True)  # admin who changed it
+
+    user = relationship("User", foreign_keys=[user_id])
+    updater = relationship("User", foreign_keys=[updated_by])

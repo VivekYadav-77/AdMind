@@ -23,7 +23,7 @@ from agents.landing_page_auditor import run_landing_page_auditor
 from agents.audience_builder import run_audience_builder
 from agents.competitor_teardown import run_competitor_teardown
 from db.database import Base, engine, get_db, SessionLocal
-from db.models import AnalysisJob, User, Workspace, WorkspaceMember, ChatMessage, RecommendationComment, ABTestCampaign, CommunityReview, SupportTicket, TicketMessage, EmailToken, EmailLog
+from db.models import AnalysisJob, User, Workspace, WorkspaceMember, ChatMessage, RecommendationComment, ABTestCampaign, CommunityReview, SupportTicket, TicketMessage, EmailToken, EmailLog, UserFeatureControl
 from models.schemas import PipelineResult, UserCreate, Token, AdminUserOut, AdminJobOut, AdminReviewOut, AdminWorkspaceOut, AdminStats, TicketCreate, TicketOut, TicketReplyCreate, TicketListItem, TicketStatusUpdate, ForgotPasswordRequest, ResetPasswordRequest, ResendVerificationRequest, VerifyEmailRequest
 from services.csv_parser import parse_csv
 from services.email_service import send_email_via_gas, generate_token
@@ -86,6 +86,17 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     db.commit()
     
     return user
+
+
+def check_feature_blocked(user: User, feature: str, db: Session):
+    ctrl = db.query(UserFeatureControl).filter(
+        UserFeatureControl.user_id == user.id,
+        UserFeatureControl.feature == feature,
+        UserFeatureControl.is_blocked == True
+    ).first()
+    if ctrl:
+        msg = ctrl.reason if ctrl.reason else "Your access to this feature has been restricted by an admin."
+        raise HTTPException(status_code=403, detail=msg)
 
 
 async def _read_csv_upload(file: UploadFile) -> str:
@@ -166,8 +177,10 @@ async def run_analysis_task(job_id: int, csv_text: str):
 @app.post("/export/pdf")
 async def export_pdf(
     file: UploadFile = File(...),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    check_feature_blocked(current_user, "export", db)
     if not file.filename or not file.filename.endswith('.docx'):
         raise HTTPException(status_code=400, detail="Only .docx files are accepted")
     
@@ -254,6 +267,8 @@ async def register_user(user: UserCreate, request: Request, background_tasks: Ba
             background_tasks.add_task(_send_verification_email, normalized_email, new_user.name, plain, new_user.id, ip)
             
         elif not existing.is_verified:
+            if getattr(existing, 'email_blocked', False):
+                return GENERIC_RESPONSE
             # CASE 2: PENDING re-registration
             existing.hashed_password = get_password_hash(user.password)
             if user.name:
@@ -322,6 +337,9 @@ async def login_for_access_token(request: Request, form_data: OAuth2PasswordRequ
     if not password_ok:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect email or password", headers={"WWW-Authenticate": "Bearer"})
     
+    if getattr(user, 'login_blocked', False):
+        raise HTTPException(status_code=403, detail="Login has been restricted for this account.")
+    
     if user.is_banned:
         raise HTTPException(status_code=403, detail="Your account has been banned.")
         
@@ -347,7 +365,7 @@ async def resend_verification(req: ResendVerificationRequest, request: Request, 
     GENERIC_RESPONSE = {"message": "If your email is unregistered or already verified, no email will be sent. Otherwise, check your inbox."}
 
     user = db.query(User).filter(User.email == normalized_email).first()
-    if not user or user.is_verified:
+    if not user or user.is_verified or getattr(user, 'email_blocked', False):
         return GENERIC_RESPONSE
         
     import time
@@ -447,7 +465,7 @@ async def forgot_password(req: ForgotPasswordRequest, request: Request, backgrou
 
     # --- 3. Silently try to send email — only if account exists and is verified ---
     user = db.query(User).filter(User.email == req.email).first()
-    if user and user.is_verified:
+    if user and user.is_verified and not getattr(user, 'email_blocked', False):
         import hashlib
         plain, hashed = generate_token()
         token_record = EmailToken(user_id=user.id, token_hash=hashed, token_type="reset", expires_at=datetime.utcnow() + timedelta(minutes=15))
@@ -553,6 +571,7 @@ def get_workspaces(db: Session = Depends(get_db), current_user: User = Depends(g
 
 @app.post("/workspaces")
 def create_workspace(ws: WorkspaceCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    check_feature_blocked(current_user, "workspaces", db)
     new_ws = Workspace(name=ws.name, owner_id=current_user.id)
     db.add(new_ws)
     db.commit()
@@ -588,6 +607,7 @@ async def analyze(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    check_feature_blocked(current_user, "analyze", db)
     csv_text = await _read_csv_upload(file)
     wid = _get_workspace_id(request, db, current_user)
     
@@ -704,6 +724,7 @@ def get_history(
     db: Session = Depends(get_db), 
     current_user: User = Depends(get_current_user)
 ):
+    check_feature_blocked(current_user, "history", db)
     wid = _get_workspace_id(request, db, current_user)
     query = db.query(AnalysisJob).filter(AnalysisJob.user_id == current_user.id)
     if wid:
@@ -735,6 +756,7 @@ def get_job_detail(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
+    check_feature_blocked(current_user, "history", db)
     job = db.query(AnalysisJob).filter(
         AnalysisJob.id == job_id,
         AnalysisJob.user_id == current_user.id
@@ -750,6 +772,7 @@ class ChatRequest(BaseModel):
 
 @app.get("/history/{job_id}/chat")
 def get_chat_history(job_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    check_feature_blocked(current_user, "chat", db)
     job = db.query(AnalysisJob).filter(AnalysisJob.id == job_id, AnalysisJob.user_id == current_user.id).first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -764,6 +787,7 @@ async def send_chat_message(
     db: Session = Depends(get_db), 
     current_user: User = Depends(get_current_user)
 ):
+    check_feature_blocked(current_user, "chat", db)
     job = db.query(AnalysisJob).filter(AnalysisJob.id == job_id, AnalysisJob.user_id == current_user.id).first()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -862,6 +886,7 @@ class ABTestWinner(BaseModel):
 
 @app.get("/workspaces/tests")
 def get_ab_tests(request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    check_feature_blocked(current_user, "ab_tests", db)
     wid = _get_workspace_id(request, db, current_user)
     if not wid:
         return []
@@ -871,6 +896,7 @@ def get_ab_tests(request: Request, db: Session = Depends(get_db), current_user: 
 
 @app.post("/workspaces/tests")
 def create_ab_test(req: ABTestCreate, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    check_feature_blocked(current_user, "ab_tests", db)
     wid = _get_workspace_id(request, db, current_user)
     if not wid:
         raise HTTPException(status_code=400, detail="No active workspace found")
@@ -889,6 +915,7 @@ def create_ab_test(req: ABTestCreate, request: Request, db: Session = Depends(ge
 
 @app.put("/workspaces/tests/{test_id}/winner")
 def declare_winner(test_id: int, req: ABTestWinner, request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    check_feature_blocked(current_user, "ab_tests", db)
     wid = _get_workspace_id(request, db, current_user)
     test = db.query(ABTestCampaign).filter(ABTestCampaign.id == test_id, ABTestCampaign.workspace_id == wid).first()
     if not test:
@@ -912,15 +939,18 @@ class AdRequest(BaseModel):
     ad_copy: str
 
 @app.post("/tools/audit-landing-page")
-async def audit_landing_page(req: UrlRequest, current_user: User = Depends(get_current_user)):
+async def audit_landing_page(req: UrlRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    check_feature_blocked(current_user, "tools", db)
     return await run_landing_page_auditor(req.url)
 
 @app.post("/tools/audience-builder")
-async def build_audience(req: DescRequest, current_user: User = Depends(get_current_user)):
+async def build_audience(req: DescRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    check_feature_blocked(current_user, "tools", db)
     return await run_audience_builder(req.description)
 
 @app.post("/tools/competitor-teardown")
-async def tear_down_competitor(req: AdRequest, current_user: User = Depends(get_current_user)):
+async def tear_down_competitor(req: AdRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    check_feature_blocked(current_user, "tools", db)
     return await run_competitor_teardown(req.ad_copy)
 
 
@@ -952,6 +982,7 @@ def get_my_review(current_user: User = Depends(get_current_user), db: Session = 
 
 @app.post("/reviews")
 def create_review(req: ReviewCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    check_feature_blocked(current_user, "community", db)
     # Prevent duplicate submissions
     existing = db.query(CommunityReview).filter(CommunityReview.user_id == current_user.id).first()
     if existing:
@@ -1109,6 +1140,88 @@ def delete_user_admin(user_id: int, db: Session = Depends(get_db), admin: User =
     db.delete(user)
     db.commit()
     return {"message": "User deleted"}
+
+
+class FeatureControlUpdate(BaseModel):
+    feature: str
+    is_blocked: bool
+    reason: Optional[str] = None
+
+@app.get("/admin/users/{user_id}/controls")
+def get_user_controls(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    controls = db.query(UserFeatureControl).filter(UserFeatureControl.user_id == user_id).all()
+    ctrl_dict = {
+        c.feature: {"blocked": c.is_blocked, "reason": c.reason}
+        for c in controls
+    }
+    
+    # Fill in defaults for all features
+    features = ["analyze", "history", "chat", "tools", "ab_tests", "workspaces", "community", "support", "export"]
+    res_features = {}
+    for f in features:
+        res_features[f] = ctrl_dict.get(f, {"blocked": False, "reason": None})
+        
+    return {
+        "user_id": user.id,
+        "email": user.email,
+        "login_blocked": getattr(user, 'login_blocked', False),
+        "email_blocked": getattr(user, 'email_blocked', False),
+        "features": res_features
+    }
+
+@app.post("/admin/users/{user_id}/controls")
+def set_feature_control(user_id: int, req: FeatureControlUpdate, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    ctrl = db.query(UserFeatureControl).filter(
+        UserFeatureControl.user_id == user_id, 
+        UserFeatureControl.feature == req.feature
+    ).first()
+    
+    if ctrl:
+        ctrl.is_blocked = req.is_blocked
+        ctrl.reason = req.reason
+        ctrl.updated_by = admin.id
+    else:
+        ctrl = UserFeatureControl(
+            user_id=user_id,
+            feature=req.feature,
+            is_blocked=req.is_blocked,
+            reason=req.reason,
+            updated_by=admin.id
+        )
+        db.add(ctrl)
+        
+    db.commit()
+    return {"message": "Feature control updated"}
+
+@app.put("/admin/users/{user_id}/login-block")
+def toggle_login_block(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    if user_id == admin.id:
+        raise HTTPException(status_code=400, detail="Cannot block your own login")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user.login_blocked = not getattr(user, 'login_blocked', False)
+    db.commit()
+    return {"message": "Login block status updated", "login_blocked": user.login_blocked}
+
+@app.put("/admin/users/{user_id}/email-block")
+def toggle_email_block(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    user.email_blocked = not getattr(user, 'email_blocked', False)
+    db.commit()
+    return {"message": "Email block status updated", "email_blocked": user.email_blocked}
 
 @app.get("/admin/jobs", response_model=dict)
 def get_admin_jobs(page: int = 1, size: int = 20, status: str = "", search: str = "", db: Session = Depends(get_db), admin: User = Depends(require_admin)):
@@ -1300,6 +1413,7 @@ def create_guest_ticket(ticket: TicketCreate, db: Session = Depends(get_db)):
 
 @app.post("/tickets", status_code=201)
 def create_user_ticket(ticket: TicketCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    check_feature_blocked(current_user, "support", db)
     db_ticket = SupportTicket(
         user_id=current_user.id,
         category=ticket.category,

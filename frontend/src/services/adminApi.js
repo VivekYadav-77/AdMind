@@ -143,5 +143,36 @@ export const adminApi = {
       headers: getHeaders()
     }, 'Failed to delete ticket')
     return res.json()
+  },
+
+  // User Control Methods
+  getUserControls: async (userId) => {
+    const res = await apiFetch(`${API_BASE_URL}/admin/users/${userId}/controls`, { headers: getHeaders() }, 'Failed to fetch user controls')
+    return res.json()
+  },
+
+  updateUserControl: async (userId, feature, isBlocked, reason = null) => {
+    const res = await apiFetch(`${API_BASE_URL}/admin/users/${userId}/controls`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({ feature, is_blocked: isBlocked, reason })
+    }, 'Failed to update feature control')
+    return res.json()
+  },
+
+  toggleUserLoginBlock: async (userId) => {
+    const res = await apiFetch(`${API_BASE_URL}/admin/users/${userId}/login-block`, {
+      method: 'PUT',
+      headers: getHeaders()
+    }, 'Failed to toggle login block')
+    return res.json()
+  },
+
+  toggleUserEmailBlock: async (userId) => {
+    const res = await apiFetch(`${API_BASE_URL}/admin/users/${userId}/email-block`, {
+      method: 'PUT',
+      headers: getHeaders()
+    }, 'Failed to toggle email block')
+    return res.json()
   }
 }

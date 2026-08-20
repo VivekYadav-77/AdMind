@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { adminApi } from '../../services/adminApi'
-import { Search, ShieldAlert, ShieldCheck, Trash2, Ban, RefreshCw } from 'lucide-react'
+import { Search, ShieldAlert, ShieldCheck, Trash2, Ban, RefreshCw, Sliders } from 'lucide-react'
 import Pagination from '../../components/ui/Pagination'
 import ConfirmModal from '../../components/ui/ConfirmModal'
 
@@ -167,6 +168,9 @@ export default function AdminUsers() {
                   </td>
                   <td className="px-6 py-4">{u.jobs_count}</td>
                   <td className="px-6 py-4 text-right space-x-2">
+                    <Link to={`/admin/users/${u.id}/controls`} className="p-2 inline-block text-textmuted hover:text-brand-500 transition-colors" title="Feature Controls">
+                      <Sliders size={16} />
+                    </Link>
                     <button onClick={() => toggleAdmin(u.id)} className="p-2 text-textmuted hover:text-orange-500 transition-colors" title="Toggle Admin">
                       {u.is_superadmin ? <ShieldAlert size={16} /> : <ShieldCheck size={16} />}
                     </button>
