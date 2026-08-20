@@ -170,8 +170,8 @@ export const API = {
     return res.json()
   },
 
-  getEmailAnalytics: async () => {
-    const res = await apiFetch(apiUrl('/admin/email-analytics'), {
+  getEmailAnalytics: async (page = 1, size = 20, logType = '', logStatus = '') => {
+    const res = await apiFetch(apiUrl(`/admin/email-analytics?page=${page}&size=${size}&log_type=${encodeURIComponent(logType)}&log_status=${encodeURIComponent(logStatus)}`), {
       method: 'GET',
       headers: getAuthHeaders()
     }, 'Could not fetch email analytics')

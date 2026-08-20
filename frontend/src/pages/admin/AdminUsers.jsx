@@ -7,13 +7,15 @@ import ConfirmModal from '../../components/ui/ConfirmModal'
 export default function AdminUsers() {
   const [data, setData] = useState({ items: [], total: 0, page: 1, size: 20 })
   const [search, setSearch] = useState('')
+  const [role, setRole] = useState('all')
+  const [pageSize, setPageSize] = useState(20)
   const [loading, setLoading] = useState(true)
   const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, title: '', message: '', onConfirm: null, type: 'danger', confirmText: 'Confirm' })
 
   const fetchUsers = async (page = 1) => {
     setLoading(true)
     try {
-      const result = await adminApi.getUsers(page, 20, search)
+      const result = await adminApi.getUsers(page, pageSize, search, role)
       setData(result)
     } catch (err) {
       console.error(err)
@@ -21,6 +23,10 @@ export default function AdminUsers() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    fetchUsers(1)
+  }, [role, pageSize])
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
@@ -88,7 +94,7 @@ export default function AdminUsers() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <h2 className="text-xl font-bold">User Management</h2>
           <button 
@@ -100,15 +106,32 @@ export default function AdminUsers() {
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>
         </div>
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-textmuted" size={16} />
-          <input 
-            type="text" 
-            placeholder="Search emails..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 pr-4 py-2 rounded-xl bg-bgpanel border border-borderwarm focus:outline-none focus:border-brand-500"
-          />
+        
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-textmuted" size={16} />
+            <input 
+              type="text" 
+              placeholder="Search emails..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 pr-4 py-2 w-full sm:w-64 rounded-xl bg-bgpanel border border-borderwarm focus:outline-none focus:border-brand-500 text-sm"
+            />
+          </div>
+          
+          <div className="flex bg-bgpanel p-1 rounded-xl border border-borderwarm">
+            {['all', 'admin', 'user', 'banned'].map(r => (
+              <button
+                key={r}
+                onClick={() => setRole(r)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${
+                  role === r ? 'bg-brand-500 text-white shadow-sm' : 'text-textmuted hover:text-textprimary'
+                }`}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -128,6 +151,8 @@ export default function AdminUsers() {
             <tbody className="divide-y divide-borderwarm">
               {loading ? (
                 <tr><td colSpan="6" className="px-6 py-8 text-center text-textmuted">Loading...</td></tr>
+              ) : data.items.length === 0 ? (
+                <tr><td colSpan="6" className="px-6 py-8 text-center text-textmuted">No users found.</td></tr>
               ) : data.items.map(u => (
                 <tr key={u.id} className={`hover:bg-bgpanelhover/50 ${u.is_banned ? 'opacity-50' : ''}`}>
                   <td className="px-6 py-4">{u.id}</td>
@@ -157,7 +182,14 @@ export default function AdminUsers() {
             </tbody>
           </table>
         </div>
-        <Pagination page={data.page} pages={data.pages} onPageChange={fetchUsers} />
+        <Pagination 
+          page={data.page} 
+          pages={data.pages} 
+          total={data.total}
+          pageSize={pageSize}
+          onPageChange={fetchUsers} 
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       <ConfirmModal

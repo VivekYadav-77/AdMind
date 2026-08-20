@@ -8,13 +8,16 @@ import ConfirmModal from '../../components/ui/ConfirmModal'
 export default function AdminTickets() {
   const [data, setData] = useState({ items: [], total: 0, page: 1, size: 20 })
   const [statusFilter, setStatusFilter] = useState('all')
+  const [category, setCategory] = useState('all')
+  const [search, setSearch] = useState('')
+  const [pageSize, setPageSize] = useState(20)
   const [loading, setLoading] = useState(true)
   const [confirmConfig, setConfirmConfig] = useState({ isOpen: false, title: '', message: '', onConfirm: null, type: 'danger', confirmText: 'Confirm' })
 
   const fetchTickets = async (page = 1) => {
     setLoading(true)
     try {
-      const result = await adminApi.getTickets(page, 20, statusFilter)
+      const result = await adminApi.getTickets(page, pageSize, statusFilter, category, search)
       setData(result)
     } catch (err) {
       console.error(err)
@@ -25,7 +28,14 @@ export default function AdminTickets() {
 
   useEffect(() => {
     fetchTickets(1)
-  }, [statusFilter])
+  }, [statusFilter, category, pageSize])
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchTickets(1)
+    }, 500)
+    return () => clearTimeout(delayDebounceFn)
+  }, [search])
 
   const deleteTicket = async (id) => {
     setConfirmConfig({
@@ -58,7 +68,7 @@ export default function AdminTickets() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <h2 className="text-xl font-bold">Support Tickets</h2>
           <button 
@@ -70,7 +80,19 @@ export default function AdminTickets() {
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>
         </div>
-        <div className="flex items-center gap-4">
+        
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-textmuted" size={16} />
+            <input 
+              type="text" 
+              placeholder="Search subject/email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 pr-4 py-2 w-full sm:w-64 rounded-xl bg-bgpanel border border-borderwarm focus:outline-none focus:border-brand-500 text-sm"
+            />
+          </div>
+          
           <select 
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -81,6 +103,18 @@ export default function AdminTickets() {
             <option value="in_progress">In Progress</option>
             <option value="resolved">Resolved</option>
             <option value="closed">Closed</option>
+          </select>
+          
+          <select 
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="bg-bgpanel border border-borderwarm rounded-xl px-4 py-2 focus:outline-none focus:border-brand-500 text-sm"
+          >
+            <option value="all">All Categories</option>
+            <option value="technical">Technical</option>
+            <option value="billing">Billing</option>
+            <option value="general">General</option>
+            <option value="other">Other</option>
           </select>
         </div>
       </div>
@@ -114,7 +148,7 @@ export default function AdminTickets() {
                       {!t.user_id && <span className="text-xs text-brand-500 font-semibold">GUEST</span>}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-textmuted">{t.category}</td>
+                  <td className="px-6 py-4 text-textmuted capitalize">{t.category}</td>
                   <td className="px-6 py-4">{getStatusBadge(t.status)}</td>
                   <td className="px-6 py-4 text-textmuted">{new Date(t.created_at).toLocaleDateString()}</td>
                   <td className="px-6 py-4 text-right space-x-2">
@@ -130,9 +164,14 @@ export default function AdminTickets() {
             </tbody>
           </table>
         </div>
-        {data.total > 0 && (
-          <Pagination page={data.page} pages={data.pages} onPageChange={fetchTickets} />
-        )}
+        <Pagination 
+          page={data.page} 
+          pages={data.pages} 
+          total={data.total}
+          pageSize={pageSize}
+          onPageChange={fetchTickets} 
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       <ConfirmModal

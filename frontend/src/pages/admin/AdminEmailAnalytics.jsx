@@ -2,21 +2,36 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Mail, CheckCircle, XCircle, AlertTriangle, Activity, Loader2 } from 'lucide-react'
 import { API } from '../../services/api'
+import Pagination from '../../components/ui/Pagination'
 
 export default function AdminEmailAnalytics() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  
+  const [logType, setLogType] = useState('all')
+  const [logStatus, setLogStatus] = useState('all')
+  const [logsPage, setLogsPage] = useState(1)
+  const [logsPageSize, setLogsPageSize] = useState(20)
+  const [logsLoading, setLogsLoading] = useState(false)
 
+  // Fetch full data on initial load
   useEffect(() => {
     fetchData()
   }, [])
+
+  // Fetch only logs when pagination or filters change
+  useEffect(() => {
+    if (data) {
+      fetchLogs()
+    }
+  }, [logType, logStatus, logsPage, logsPageSize])
 
   const fetchData = async () => {
     setLoading(true)
     setError(null)
     try {
-      const result = await API.getEmailAnalytics()
+      const result = await API.getEmailAnalytics(logsPage, logsPageSize, logType, logStatus)
       setData(result)
     } catch (err) {
       setError(err.message)
@@ -25,7 +40,22 @@ export default function AdminEmailAnalytics() {
     }
   }
 
-  if (loading) return <div className="p-8 flex items-center justify-center min-h-[400px]"><Loader2 className="w-8 h-8 text-brand-500 animate-spin" /></div>
+  const fetchLogs = async () => {
+    setLogsLoading(true)
+    try {
+      const result = await API.getEmailAnalytics(logsPage, logsPageSize, logType, logStatus)
+      setData(prev => ({
+        ...prev,
+        recent_logs: result.recent_logs
+      }))
+    } catch (err) {
+      console.error("Failed to fetch logs:", err.message)
+    } finally {
+      setLogsLoading(false)
+    }
+  }
+
+  if (loading && !data) return <div className="p-8 flex items-center justify-center min-h-[400px]"><Loader2 className="w-8 h-8 text-brand-500 animate-spin" /></div>
 
   if (error) return <div className="p-8 text-red-500">Error: {error}</div>
   if (!data) return null
@@ -127,11 +157,35 @@ export default function AdminEmailAnalytics() {
         </div>
 
         {/* Recent Logs Table */}
-        <div className="lg:col-span-2 bg-bgpanel border border-borderwarm rounded-xl shadow-sm flex flex-col h-full">
-          <div className="p-5 border-b border-borderwarm">
-            <h3 className="text-lg font-serif text-textprimary">Recent Email Logs</h3>
+        <div className="lg:col-span-2 bg-bgpanel border border-borderwarm rounded-xl shadow-sm flex flex-col h-full overflow-hidden">
+          <div className="p-5 border-b border-borderwarm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h3 className="text-lg font-serif text-textprimary flex items-center gap-2">
+              Recent Email Logs
+              {logsLoading && <Loader2 size={14} className="animate-spin text-brand-500" />}
+            </h3>
+            <div className="flex items-center gap-3">
+              <select 
+                value={logType}
+                onChange={(e) => setLogType(e.target.value)}
+                className="bg-bgbase border border-borderwarm rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand-500 text-sm"
+              >
+                <option value="all">All Types</option>
+                <option value="verification">Verification</option>
+                <option value="password_reset">Password Reset</option>
+              </select>
+              <select 
+                value={logStatus}
+                onChange={(e) => setLogStatus(e.target.value)}
+                className="bg-bgbase border border-borderwarm rounded-lg px-3 py-1.5 focus:outline-none focus:border-brand-500 text-sm"
+              >
+                <option value="all">All Statuses</option>
+                <option value="sent">Sent</option>
+                <option value="failed">Failed</option>
+              </select>
+            </div>
           </div>
-          <div className="overflow-x-auto flex-1">
+          
+          <div className="overflow-x-auto flex-1 relative">
             <table className="w-full text-left text-sm whitespace-nowrap">
               <thead className="bg-bgbase/50 text-textsecondary sticky top-0">
                 <tr>
@@ -142,15 +196,15 @@ export default function AdminEmailAnalytics() {
                   <th className="px-5 py-3 font-medium">IP Address</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-borderwarm text-textprimary">
-                {data.recent_logs.length === 0 ? (
+              <tbody className={`divide-y divide-borderwarm text-textprimary ${logsLoading ? 'opacity-50' : ''}`}>
+                {data.recent_logs.items.length === 0 ? (
                   <tr>
                     <td colSpan="5" className="px-5 py-8 text-center text-textmuted italic">
                       No emails logged yet.
                     </td>
                   </tr>
                 ) : (
-                  data.recent_logs.map((log) => (
+                  data.recent_logs.items.map((log) => (
                     <tr key={log.id} className="hover:bg-bgbase/30 transition-colors">
                       <td className="px-5 py-3 text-textmuted">
                         {new Date(log.created_at).toLocaleString()}
@@ -178,6 +232,14 @@ export default function AdminEmailAnalytics() {
               </tbody>
             </table>
           </div>
+          <Pagination 
+            page={data.recent_logs.page} 
+            pages={data.recent_logs.pages} 
+            total={data.recent_logs.total}
+            pageSize={logsPageSize}
+            onPageChange={setLogsPage} 
+            onPageSizeChange={setLogsPageSize}
+          />
         </div>
       </div>
     </div>

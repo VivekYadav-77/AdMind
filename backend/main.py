@@ -1045,10 +1045,16 @@ def get_admin_growth(db: Session = Depends(get_db), admin: User = Depends(requir
     return data
 
 @app.get("/admin/users", response_model=dict)
-def get_admin_users(page: int = 1, size: int = 20, search: str = "", db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def get_admin_users(page: int = 1, size: int = 20, search: str = "", role: str = "", db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     query = db.query(User)
     if search:
         query = query.filter(User.email.ilike(f"%{search}%"))
+    if role == "admin":
+        query = query.filter(User.is_superadmin == True)
+    elif role == "user":
+        query = query.filter(User.is_superadmin == False)
+    elif role == "banned":
+        query = query.filter(User.is_banned == True)
     total = query.count()
     users = query.order_by(desc(User.created_at)).offset((page - 1) * size).limit(size).all()
     items = []
@@ -1105,10 +1111,12 @@ def delete_user_admin(user_id: int, db: Session = Depends(get_db), admin: User =
     return {"message": "User deleted"}
 
 @app.get("/admin/jobs", response_model=dict)
-def get_admin_jobs(page: int = 1, size: int = 20, status: str = "", db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def get_admin_jobs(page: int = 1, size: int = 20, status: str = "", search: str = "", db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     query = db.query(AnalysisJob)
     if status and status != "all":
         query = query.filter(AnalysisJob.status == status)
+    if search:
+        query = query.join(User, User.id == AnalysisJob.user_id).filter(User.email.ilike(f"%{search}%"))
     total = query.count()
     jobs = query.order_by(desc(AnalysisJob.created_at)).offset((page - 1) * size).limit(size).all()
     items = []
@@ -1195,8 +1203,16 @@ def reject_review(review_id: int, db: Session = Depends(get_db), admin: User = D
     return {"message": "Review deleted"}
 
 @app.get("/admin/workspaces", response_model=dict)
-def get_admin_workspaces(page: int = 1, size: int = 20, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def get_admin_workspaces(page: int = 1, size: int = 20, search: str = "", db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     query = db.query(Workspace)
+    if search:
+        from sqlalchemy import or_
+        query = query.outerjoin(User, User.id == Workspace.owner_id).filter(
+            or_(
+                Workspace.name.ilike(f"%{search}%"),
+                User.email.ilike(f"%{search}%")
+            )
+        )
     total = query.count()
     workspaces = query.order_by(desc(Workspace.created_at)).offset((page - 1) * size).limit(size).all()
     items = []
@@ -1214,27 +1230,43 @@ def get_admin_workspaces(page: int = 1, size: int = 20, db: Session = Depends(ge
         })
     return {"items": items, "total": total, "page": page, "size": size, "pages": (total + size - 1) // size}
 
-@app.get("/admin/activity", response_model=list)
-def get_admin_activity(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
-    recent_users = db.query(User).order_by(desc(User.created_at)).limit(20).all()
-    recent_jobs = db.query(AnalysisJob).order_by(desc(AnalysisJob.created_at)).limit(20).all()
-    recent_reviews = db.query(CommunityReview).order_by(desc(CommunityReview.created_at)).limit(20).all()
-    
+@app.get("/admin/activity", response_model=dict)
+def get_admin_activity(page: int = 1, size: int = 20, type_filter: str = "", db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     feed = []
-    for u in recent_users:
-        feed.append({"type": "user_registered", "message": f"New user registered: {u.email}", "timestamp": u.created_at})
-    for j in recent_jobs:
-        user = db.query(User).filter(User.id == j.user_id).first()
-        email = user.email if user else "Unknown"
-        feed.append({"type": f"job_{j.status}", "message": f"Job {j.status} for {email}", "timestamp": j.created_at})
-    for r in recent_reviews:
-        user = db.query(User).filter(User.id == r.user_id).first()
-        email = user.email if user else "Unknown"
-        action = "New review submitted" if r.is_approved == 0 else "Review approved"
-        feed.append({"type": "review_submitted", "message": f"{action} by {email}", "timestamp": r.created_at})
-        
+    
+    if type_filter in ["", "users", "all"]:
+        users = db.query(User).order_by(desc(User.created_at)).limit(500).all()
+        for u in users:
+            feed.append({"type": "user_registered", "message": f"New user registered: {u.email}", "timestamp": u.created_at})
+            
+    if type_filter in ["", "jobs", "all"]:
+        jobs = db.query(AnalysisJob).order_by(desc(AnalysisJob.created_at)).limit(500).all()
+        for j in jobs:
+            user = db.query(User).filter(User.id == j.user_id).first()
+            email = user.email if user else "Unknown"
+            feed.append({"type": f"job_{j.status}", "message": f"Job {j.status} for {email}", "timestamp": j.created_at})
+            
+    if type_filter in ["", "reviews", "all"]:
+        reviews = db.query(CommunityReview).order_by(desc(CommunityReview.created_at)).limit(500).all()
+        for r in reviews:
+            user = db.query(User).filter(User.id == r.user_id).first()
+            email = user.email if user else "Unknown"
+            action = "New review submitted" if r.is_approved == 0 else "Review approved"
+            feed.append({"type": "review_submitted", "message": f"{action} by {email}", "timestamp": r.created_at})
+            
     feed.sort(key=lambda x: x["timestamp"], reverse=True)
-    return feed[:100]
+    
+    total = len(feed)
+    start = (page - 1) * size
+    end = start + size
+    
+    return {
+        "items": feed[start:end],
+        "total": total,
+        "page": page,
+        "size": size,
+        "pages": (total + size - 1) // size if size > 0 else 0
+    }
 
 
 # --- TICKET SYSTEM ---
@@ -1363,10 +1395,21 @@ def reply_ticket(ticket_id: int, reply: TicketReplyCreate, db: Session = Depends
 
 # Admin Ticket Routes
 @app.get("/admin/tickets", response_model=dict)
-def get_admin_tickets(page: int = 1, size: int = 20, status: str = "", db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def get_admin_tickets(page: int = 1, size: int = 20, status: str = "", category: str = "", search: str = "", db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     query = db.query(SupportTicket)
     if status and status != "all":
         query = query.filter(SupportTicket.status == status)
+    if category and category != "all":
+        query = query.filter(SupportTicket.category == category)
+    if search:
+        from sqlalchemy import or_
+        query = query.outerjoin(User, User.id == SupportTicket.user_id).filter(
+            or_(
+                SupportTicket.subject.ilike(f"%{search}%"),
+                User.email.ilike(f"%{search}%"),
+                SupportTicket.guest_email.ilike(f"%{search}%")
+            )
+        )
     
     total = query.count()
     tickets = query.order_by(desc(SupportTicket.created_at)).offset((page - 1) * size).limit(size).all()
@@ -1474,7 +1517,7 @@ def delete_admin_ticket(ticket_id: int, db: Session = Depends(get_db), admin: Us
     return {"message": "Ticket deleted successfully"}
 
 @app.get("/admin/email-analytics")
-def get_email_analytics(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+def get_email_analytics(page: int = 1, size: int = 20, log_type: str = "", log_status: str = "", db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     from sqlalchemy import func
     
     total = db.query(EmailLog).count()
@@ -1501,7 +1544,15 @@ def get_email_analytics(db: Session = Depends(get_db), admin: User = Depends(req
     top_ips = [{"ip": ip, "count": count, "flagged": count > 50} for ip, count in top_ips_query]
     
     # Recent logs
-    recent = db.query(EmailLog).order_by(desc(EmailLog.created_at)).limit(50).all()
+    logs_query = db.query(EmailLog)
+    if log_type and log_type != "all":
+        logs_query = logs_query.filter(EmailLog.email_type == log_type)
+    if log_status and log_status != "all":
+        logs_query = logs_query.filter(EmailLog.status == log_status)
+        
+    logs_total = logs_query.count()
+    recent = logs_query.order_by(desc(EmailLog.created_at)).offset((page - 1) * size).limit(size).all()
+    
     recent_logs = []
     for r in recent:
         recent_logs.append({
@@ -1520,7 +1571,13 @@ def get_email_analytics(db: Session = Depends(get_db), admin: User = Depends(req
         "by_type": {"verification": verify_count, "password_reset": reset_count},
         "success_rate": success_rate,
         "top_ips": top_ips,
-        "recent_logs": recent_logs
+        "recent_logs": {
+            "items": recent_logs,
+            "total": logs_total,
+            "page": page,
+            "size": size,
+            "pages": (logs_total + size - 1) // size if size > 0 else 0
+        }
     }
 
 if __name__ == "__main__":

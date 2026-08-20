@@ -8,6 +8,8 @@ import Pagination from '../../components/ui/Pagination'
 export default function AdminJobs() {
   const [data, setData] = useState({ items: [], total: 0, page: 1, size: 20 })
   const [statusFilter, setStatusFilter] = useState('all')
+  const [search, setSearch] = useState('')
+  const [pageSize, setPageSize] = useState(20)
   const [loading, setLoading] = useState(true)
   const [selectedJob, setSelectedJob] = useState(null)
   const [showModal, setShowModal] = useState(false)
@@ -16,7 +18,7 @@ export default function AdminJobs() {
   const fetchJobs = async (page = 1) => {
     setLoading(true)
     try {
-      const result = await adminApi.getJobs(page, 20, statusFilter)
+      const result = await adminApi.getJobs(page, pageSize, statusFilter, search)
       setData(result)
     } catch (err) {
       console.error(err)
@@ -27,7 +29,14 @@ export default function AdminJobs() {
 
   useEffect(() => {
     fetchJobs(1)
-  }, [statusFilter])
+  }, [statusFilter, pageSize])
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchJobs(1)
+    }, 500)
+    return () => clearTimeout(delayDebounceFn)
+  }, [search])
 
   const deleteJob = async (id) => {
     setConfirmConfig({
@@ -60,7 +69,7 @@ export default function AdminJobs() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <h2 className="text-xl font-bold">Analysis Jobs</h2>
           <button 
@@ -72,16 +81,29 @@ export default function AdminJobs() {
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>
         </div>
-        <select 
-          value={statusFilter} 
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="px-4 py-2 rounded-xl bg-bgpanel border border-borderwarm focus:outline-none"
-        >
-          <option value="all">All Statuses</option>
-          <option value="complete">Complete</option>
-          <option value="processing">Processing</option>
-          <option value="error">Error</option>
-        </select>
+        
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-textmuted" size={16} />
+            <input 
+              type="text" 
+              placeholder="Search user email..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 pr-4 py-2 w-full sm:w-64 rounded-xl bg-bgpanel border border-borderwarm focus:outline-none focus:border-brand-500 text-sm"
+            />
+          </div>
+          <select 
+            value={statusFilter} 
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="px-4 py-2 rounded-xl bg-bgpanel border border-borderwarm focus:outline-none text-sm"
+          >
+            <option value="all">All Statuses</option>
+            <option value="complete">Complete</option>
+            <option value="processing">Processing</option>
+            <option value="error">Error</option>
+          </select>
+        </div>
       </div>
 
       <div className="bg-bgpanel border border-borderwarm rounded-2xl overflow-hidden">
@@ -101,6 +123,8 @@ export default function AdminJobs() {
             <tbody className="divide-y divide-borderwarm">
               {loading ? (
                 <tr><td colSpan="7" className="px-6 py-8 text-center text-textmuted">Loading...</td></tr>
+              ) : data.items.length === 0 ? (
+                <tr><td colSpan="7" className="px-6 py-8 text-center text-textmuted">No jobs found.</td></tr>
               ) : data.items.map(j => (
                 <tr key={j.id} className="hover:bg-bgpanelhover/50">
                   <td className="px-6 py-4">{j.id}</td>
@@ -130,7 +154,14 @@ export default function AdminJobs() {
             </tbody>
           </table>
         </div>
-        <Pagination page={data.page} pages={data.pages} onPageChange={fetchJobs} />
+        <Pagination 
+          page={data.page} 
+          pages={data.pages} 
+          total={data.total}
+          pageSize={pageSize}
+          onPageChange={fetchJobs} 
+          onPageSizeChange={setPageSize}
+        />
       </div>
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title={`Job #${selectedJob?.id} Details`}>

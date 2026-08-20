@@ -25,8 +25,8 @@ export const adminApi = {
     return res.json()
   },
 
-  getUsers: async (page = 1, size = 20, search = '') => {
-    const res = await apiFetch(`${API_BASE_URL}/admin/users?page=${page}&size=${size}&search=${encodeURIComponent(search)}`, { headers: getHeaders() }, 'Failed to fetch users')
+  getUsers: async (page = 1, size = 20, search = '', role = '') => {
+    const res = await apiFetch(`${API_BASE_URL}/admin/users?page=${page}&size=${size}&search=${encodeURIComponent(search)}&role=${encodeURIComponent(role)}`, { headers: getHeaders() }, 'Failed to fetch users')
     return res.json()
   },
 
@@ -54,8 +54,8 @@ export const adminApi = {
     return res.json()
   },
 
-  getJobs: async (page = 1, size = 20, status = '') => {
-    const res = await apiFetch(`${API_BASE_URL}/admin/jobs?page=${page}&size=${size}&status=${status}`, { headers: getHeaders() }, 'Failed to fetch jobs')
+  getJobs: async (page = 1, size = 20, status = '', search = '') => {
+    const res = await apiFetch(`${API_BASE_URL}/admin/jobs?page=${page}&size=${size}&status=${encodeURIComponent(status)}&search=${encodeURIComponent(search)}`, { headers: getHeaders() }, 'Failed to fetch jobs')
     return res.json()
   },
   
@@ -93,19 +93,19 @@ export const adminApi = {
     return res.json()
   },
 
-  getWorkspaces: async (page = 1, size = 20) => {
-    const res = await apiFetch(`${API_BASE_URL}/admin/workspaces?page=${page}&size=${size}`, { headers: getHeaders() }, 'Failed to fetch workspaces')
+  getWorkspaces: async (page = 1, size = 20, search = '') => {
+    const res = await apiFetch(`${API_BASE_URL}/admin/workspaces?page=${page}&size=${size}&search=${encodeURIComponent(search)}`, { headers: getHeaders() }, 'Failed to fetch workspaces')
     return res.json()
   },
 
-  getActivity: async () => {
-    const res = await apiFetch(`${API_BASE_URL}/admin/activity`, { headers: getHeaders() }, 'Failed to fetch activity')
+  getActivity: async (page = 1, size = 20, typeFilter = '') => {
+    const res = await apiFetch(`${API_BASE_URL}/admin/activity?page=${page}&size=${size}&type_filter=${encodeURIComponent(typeFilter)}`, { headers: getHeaders() }, 'Failed to fetch activity')
     return res.json()
   },
 
   // Ticket System Methods
-  getTickets: async (page = 1, size = 20, status = '') => {
-    const res = await apiFetch(`${API_BASE_URL}/admin/tickets?page=${page}&size=${size}&status=${status}`, { headers: getHeaders() }, 'Failed to fetch tickets')
+  getTickets: async (page = 1, size = 20, status = '', category = '', search = '') => {
+    const res = await apiFetch(`${API_BASE_URL}/admin/tickets?page=${page}&size=${size}&status=${encodeURIComponent(status)}&category=${encodeURIComponent(category)}&search=${encodeURIComponent(search)}`, { headers: getHeaders() }, 'Failed to fetch tickets')
     return res.json()
   },
 

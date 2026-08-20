@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react'
 import { adminApi } from '../../services/adminApi'
-import { RefreshCw } from 'lucide-react'
+import { RefreshCw, Search } from 'lucide-react'
 import Pagination from '../../components/ui/Pagination'
 
 export default function AdminWorkspaces() {
   const [data, setData] = useState({ items: [], total: 0, page: 1, size: 20 })
+  const [search, setSearch] = useState('')
+  const [pageSize, setPageSize] = useState(20)
   const [loading, setLoading] = useState(true)
 
   const fetchWorkspaces = async (page = 1) => {
     setLoading(true)
     try {
-      const result = await adminApi.getWorkspaces(page, 20)
+      const result = await adminApi.getWorkspaces(page, pageSize, search)
       setData(result)
     } catch (err) {
       console.error(err)
@@ -21,11 +23,18 @@ export default function AdminWorkspaces() {
 
   useEffect(() => {
     fetchWorkspaces(1)
-  }, [])
+  }, [pageSize])
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchWorkspaces(1)
+    }, 500)
+    return () => clearTimeout(delayDebounceFn)
+  }, [search])
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <h2 className="text-xl font-bold">Workspace Directory</h2>
           <button 
@@ -36,6 +45,19 @@ export default function AdminWorkspaces() {
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-textmuted" size={16} />
+            <input 
+              type="text" 
+              placeholder="Search name or owner..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 pr-4 py-2 w-full sm:w-64 rounded-xl bg-bgpanel border border-borderwarm focus:outline-none focus:border-brand-500 text-sm"
+            />
+          </div>
         </div>
       </div>
 
@@ -55,6 +77,8 @@ export default function AdminWorkspaces() {
             <tbody className="divide-y divide-borderwarm">
               {loading ? (
                 <tr><td colSpan="6" className="px-6 py-8 text-center text-textmuted">Loading...</td></tr>
+              ) : data.items.length === 0 ? (
+                <tr><td colSpan="6" className="px-6 py-8 text-center text-textmuted">No workspaces found.</td></tr>
               ) : data.items.map(w => (
                 <tr key={w.id} className="hover:bg-bgpanelhover/50">
                   <td className="px-6 py-4">{w.id}</td>
@@ -68,7 +92,14 @@ export default function AdminWorkspaces() {
             </tbody>
           </table>
         </div>
-        <Pagination page={data.page} pages={data.pages} onPageChange={fetchWorkspaces} />
+        <Pagination 
+          page={data.page} 
+          pages={data.pages} 
+          total={data.total}
+          pageSize={pageSize}
+          onPageChange={fetchWorkspaces} 
+          onPageSizeChange={setPageSize}
+        />
       </div>
     </div>
   )
