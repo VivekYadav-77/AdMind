@@ -21,9 +21,19 @@ export default function History() {
   const reportRef = useRef(null)
 
   // Rename state
-  const [editingJobId, setEditingJobId] = useState(null)
+  const [renameModal, setRenameModal] = useState(null)
   const [editName, setEditName] = useState('')
   const [renameLoading, setRenameLoading] = useState(false)
+
+  const openRenameModal = (job) => {
+    setRenameModal({ jobId: job.id, currentName: job.name || `Report #${job.id}` })
+    setEditName(job.name || `Report #${job.id}`)
+  }
+
+  const closeRenameModal = () => {
+    setRenameModal(null)
+    setEditName('')
+  }
 
   // Delete state
   const [jobToDelete, setJobToDelete] = useState(null)
@@ -86,16 +96,16 @@ export default function History() {
     fetchHistory()
   }, [page])
 
-  const handleRename = async (jobId) => {
-    if (!editName.trim()) {
-      setEditingJobId(null)
+  const handleRename = async () => {
+    if (!renameModal || !editName.trim()) {
+      closeRenameModal()
       return
     }
     setRenameLoading(true)
     try {
-      await API.renameAnalysis(jobId, editName.trim())
-      setJobs(jobs.map(j => j.id === jobId ? { ...j, name: editName.trim() } : j))
-      setEditingJobId(null)
+      await API.renameAnalysis(renameModal.jobId, editName.trim())
+      setJobs(jobs.map(j => j.id === renameModal.jobId ? { ...j, name: editName.trim() } : j))
+      closeRenameModal()
     } catch (err) {
       console.error("Failed to rename analysis", err)
     } finally {
@@ -285,46 +295,11 @@ export default function History() {
               >
                 <div className="flex-1 space-y-3">
                   <div className="flex flex-wrap items-center gap-3">
-                    {editingJobId === job.id ? (
-                      <div className="flex items-center gap-2">
-                        <input
-                          autoFocus
-                          type="text"
-                          value={editName}
-                          onChange={(e) => setEditName(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && handleRename(job.id)}
-                          disabled={renameLoading}
-                          className="bg-bgbase border border-borderwarm text-textprimary px-2.5 py-1 rounded-lg text-sm focus:outline-none focus:border-brand-500"
-                        />
-                        <button 
-                          onClick={() => handleRename(job.id)}
-                          disabled={renameLoading}
-                          className="p-1 text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors"
-                        >
-                          <CheckCircle2 size={16} />
-                        </button>
-                        <button 
-                          onClick={() => setEditingJobId(null)}
-                          disabled={renameLoading}
-                          className="p-1 text-textmuted hover:bg-white/5 rounded transition-colors"
-                        >
-                          <X size={16} />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 group/title">
-                        <span className="bg-brand-500/10 border border-brand-500/20 text-brand-400 text-[13px] font-bold px-2.5 py-0.5 rounded-lg tracking-wide">
-                          {job.name || `Report #${job.id}`}
-                        </span>
-                        <button
-                          onClick={() => { setEditingJobId(job.id); setEditName(job.name || `Report #${job.id}`); }}
-                          className="opacity-0 group-hover/title:opacity-100 p-1 text-textmuted hover:text-amber-400 transition-all rounded hover:bg-white/5"
-                          title="Rename Analysis"
-                        >
-                          <Pencil size={14} />
-                        </button>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-2 group/title">
+                      <span className="bg-brand-500/10 border border-brand-500/20 text-brand-400 text-[13px] font-bold px-2.5 py-0.5 rounded-lg tracking-wide">
+                        {job.name || `Report #${job.id}`}
+                      </span>
+                    </div>
                     <span className="flex items-center gap-1.5 text-xs text-textmuted">
                       <Calendar size={13} />
                       {new Date(job.created_at).toLocaleString()}
@@ -366,10 +341,18 @@ export default function History() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
+                  <button
+                    onClick={() => openRenameModal(job)}
+                    className="flex items-center gap-1.5 px-3 py-2 text-textmuted hover:text-brand-400 hover:bg-brand-500/10 rounded-xl transition-colors border border-transparent hover:border-brand-500/20 text-sm font-medium"
+                    title="Rename Analysis"
+                  >
+                    <Pencil size={16} />
+                    <span className="hidden sm:inline">Rename</span>
+                  </button>
                   <button
                     onClick={() => setJobToDelete(job.id)}
-                    className="p-2.5 text-textmuted hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors border border-transparent hover:border-red-500/20"
+                    className="p-2.5 text-textmuted hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors border border-transparent hover:border-red-500/20 shrink-0"
                     title="Delete Analysis"
                   >
                     <Trash2 size={18} />
@@ -377,14 +360,14 @@ export default function History() {
                   {job.status === 'complete' ? (
                     <button
                       onClick={() => navigate(`/app/history/${job.id}`)}
-                      className="w-full md:w-auto px-5 py-2.5 bg-bgpanelhover hover:bg-bgpanel text-textprimary font-medium rounded-xl text-sm transition-all border border-borderwarm hover:border-brand-500/50"
+                      className="flex-1 md:flex-none md:w-auto px-5 py-2.5 bg-bgpanelhover hover:bg-bgpanel text-textprimary font-medium rounded-xl text-sm transition-all border border-borderwarm hover:border-brand-500/50 text-center"
                     >
                       View Report
                     </button>
                   ) : (
                     <button
                       disabled
-                      className="w-full md:w-auto px-5 py-2.5 bg-white/5 text-[#6A655A] font-medium rounded-xl text-sm border border-transparent cursor-not-allowed"
+                      className="flex-1 md:flex-none md:w-auto px-5 py-2.5 bg-white/5 text-[#6A655A] font-medium rounded-xl text-sm border border-transparent cursor-not-allowed text-center"
                     >
                       Unavailable
                     </button>
@@ -466,6 +449,76 @@ export default function History() {
                     </>
                   ) : (
                     'Delete Report'
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {renameModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-bgpanel border border-borderwarm rounded-3xl p-6 w-full max-w-md shadow-2xl relative overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-500/50 to-transparent" />
+              
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center shrink-0 border border-brand-500/20">
+                  <Pencil size={20} />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-serif text-textprimary">Rename Analysis</h3>
+                  <p className="text-sm text-textmuted mt-1 mb-4">
+                    Give this report a memorable name
+                  </p>
+                  
+                  <div className="relative">
+                    <input
+                      autoFocus
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value.slice(0, 60))}
+                      onKeyDown={(e) => e.key === 'Enter' && handleRename()}
+                      disabled={renameLoading}
+                      placeholder="e.g. Q4 Google Campaign Audit"
+                      className="w-full bg-bgbase border border-borderwarm text-textprimary px-4 py-3 rounded-xl text-sm focus:outline-none focus:border-brand-500 transition-colors"
+                    />
+                    <div className="absolute right-3 top-3.5 text-xs text-textmuted font-medium">
+                      {editName.length} / 60
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 mt-8">
+                <button
+                  onClick={closeRenameModal}
+                  disabled={renameLoading}
+                  className="px-4 py-2 text-sm font-medium text-textprimary hover:bg-white/5 rounded-xl transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRename}
+                  disabled={renameLoading || !editName.trim()}
+                  className="px-4 py-2 text-sm font-medium text-white bg-brand-500 hover:bg-brand-600 rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {renameLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Name'
                   )}
                 </button>
               </div>
