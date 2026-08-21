@@ -162,6 +162,23 @@ export const API = {
     return res.json()
   },
 
+  renameAnalysis: async (jobId, name) => {
+    const res = await apiFetch(apiUrl(`/history/${jobId}/rename`), {
+      method: 'PATCH',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    }, 'Failed to rename analysis')
+    return res.json()
+  },
+
+  deleteAnalysis: async (jobId) => {
+    const res = await apiFetch(apiUrl(`/history/${jobId}`), {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    }, 'Failed to delete analysis')
+    return res.json()
+  },
+
   getTrends: async () => {
     const res = await apiFetch(apiUrl('/history/trends'), {
       method: 'GET',

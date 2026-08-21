@@ -3,8 +3,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
 from db.database import get_db
-from db.models import User, AnalysisJob, RecommendationComment
-from models.requests import CommentCreate
+from db.models import User, AnalysisJob, RecommendationComment, ChatMessage
+from models.requests import CommentCreate, AnalysisRename
 from app.dependencies import get_current_user
 from app.utils import check_feature_blocked, _get_workspace_id
 
@@ -76,6 +76,7 @@ def get_history(
     return {
         "items": [{
             "id": j.id, 
+            "name": j.name,
             "created_at": j.created_at, 
             "status": j.status,
             "total_rows": j.total_rows,
@@ -146,3 +147,52 @@ def add_comment(job_id: int, req: CommentCreate, db: Session = Depends(get_db), 
         "user_email": current_user.email,
         "created_at": new_comment.created_at
     }
+
+@router.patch("/history/{job_id}/rename")
+def rename_job(
+    job_id: int,
+    req: AnalysisRename,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    check_feature_blocked(current_user, "history", db)
+    job = db.query(AnalysisJob).filter(
+        AnalysisJob.id == job_id,
+        AnalysisJob.user_id == current_user.id
+    ).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Analysis job not found")
+        
+    job.name = req.name
+    db.commit()
+    db.refresh(job)
+    
+    return {
+        "id": job.id, 
+        "name": job.name,
+        "status": job.status
+    }
+
+@router.delete("/history/{job_id}")
+def delete_job(
+    job_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    check_feature_blocked(current_user, "history", db)
+    job = db.query(AnalysisJob).filter(
+        AnalysisJob.id == job_id,
+        AnalysisJob.user_id == current_user.id
+    ).first()
+    if not job:
+        raise HTTPException(status_code=404, detail="Analysis job not found")
+    
+    # Delete related data first
+    db.query(ChatMessage).filter(ChatMessage.job_id == job_id).delete()
+    db.query(RecommendationComment).filter(RecommendationComment.job_id == job_id).delete()
+    
+    # Delete the job
+    db.delete(job)
+    db.commit()
+    
+    return {"ok": True}

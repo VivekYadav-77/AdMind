@@ -1,8 +1,8 @@
-import { Calendar, CheckCircle2, Clock, BarChart3, TrendingUp, AlertTriangle, ChevronLeft, ChevronRight, Download } from 'lucide-react'
+import { Calendar, CheckCircle2, Clock, BarChart3, TrendingUp, AlertTriangle, ChevronLeft, ChevronRight, Download, Pencil, Trash2, X } from 'lucide-react'
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import clsx from 'clsx'
 import html2pdf from 'html2pdf.js'
 
@@ -19,6 +19,15 @@ export default function History() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const reportRef = useRef(null)
+
+  // Rename state
+  const [editingJobId, setEditingJobId] = useState(null)
+  const [editName, setEditName] = useState('')
+  const [renameLoading, setRenameLoading] = useState(false)
+
+  // Delete state
+  const [jobToDelete, setJobToDelete] = useState(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   const exportReportAsPDF = () => {
     try {
@@ -76,6 +85,46 @@ export default function History() {
     }
     fetchHistory()
   }, [page])
+
+  const handleRename = async (jobId) => {
+    if (!editName.trim()) {
+      setEditingJobId(null)
+      return
+    }
+    setRenameLoading(true)
+    try {
+      await API.renameAnalysis(jobId, editName.trim())
+      setJobs(jobs.map(j => j.id === jobId ? { ...j, name: editName.trim() } : j))
+      setEditingJobId(null)
+    } catch (err) {
+      console.error("Failed to rename analysis", err)
+    } finally {
+      setRenameLoading(false)
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!jobToDelete) return
+    setDeleteLoading(true)
+    try {
+      await API.deleteAnalysis(jobToDelete)
+      setJobs(jobs.filter(j => j.id !== jobToDelete))
+      setJobToDelete(null)
+      // Check if page needs to be adjusted?
+      if (jobs.length === 1 && page > 1) {
+        setPage(page - 1)
+      } else if (jobs.length === 1) {
+        // Just reload
+        const data = await API.getHistory(1, 10)
+        setJobs(data.items || [])
+        setTotalPages(data.pages || 1)
+      }
+    } catch (err) {
+      console.error("Failed to delete analysis", err)
+    } finally {
+      setDeleteLoading(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -236,9 +285,46 @@ export default function History() {
               >
                 <div className="flex-1 space-y-3">
                   <div className="flex flex-wrap items-center gap-3">
-                    <span className="bg-brand-500/10 border border-brand-500/20 text-brand-400 text-[11px] font-bold px-2.5 py-0.5 rounded-lg uppercase tracking-wider">
-                      Report #{job.id}
-                    </span>
+                    {editingJobId === job.id ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          autoFocus
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleRename(job.id)}
+                          disabled={renameLoading}
+                          className="bg-bgbase border border-borderwarm text-textprimary px-2.5 py-1 rounded-lg text-sm focus:outline-none focus:border-brand-500"
+                        />
+                        <button 
+                          onClick={() => handleRename(job.id)}
+                          disabled={renameLoading}
+                          className="p-1 text-emerald-400 hover:bg-emerald-500/10 rounded transition-colors"
+                        >
+                          <CheckCircle2 size={16} />
+                        </button>
+                        <button 
+                          onClick={() => setEditingJobId(null)}
+                          disabled={renameLoading}
+                          className="p-1 text-textmuted hover:bg-white/5 rounded transition-colors"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 group/title">
+                        <span className="bg-brand-500/10 border border-brand-500/20 text-brand-400 text-[13px] font-bold px-2.5 py-0.5 rounded-lg tracking-wide">
+                          {job.name || `Report #${job.id}`}
+                        </span>
+                        <button
+                          onClick={() => { setEditingJobId(job.id); setEditName(job.name || `Report #${job.id}`); }}
+                          className="opacity-0 group-hover/title:opacity-100 p-1 text-textmuted hover:text-amber-400 transition-all rounded hover:bg-white/5"
+                          title="Rename Analysis"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                      </div>
+                    )}
                     <span className="flex items-center gap-1.5 text-xs text-textmuted">
                       <Calendar size={13} />
                       {new Date(job.created_at).toLocaleString()}
@@ -280,7 +366,14 @@ export default function History() {
                   </div>
                 </div>
 
-                <div className="flex items-center">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setJobToDelete(job.id)}
+                    className="p-2.5 text-textmuted hover:text-red-400 hover:bg-red-500/10 rounded-xl transition-colors border border-transparent hover:border-red-500/20"
+                    title="Delete Analysis"
+                  >
+                    <Trash2 size={18} />
+                  </button>
                   {job.status === 'complete' ? (
                     <button
                       onClick={() => navigate(`/app/history/${job.id}`)}
@@ -324,6 +417,62 @@ export default function History() {
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {jobToDelete && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-bgpanel border border-borderwarm rounded-3xl p-6 w-full max-w-md shadow-2xl relative overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500/50 to-transparent" />
+              
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl bg-red-500/10 text-red-400 flex items-center justify-center shrink-0 border border-red-500/20">
+                  <Trash2 size={20} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-serif text-textprimary">Delete Analysis?</h3>
+                  <p className="text-sm text-textmuted mt-2">
+                    Are you sure you want to delete this analysis report? This action cannot be undone and will permanently remove all associated data, chat history, and comments.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 mt-8">
+                <button
+                  onClick={() => setJobToDelete(null)}
+                  disabled={deleteLoading}
+                  className="px-4 py-2 text-sm font-medium text-textprimary hover:bg-white/5 rounded-xl transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={deleteLoading}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {deleteLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    'Delete Report'
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

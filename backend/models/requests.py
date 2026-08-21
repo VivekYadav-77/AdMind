@@ -40,3 +40,6 @@ class FeatureControlUpdate(BaseModel):
     feature: str
     is_blocked: bool
     reason: Optional[str] = None
+
+class AnalysisRename(BaseModel):
+    name: str
