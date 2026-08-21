@@ -37,7 +37,7 @@ def get_admin_users(page: int = 1, size: int = 20, search: str = "", role: str =
         for uid, count in jobs_res:
             jobs_counts[uid] = count
             
-        ws_res = db.query(WorkspaceMember.user_id, func.count(WorkspaceMember.id)).filter(WorkspaceMember.user_id.in_(user_ids)).group_by(WorkspaceMember.user_id).all()
+        ws_res = db.query(WorkspaceMember.user_id, func.count(WorkspaceMember.workspace_id)).filter(WorkspaceMember.user_id.in_(user_ids)).group_by(WorkspaceMember.user_id).all()
         for uid, count in ws_res:
             ws_counts[uid] = count
             
@@ -54,7 +54,7 @@ def get_admin_users(page: int = 1, size: int = 20, search: str = "", role: str =
         })
     return {"items": items, "total": total, "page": page, "size": size, "pages": (total + size - 1) // size}
 
-@router.post("/{user_id}/toggle-ban")
+@router.post("/users/{user_id}/toggle-ban")
 def toggle_user_ban(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     if user_id == admin.id:
         raise HTTPException(status_code=400, detail="Cannot ban yourself")
@@ -65,7 +65,7 @@ def toggle_user_ban(user_id: int, db: Session = Depends(get_db), admin: User = D
     db.commit()
     return {"message": "User ban status updated", "is_banned": user.is_banned}
 
-@router.post("/{user_id}/make-admin")
+@router.post("/users/{user_id}/make-admin")
 def toggle_user_admin(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     if user_id == admin.id:
         raise HTTPException(status_code=400, detail="Cannot revoke your own admin rights")
@@ -76,7 +76,7 @@ def toggle_user_admin(user_id: int, db: Session = Depends(get_db), admin: User =
     db.commit()
     return {"message": "User admin status updated", "is_superadmin": user.is_superadmin}
 
-@router.get("/{user_id}/controls")
+@router.get("/users/{user_id}/controls")
 def get_user_controls(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -101,7 +101,7 @@ def get_user_controls(user_id: int, db: Session = Depends(get_db), admin: User =
         "features": res_features
     }
 
-@router.post("/{user_id}/controls")
+@router.post("/users/{user_id}/controls")
 def set_feature_control(user_id: int, req: FeatureControlUpdate, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -129,7 +129,7 @@ def set_feature_control(user_id: int, req: FeatureControlUpdate, db: Session = D
     db.commit()
     return {"message": "Feature control updated"}
 
-@router.put("/{user_id}/login-block")
+@router.put("/users/{user_id}/login-block")
 def toggle_login_block(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     if user_id == admin.id:
         raise HTTPException(status_code=400, detail="Cannot block your own login")
@@ -141,7 +141,7 @@ def toggle_login_block(user_id: int, db: Session = Depends(get_db), admin: User 
     db.commit()
     return {"message": "Login block status updated", "login_blocked": user.login_blocked}
 
-@router.put("/{user_id}/email-block")
+@router.put("/users/{user_id}/email-block")
 def toggle_email_block(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -151,7 +151,7 @@ def toggle_email_block(user_id: int, db: Session = Depends(get_db), admin: User 
     db.commit()
     return {"message": "Email block status updated", "email_blocked": user.email_blocked}
 
-@router.delete("/{user_id}")
+@router.delete("/users/{user_id}")
 def delete_user_admin(user_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     if user_id == admin.id:
         raise HTTPException(status_code=400, detail="Cannot delete yourself")

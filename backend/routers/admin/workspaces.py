@@ -31,7 +31,7 @@ def get_admin_workspaces(page: int = 1, size: int = 20, search: str = "", db: Se
     
     if ws_ids:
         from sqlalchemy import func
-        member_res = db.query(WorkspaceMember.workspace_id, func.count(WorkspaceMember.id)).filter(WorkspaceMember.workspace_id.in_(ws_ids)).group_by(WorkspaceMember.workspace_id).all()
+        member_res = db.query(WorkspaceMember.workspace_id, func.count(WorkspaceMember.user_id)).filter(WorkspaceMember.workspace_id.in_(ws_ids)).group_by(WorkspaceMember.workspace_id).all()
         for wid, count in member_res:
             member_counts[wid] = count
             
