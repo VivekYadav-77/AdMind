@@ -8,7 +8,7 @@ from agents.landing_page_auditor import run_landing_page_auditor
 from agents.audience_builder import run_audience_builder
 from agents.competitor_teardown import run_competitor_teardown
 from app.dependencies import get_current_user
-from main import check_feature_blocked
+from app.utils import check_feature_blocked
 
 router = APIRouter()
 

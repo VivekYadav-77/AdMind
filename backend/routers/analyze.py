@@ -7,7 +7,7 @@ import asyncio
 from db.database import get_db, SessionLocal
 from db.models import User, AnalysisJob
 from app.dependencies import get_current_user
-from main import check_feature_blocked, _read_csv_upload, _get_workspace_id, run_analysis_task
+from app.utils import check_feature_blocked, _read_csv_upload, _get_workspace_id, run_analysis_task
 
 router = APIRouter()
 

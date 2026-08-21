@@ -6,7 +6,7 @@ from db.database import get_db
 from db.models import User, Workspace, WorkspaceMember, ABTestCampaign
 from models.requests import WorkspaceCreate, ABTestCreate, ABTestWinner
 from app.dependencies import get_current_user
-from main import check_feature_blocked, _get_workspace_id
+from app.utils import check_feature_blocked, _get_workspace_id
 
 router = APIRouter()
 

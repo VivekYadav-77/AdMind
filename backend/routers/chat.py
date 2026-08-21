@@ -6,7 +6,7 @@ from db.models import User, AnalysisJob, ChatMessage
 from models.requests import ChatRequest
 from services.gemini import call_gemini_chat
 from app.dependencies import get_current_user
-from main import check_feature_blocked
+from app.utils import check_feature_blocked
 
 router = APIRouter()
 

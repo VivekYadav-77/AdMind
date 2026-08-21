@@ -6,7 +6,7 @@ from db.database import get_db
 from db.models import User, AnalysisJob, WorkspaceMember, UserFeatureControl, Workspace, CommunityReview
 from models.requests import FeatureControlUpdate
 from app.dependencies import require_admin
-from main import sanitize_like
+from app.utils import sanitize_like
 
 router = APIRouter()
 

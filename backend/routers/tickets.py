@@ -6,7 +6,7 @@ from db.database import get_db
 from db.models import User, SupportTicket, TicketMessage
 from models.schemas import TicketCreate, TicketOut, TicketReplyCreate
 from app.dependencies import get_current_user
-from main import check_feature_blocked
+from app.utils import check_feature_blocked
 
 router = APIRouter()
 

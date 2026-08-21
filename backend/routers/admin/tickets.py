@@ -6,7 +6,7 @@ from db.database import get_db
 from db.models import User, SupportTicket, TicketMessage
 from models.schemas import TicketOut, TicketReplyCreate, TicketStatusUpdate
 from app.dependencies import require_admin
-from main import sanitize_like
+from app.utils import sanitize_like
 
 router = APIRouter()
 
