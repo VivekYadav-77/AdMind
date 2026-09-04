@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/brain-circuit.svg" alt="AdMind logo" width="120" />
+  <img src="./assets/admind-logo.svg" alt="AdMind logo" width="120" />
 </p>
 
 <h1 align="center">AdMind</h1>
