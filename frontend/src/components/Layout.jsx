@@ -1,11 +1,13 @@
-import { History, LayoutDashboard, LogOut, Settings, ChevronDown, Plus, Wrench, FlaskConical } from 'lucide-react'
+import { History, LayoutDashboard, LogOut, Settings, ChevronDown, Plus, Wrench, FlaskConical, Zap, Sun, Moon } from 'lucide-react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useWorkspace } from '../context/WorkspaceContext'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import clsx from 'clsx'
 import { motion } from 'framer-motion'
 import Modal from './ui/Modal'
+import AnimatedBackground from './AnimatedBackground'
+import Logo from './Logo'
 
 export default function Layout() {
   const location = useLocation()
@@ -14,7 +16,20 @@ export default function Layout() {
   const { workspaces, activeWorkspace, changeWorkspace, createWorkspace } = useWorkspace()
 
   const [showWsDropdown, setShowWsDropdown] = useState(false)
-  const [showUserDropdown, setShowUserDropdown] = useState(false)
+  const wsDropdownRef = useRef(null)
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (wsDropdownRef.current && !wsDropdownRef.current.contains(event.target)) {
+        setShowWsDropdown(false)
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
   const [showNewWsModal, setShowNewWsModal] = useState(false)
   const [newWsName, setNewWsName] = useState('')
   const [isSubmittingWs, setIsSubmittingWs] = useState(false)
@@ -57,34 +72,41 @@ export default function Layout() {
   }
 
   const navItems = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-    { name: 'Analyze', path: '/analyze', icon: Zap },
-    { name: 'History', path: '/history', icon: History },
-    { name: 'AI Tools', path: '/tools', icon: Wrench },
-    { name: 'A/B Tracker', path: '/tests', icon: FlaskConical },
-    { name: 'Settings', path: '/settings', icon: Settings }
+    { name: 'Dashboard', path: '/app', icon: LayoutDashboard },
+    { name: 'Analyze', path: '/app/analyze', icon: Zap },
+    { name: 'History', path: '/app/history', icon: History },
+    { name: 'AI Tools', path: '/app/tools', icon: Wrench },
+    { name: 'A/B Tracker', path: '/app/tests', icon: FlaskConical },
+    { name: 'Settings', path: '/app/settings', icon: Settings }
   ]
 
   const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : 'U'
 
   return (
-    <div className="flex min-h-screen bg-bgbase text-textprimary font-sans selection:bg-brand-500/30 transition-colors duration-300" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+    <div className="relative flex min-h-screen bg-bgbase text-textprimary font-sans selection:bg-brand-500/30 transition-colors duration-300" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+      
+      {/* Background Blobs matching the landing page */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="landing-blob bg-brand-500/20 w-[600px] h-[600px] top-[-10%] left-[-10%]" />
+        <div className="landing-blob bg-purple-500/10 w-[500px] h-[500px] bottom-[10%] right-[-10%]" style={{ animationDelay: '-5s' }} />
+        <div className="landing-blob bg-blue-500/10 w-[400px] h-[400px] top-[40%] left-[40%]" style={{ animationDelay: '-10s' }} />
+      </div>
+
+      <AnimatedBackground density="low" showKite={false} />
       <div className="grain-overlay print:hidden" />
       {/* Sidebar */}
       <aside className="w-64 flex-shrink-0 flex flex-col bg-bgpanel border-r border-borderwarm z-10 relative print:hidden">
         <div className="flex h-20 items-center px-6 border-b border-borderwarm relative z-10">
           <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-500 font-bold text-white shadow-sm">
-              A
-            </div>
+            <Logo className="h-8 w-8 text-brand-500" />
             <span className="text-xl font-bold tracking-tight text-textprimary">AdMind</span>
           </div>
         </div>
         
         <nav className="flex-1 mt-8 px-4 space-y-2 relative z-10">
           {navItems.map((item) => {
-            const isActive = item.path === '/' 
-              ? location.pathname === '/' 
+            const isActive = item.path === '/app' 
+              ? location.pathname === '/app' 
               : location.pathname.startsWith(item.path)
             return (
               <Link
@@ -108,18 +130,18 @@ export default function Layout() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden z-10">
         <header className="h-24 flex items-center justify-between px-10 shrink-0">
-          <h1 className="text-2xl font-bold text-white tracking-tight">
-            {location.pathname === '/' 
+          <h1 className="text-2xl font-bold text-textprimary tracking-tight">
+            {location.pathname === '/app' 
               ? 'Campaign Dashboard' 
-              : location.pathname.startsWith('/history/')
+              : location.pathname.startsWith('/app/history/')
               ? 'Detailed Analysis Report'
-              : location.pathname === '/history'
+              : location.pathname === '/app/history'
               ? 'Analysis History'
-              : location.pathname.startsWith('/tools')
+              : location.pathname.startsWith('/app/tools')
               ? 'AI Marketing Tools'
-              : location.pathname.startsWith('/tests')
+              : location.pathname.startsWith('/app/tests')
               ? 'A/B Test Tracking'
-              : location.pathname === '/settings'
+              : location.pathname === '/app/settings'
               ? 'System Settings'
               : 'Overview'}
           </h1>
@@ -133,9 +155,9 @@ export default function Layout() {
               {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
             </button>
 
-            <div className="relative">
+            <div className="relative" ref={wsDropdownRef}>
               <button 
-                onClick={() => { setShowWsDropdown(!showWsDropdown); setShowUserDropdown(false) }}
+                onClick={() => setShowWsDropdown(!showWsDropdown)}
                 className="flex items-center gap-2 bg-bgpanelhover hover:bg-bgpanel border border-borderwarm px-4 py-2.5 rounded-xl text-sm font-medium text-textprimary transition-colors"
               >
                 {activeWorkspace ? activeWorkspace.name : 'Loading...'}
@@ -174,30 +196,19 @@ export default function Layout() {
               )}
             </div>
 
-            <div className="relative">
+            <div>
               <motion.button
                 whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => { setShowUserDropdown(!showUserDropdown); setShowWsDropdown(false) }}
+                onClick={() => {
+                  navigate('/app/settings')
+                  setShowWsDropdown(false)
+                }}
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-bgpanel border border-borderwarm font-bold text-textprimary hover:bg-bgpanelhover transition-colors"
+                title="Go to Settings"
               >
                 {userInitial}
               </motion.button>
-              {showUserDropdown && (
-                <div className="absolute right-0 mt-2 w-56 bg-bgpanel border border-borderwarm rounded-2xl shadow-xl overflow-hidden z-50">
-                  <div className="p-4 border-b border-borderwarm">
-                    <p className="text-sm font-bold text-textprimary truncate">{user?.email || 'User'}</p>
-                  </div>
-                  <div className="p-2">
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center gap-3 text-left px-4 py-2.5 rounded-xl text-sm text-red-500 hover:bg-red-500/10 transition-colors font-medium"
-                    >
-                      <LogOut size={16} /> Logout
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </header>

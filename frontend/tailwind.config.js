@@ -9,12 +9,12 @@ export default {
       },
       colors: {
         brand: {
-          50: '#FDF8F5',
-          100: '#F9ECE6',
-          400: '#E8836A',
-          500: '#D97757', // Primary warm coral
-          600: '#C26243',
-          900: '#542316'
+          50: 'rgb(var(--brand-50) / <alpha-value>)',
+          100: 'rgb(var(--brand-100) / <alpha-value>)',
+          400: 'rgb(var(--brand-400) / <alpha-value>)',
+          500: 'rgb(var(--brand-500) / <alpha-value>)',
+          600: 'rgb(var(--brand-600) / <alpha-value>)',
+          900: 'rgb(var(--brand-900) / <alpha-value>)'
         },
         bgbase: 'var(--bg-base)',
         bgpanel: 'var(--bg-panel)',

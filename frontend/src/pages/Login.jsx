@@ -1,17 +1,36 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { LogIn, ArrowRight } from 'lucide-react'
+import { LogIn, ArrowRight, Sun, Moon, Eye, EyeOff } from 'lucide-react'
 import { API } from '../services/api'
 import { useAuth } from '../context/AuthContext'
+import AnimatedBackground from '../components/AnimatedBackground'
+import Logo from '../components/Logo'
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
   const { login } = useAuth()
+
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('theme')
+    if (saved) return saved === 'dark'
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  })
+
+  useEffect(() => {
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark')
+      localStorage.setItem('theme', 'dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+      localStorage.setItem('theme', 'light')
+    }
+  }, [isDarkMode])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -20,7 +39,7 @@ export default function Login() {
     try {
       const data = await API.login(email, password)
       login(data.access_token)
-      navigate('/')
+      navigate('/app')
     } catch (err) {
       setError(err.message)
     } finally {
@@ -29,7 +48,17 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen bg-bgbase text-textprimary">
+    <div className="flex min-h-screen bg-bgbase text-textprimary relative selection:bg-brand-500/30">
+      <div className="absolute top-6 right-6 z-50">
+        <button
+          onClick={() => setIsDarkMode(!isDarkMode)}
+          className="p-2.5 rounded-xl bg-bgpanel/80 hover:bg-bgpanel border border-borderwarm text-textmuted hover:text-brand-500 transition-all duration-300 shadow-sm backdrop-blur-sm"
+          aria-label="Toggle theme"
+        >
+          {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+        </button>
+      </div>
+      <AnimatedBackground density="full" showKite={true} />
       <div className="grain-overlay" />
       
       {/* Left side - Branding (Hidden on mobile) */}
@@ -41,9 +70,7 @@ export default function Login() {
         
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-16">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 font-bold text-white shadow-[0_0_15px_rgba(217,119,87,0.4)]">
-              A
-            </div>
+            <Logo className="h-12 w-12 text-brand-500" />
             <span className="text-2xl font-serif tracking-tight text-textprimary glow-text">AdMind</span>
           </div>
           
@@ -71,9 +98,7 @@ export default function Login() {
           className="w-full max-w-md"
         >
           <div className="lg:hidden flex items-center gap-3 mb-10">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 font-bold text-white shadow-[0_0_15px_rgba(217,119,87,0.4)]">
-              A
-            </div>
+            <Logo className="h-10 w-10 text-brand-500" />
             <span className="text-2xl font-serif tracking-tight text-textprimary">AdMind</span>
           </div>
 
@@ -103,14 +128,24 @@ export default function Login() {
 
             <div className="space-y-2">
               <label className="block text-sm font-medium text-textsecondary">Password</label>
-              <input
-                type="password"
-                required
-                className="w-full bg-bgpanel border border-borderwarm rounded-xl px-4 py-3.5 text-textprimary focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all placeholder:text-textmuted"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  className="w-full bg-bgpanel border border-borderwarm rounded-xl px-4 py-3.5 pr-12 text-textprimary focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/50 transition-all placeholder:text-textmuted"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-textmuted hover:text-textprimary transition-colors focus:outline-none"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
             </div>
 
             <motion.button

@@ -106,3 +106,17 @@ class ABTestCampaign(Base):
     status = Column(String, default="running")
     winner = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class CommunityReview(Base):
+    __tablename__ = "community_reviews"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    author_name = Column(String, nullable=False)
+    rating = Column(Integer, nullable=False)
+    content = Column(String, nullable=False)
+    is_approved = Column(Integer, default=0) # 0 for False, 1 for True for sqlite compat or just Boolean if supported. The schema says boolean, but sqlite uses 0/1. Let's use Boolean or just Integer.
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")

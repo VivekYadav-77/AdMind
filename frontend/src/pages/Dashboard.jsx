@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { 
@@ -18,71 +18,17 @@ function formatMoney(value) {
 }
 
 export default function Dashboard() {
-  const [stage, setStage] = useState('upload')
-  const [agentStatus, setAgentStatus] = useState(initialAgentStatus)
-  const [results, setResults] = useState(initialResults)
-  const [csvStats, setCsvStats] = useState(null)
-  const [error, setError] = useState(null)
-  const [waitingForBackend, setWaitingForBackend] = useState(false)
-  const [activeTab, setActiveTab] = useState('audit')
-  const [jobId, setJobId] = useState(null)
+  const { user } = useAuth()
+  const { activeWorkspace } = useWorkspace()
+  const navigate = useNavigate()
   
-  const reportRef = useRef(null)
-
-  const reset = () => {
-    setStage('upload')
-    setAgentStatus(initialAgentStatus)
-    setResults(initialResults)
-    setCsvStats(null)
-    setError(null)
-    setWaitingForBackend(false)
-    setActiveTab('audit')
-    setJobId(null)
+  const firstName = user?.email?.split('@')[0] || 'User'
+  const getGreeting = () => {
+    const hour = new Date().getHours()
+    if (hour < 12) return 'Good morning'
+    if (hour < 18) return 'Good afternoon'
+    return 'Good evening'
   }
-
-  const handleEvent = (event, data) => {
-    switch (event) {
-      case 'csv_parsed':
-        setWaitingForBackend(false)
-        setCsvStats(data)
-        break
-      case 'agent_start':
-        setWaitingForBackend(false)
-        setAgentStatus((prev) => ({ ...prev, [data.agent]: 'running' }))
-        break
-      case 'agent_done': {
-        const resultKey = data.agent === 'auditor' ? 'audit' : data.agent === 'strategist' ? 'strategy' : 'copy'
-        setAgentStatus((prev) => ({ ...prev, [data.agent]: 'done' }))
-        setResults((prev) => ({ ...prev, [resultKey]: data.result }))
-        break
-      }
-      case 'complete':
-        setStage('done')
-        break
-      case 'error':
-        setError(data.message || 'Analysis failed')
-        setStage('error')
-        break
-      default:
-        break
-    }
-  }
-
-  const runAnalysis = async (file) => {
-    // Let the backend handle CSV validation to support column aliases
-
-    setStage('running')
-    setAgentStatus(initialAgentStatus)
-    setResults(initialResults)
-    setCsvStats(null)
-    setError(null)
-    setWaitingForBackend(true)
-
-    try {
-      // Start background job
-      const response = await API.analyzeCSV(file)
-      const { job_id } = response
-      setJobId(job_id)
 
   const [loading, setLoading] = useState(true)
   const [trends, setTrends] = useState([])
@@ -128,11 +74,9 @@ export default function Dashboard() {
           avgEfficiency
         })
         
-        // Local AB tests
-        const savedTests = localStorage.getItem('ab_tests')
-        if (savedTests) {
-          setAbTests(JSON.parse(savedTests))
-        }
+        // Fetch active AB tests
+        const tests = await API.getAbTests()
+        setAbTests(tests || [])
 
       } catch (err) {
         console.error("Failed to load dashboard data", err)
@@ -154,40 +98,7 @@ export default function Dashboard() {
     Efficiency: t.efficiency
   }))
 
-    // Inject White-Label Branding
-    const agencyName = localStorage.getItem('agencyName')
-    const logoUrl = localStorage.getItem('logoUrl')
-    
-    let brandingDiv = null
-    if (agencyName || logoUrl) {
-      brandingDiv = document.createElement('div')
-      brandingDiv.className = 'flex items-center gap-4 mb-8 p-6 bg-slate-900 rounded-2xl border border-white/10'
-      if (logoUrl) {
-        brandingDiv.innerHTML += `<img src="${logoUrl}" alt="Logo" class="h-12 w-auto object-contain rounded" crossorigin="anonymous" />`
-      }
-      if (agencyName) {
-        brandingDiv.innerHTML += `<h2 class="text-2xl font-bold text-white">${agencyName}</h2>`
-      }
-      element.insertBefore(brandingDiv, element.firstChild)
-    }
-
-    const opt = {
-      margin: [10, 10, 10, 10], // top, left, bottom, right in mm
-      filename: 'AdMind_Report.pdf',
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }
-
-    html2pdf().set(opt).from(element).save().then(() => {
-      // Clean up branding div after PDF is generated
-      if (brandingDiv) {
-        element.removeChild(brandingDiv)
-      }
-    })
-  }
-
-  const runningAbTests = abTests.filter(t => t.status === 'Running')
+  const runningAbTests = abTests.filter(t => t.status === 'running')
 
   return (
     <motion.div 
@@ -204,13 +115,15 @@ export default function Dashboard() {
           </h1>
           <p className="text-textmuted font-medium">Here's what's happening with your campaigns today.</p>
         </div>
-        <button
-          onClick={() => navigate('/analyze')}
-          className="inline-flex items-center gap-2 btn-primary"
-        >
-          <Zap size={18} />
-          Run New Analysis
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate('/app/analyze')}
+            className="inline-flex items-center gap-2 btn-primary"
+          >
+            <Zap size={18} />
+            Run New Analysis
+          </button>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -274,12 +187,12 @@ export default function Dashboard() {
               <h2 className="text-lg font-serif font-bold text-textprimary">Performance Trend</h2>
             </div>
             
-            {!showChart ? (
+            {chartData.length === 0 ? (
               <div className="h-64 flex flex-col items-center justify-center text-center bg-bgbase rounded-xl border border-dashed border-borderwarm p-6">
                 <BarChart3 size={32} className="text-textmuted mb-3 opacity-50" />
                 <h3 className="text-textprimary font-medium mb-1">No data available yet</h3>
                 <p className="text-sm text-textmuted max-w-sm">Run your first campaign analysis to see your ROAS and efficiency trends here.</p>
-                <button onClick={() => navigate('/analyze')} className="mt-4 text-sm font-medium text-brand-500 hover:text-brand-600">Run Analysis →</button>
+                <button onClick={() => navigate('/app/analyze')} className="mt-4 text-sm font-medium text-brand-500 hover:text-brand-600">Run Analysis →</button>
               </div>
             ) : (
               <div className="h-64">
@@ -305,25 +218,7 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div ref={reportRef} className="bg-transparent min-h-[500px] p-2">
-            <AnimatePresence mode="wait">
-              {activeTab === 'audit' && results.audit && (
-                <motion.div key="audit" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
-                  <AuditResults audit={results.audit} />
-                </motion.div>
-              )}
-              {activeTab === 'strategy' && results.strategy && (
-                <motion.div key="strategy" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
-                  <StrategyResults strategy={results.strategy} jobId={jobId} />
-                </motion.div>
-              )}
-              {activeTab === 'copy' && results.copy && (
-                <motion.div key="copy" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
-                  <CopyResults copy={results.copy} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-            
+          <div className="bg-transparent min-h-[500px] p-2">
             {recentJobs.length === 0 ? (
               <p className="text-sm text-textmuted py-4 text-center">No analyses found.</p>
             ) : (
@@ -351,7 +246,7 @@ export default function Dashboard() {
                       </div>
                       
                       <button 
-                        onClick={() => navigate(job.status === 'complete' ? `/history/${job.id}` : '#')}
+                        onClick={() => navigate(job.status === 'complete' ? `/app/history/${job.id}` : '#')}
                         disabled={job.status !== 'complete'}
                         className="opacity-0 group-hover:opacity-100 px-4 py-2 bg-bgpanel text-textprimary text-xs font-semibold rounded-lg border border-borderwarm hover:border-brand-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
@@ -373,22 +268,22 @@ export default function Dashboard() {
           <div className="card-warm p-6">
             <h2 className="text-lg font-serif font-bold text-textprimary mb-4">Quick Actions</h2>
             <div className="grid grid-cols-2 gap-3">
-              <button onClick={() => navigate('/analyze')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-brand-500/5 border border-borderwarm hover:border-brand-500/30 transition-colors gap-2 text-center group">
+              <button onClick={() => navigate('/app/analyze')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-brand-500/5 border border-borderwarm hover:border-brand-500/30 transition-colors gap-2 text-center group">
                 <Zap size={20} className="text-brand-500 group-hover:scale-110 transition-transform" />
                 <span className="text-xs font-medium text-textprimary">Run Analysis</span>
               </button>
               
-              <button onClick={() => navigate('/tools')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-emerald-500/5 border border-borderwarm hover:border-emerald-500/30 transition-colors gap-2 text-center group">
+              <button onClick={() => navigate('/app/tools', { state: { activeTab: 'landing-page' } })} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-emerald-500/5 border border-borderwarm hover:border-emerald-500/30 transition-colors gap-2 text-center group">
                 <Search size={20} className="text-emerald-500 group-hover:scale-110 transition-transform" />
                 <span className="text-xs font-medium text-textprimary">Landing Audit</span>
               </button>
 
-              <button onClick={() => navigate('/tools')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-blue-500/5 border border-borderwarm hover:border-blue-500/30 transition-colors gap-2 text-center group">
+              <button onClick={() => navigate('/app/tools', { state: { activeTab: 'audience' } })} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-blue-500/5 border border-borderwarm hover:border-blue-500/30 transition-colors gap-2 text-center group">
                 <Users size={20} className="text-blue-500 group-hover:scale-110 transition-transform" />
                 <span className="text-xs font-medium text-textprimary">Build Audience</span>
               </button>
 
-              <button onClick={() => navigate('/ab-tracker')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-purple-500/5 border border-borderwarm hover:border-purple-500/30 transition-colors gap-2 text-center group">
+              <button onClick={() => navigate('/app/tests')} className="flex flex-col items-center justify-center p-4 rounded-xl bg-bgbase hover:bg-purple-500/5 border border-borderwarm hover:border-purple-500/30 transition-colors gap-2 text-center group">
                 <GitCompare size={20} className="text-purple-500 group-hover:scale-110 transition-transform" />
                 <span className="text-xs font-medium text-textprimary">A/B Tracker</span>
               </button>
@@ -408,13 +303,13 @@ export default function Dashboard() {
               <div className="text-center py-6 px-4 bg-bgbase rounded-xl border border-dashed border-borderwarm">
                 <GitCompare size={24} className="mx-auto text-textmuted mb-2 opacity-50" />
                 <p className="text-sm text-textmuted">No active tests.</p>
-                <button onClick={() => navigate('/ab-tracker')} className="mt-2 text-xs font-medium text-brand-500 hover:text-brand-600">Start a Test →</button>
+                <button onClick={() => navigate('/app/tests')} className="mt-2 text-xs font-medium text-brand-500 hover:text-brand-600">Start a Test →</button>
               </div>
             ) : (
               <div className="space-y-3 mb-4">
                 {runningAbTests.slice(0, 3).map(test => (
                   <div key={test.id} className="p-3 bg-bgbase rounded-lg border border-borderwarm text-sm">
-                    <div className="font-semibold text-textprimary truncate">{test.name}</div>
+                    <div className="font-semibold text-textprimary truncate">{test.test_name}</div>
                     <div className="text-xs text-textmuted flex items-center gap-2 mt-1">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                       Gathering data...
@@ -426,7 +321,7 @@ export default function Dashboard() {
             
             {runningAbTests.length > 0 && (
               <button 
-                onClick={() => navigate('/ab-tracker')} 
+                onClick={() => navigate('/app/tests')} 
                 className="w-full py-2.5 text-sm font-medium text-textprimary bg-bgbase hover:bg-bgpanelhover rounded-xl border border-borderwarm transition-colors"
               >
                 Manage Tests

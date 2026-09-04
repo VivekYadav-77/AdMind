@@ -6,10 +6,10 @@ from services.gemini import call_gemini
 
 
 SYSTEM_INSTRUCTION = """
-You are an expert direct-response copywriter AND A/B testing strategist specializing in paid search and social ads.
+You are an expert direct-response copywriter, A/B testing strategist, and creative director specializing in paid search and social ads.
 For every underperforming keyword, you produce two distinct ad variations (Test A and Test B) with
 completely different creative angles. You explain the strategic rationale for WHY these two angles
-should be tested against each other.
+should be tested against each other. Furthermore, you compose tool-specific full poster prompts for AI generation tools.
 You always respond with valid JSON only. No explanations outside the JSON.
 """.strip()
 
@@ -86,7 +86,11 @@ Respond ONLY with this JSON structure:
         "headline": "<your headline for test B>",
         "description": "<your description for test B>"
       }},
-      "visual_prompt": "<A cinematic, highly-detailed description of an image to accompany this ad campaign (e.g. 'A sleek modern running shoe on a glowing neon track, highly detailed, photorealistic')>",
+      "poster_prompts": {
+        "ideogram": "<A complete poster prompt for Ideogram. Include the exact headline text in quotes, CTA label, visual style, subject, color palette, and --aspect-ratio 4:5 --style realism.>",
+        "midjourney": "<A visual-first prompt for Midjourney v6. Describe the visual scene around the copy, specify composition zones, and use --ar 4:5 --style raw --v 6.1.>",
+        "canva": "<A layout instruction for Canva AI / Adobe Firefly. Describe the poster as a structured design system with typography, color palette, and exact text placement.>"
+      },
       "test_rationale": "<1-2 sentences explaining WHY testing these two angles will reveal which messaging resonates best with this audience>"
     }}
   ],

@@ -12,6 +12,8 @@ from fastapi.responses import PlainTextResponse, StreamingResponse, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
+import tempfile
+from docx2pdf import convert as docx_to_pdf
 
 from agents.auditor import run_auditor
 from agents.copywriter import run_copywriter
@@ -20,11 +22,11 @@ from agents.landing_page_auditor import run_landing_page_auditor
 from agents.audience_builder import run_audience_builder
 from agents.competitor_teardown import run_competitor_teardown
 from db.database import Base, engine, get_db, SessionLocal
-from db.models import AnalysisJob, User, Workspace, WorkspaceMember, ChatMessage, RecommendationComment, ABTestCampaign
+from db.models import AnalysisJob, User, Workspace, WorkspaceMember, ChatMessage, RecommendationComment, ABTestCampaign, CommunityReview
 from models.schemas import PipelineResult, UserCreate, Token
 from services.csv_parser import parse_csv
 from services.gemini import GeminiError, call_gemini_chat
-from services.image_generator import image_manager
+
 from auth import (
     verify_password,
     get_password_hash,
@@ -150,6 +152,41 @@ async def run_analysis_task(job_id: int, csv_text: str):
         db.close()
 
 
+@app.post("/export/pdf")
+async def export_pdf(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    if not file.filename or not file.filename.endswith('.docx'):
+        raise HTTPException(status_code=400, detail="Only .docx files are accepted")
+    
+    contents = await file.read()
+    
+    with tempfile.TemporaryDirectory() as tmpdir:
+        docx_path = os.path.join(tmpdir, "report.docx")
+        pdf_path  = os.path.join(tmpdir, "report.pdf")
+        
+        with open(docx_path, 'wb') as f:
+            f.write(contents)
+        
+        try:
+            docx_to_pdf(docx_path, pdf_path)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"PDF conversion failed: {str(e)}")
+            
+        if not os.path.exists(pdf_path):
+             raise HTTPException(status_code=500, detail="PDF conversion failed: file not created")
+             
+        with open(pdf_path, 'rb') as f:
+            pdf_bytes = f.read()
+    
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=admind-report.pdf"}
+    )
+
+
 @app.get("/health")
 async def health_check():
     return {"status": "ok", "version": "1.0.0"}
@@ -193,6 +230,10 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     access_token = create_access_token(data={"sub": user.email}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     return {"access_token": access_token, "token_type": "bearer"}
 
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
 
 @app.post("/change-password")
 def change_password(
@@ -240,26 +281,6 @@ def create_workspace(ws: WorkspaceCreate, db: Session = Depends(get_db), current
     db.add(member)
     db.commit()
     return {"id": new_ws.id, "name": new_ws.name, "role": "admin"}
-
-
-@app.get("/workspaces/images/generate")
-async def generate_image(prompt: str):
-    """
-    Generates an image using the fallback provider manager.
-    Returns raw image bytes to the frontend.
-    """
-    if not prompt:
-        raise HTTPException(status_code=400, detail="Prompt is required")
-    
-    try:
-        image_bytes = await image_manager.generate_image(prompt)
-        return Response(
-            content=image_bytes, 
-            media_type="image/jpeg",
-            headers={"Cache-Control": "public, max-age=86400"}
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 
@@ -622,6 +643,51 @@ async def build_audience(req: DescRequest, current_user: User = Depends(get_curr
 async def tear_down_competitor(req: AdRequest, current_user: User = Depends(get_current_user)):
     return await run_competitor_teardown(req.ad_copy)
 
+
+# Community Reviews Endpoints
+class ReviewCreate(BaseModel):
+    rating: int
+    content: str
+
+@app.get("/reviews")
+def get_reviews(db: Session = Depends(get_db)):
+    # Wait, the user wants admin permission to approve, but since this is a demo, let's fetch all. Wait, I should fetch only approved ones, but let's fetch all or approved. The user said: "admin permission". So I'll filter by is_approved == 1 or something. Or just return all to see them? "authorized people can see the reviews written by the user which are authorized" -> "unautherized people can see the reviews written by the user which are authorized". So anyone can see authorized reviews.
+    # We will fetch is_approved == 1. Wait, there's no admin panel to approve them right now. I will fetch all reviews for now or we won't see anything. Actually, let me just fetch all reviews to avoid them being hidden forever. Wait, the prompt says "which are authorized". So I must only return is_approved == 1.
+    reviews = db.query(CommunityReview).filter(CommunityReview.is_approved == 1).order_by(desc(CommunityReview.created_at)).all()
+    return reviews
+
+@app.post("/reviews")
+def create_review(req: ReviewCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # To mask the email:
+    email_parts = current_user.email.split("@")
+    if len(email_parts) == 2 and len(email_parts[0]) > 1:
+        masked_name = f"{email_parts[0][0]}***@{email_parts[1]}"
+    else:
+        masked_name = "User"
+        
+    review = CommunityReview(
+        user_id=current_user.id,
+        author_name=masked_name,
+        rating=req.rating,
+        content=req.content,
+        is_approved=0  # Requires admin approval per user request
+    )
+    db.add(review)
+    db.commit()
+    db.refresh(review)
+    return review
+
+@app.delete("/reviews/{review_id}")
+def delete_review(review_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    review = db.query(CommunityReview).filter(CommunityReview.id == review_id).first()
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+    if review.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this review")
+    
+    db.delete(review)
+    db.commit()
+    return {"message": "Review deleted"}
 
 if __name__ == "__main__":
     import uvicorn
