@@ -1,94 +1,114 @@
-import { Upload, FileSpreadsheet, PlayCircle } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { motion } from 'framer-motion'
+import { FileUp, Sparkles, UploadCloud } from 'lucide-react'
+import { useCallback, useState } from 'react'
 
-import { API } from '../services/api'
+import { API_BASE_URL } from '../services/api'
+import { useToast } from '../context/ToastContext'
 
 export default function UploadZone({ onFileReady }) {
-  const inputRef = useRef(null)
   const [isDragging, setIsDragging] = useState(false)
-  const [filename, setFilename] = useState('')
-  const [loadingSample, setLoadingSample] = useState(false)
-  const [localError, setLocalError] = useState('')
+  const [isProcessingDemo, setIsProcessingDemo] = useState(false)
+  const { showToast } = useToast()
 
-  const acceptFile = (file) => {
-    if (!file) return
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      setLocalError('Please choose a CSV file.')
-      return
+  const handleDrop = useCallback(
+    (e) => {
+      e.preventDefault()
+      setIsDragging(false)
+      const file = e.dataTransfer.files[0]
+      if (file && file.name.endsWith('.csv')) {
+        onFileReady(file)
+      } else {
+        showToast('error', 'Please upload a valid CSV file.')
+      }
+    },
+    [onFileReady, showToast]
+  )
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.name.endsWith('.csv')) {
+        onFileReady(file)
+      } else {
+        showToast('error', 'Please upload a valid CSV file.')
+      }
     }
-    setFilename(file.name)
-    setLocalError('')
-    onFileReady(file)
+    // reset input so the same file can be selected again if needed
+    e.target.value = null
   }
 
-  const loadSample = async () => {
-    setLoadingSample(true)
-    setLocalError('')
+  const loadSampleData = async () => {
     try {
-      const sample = await API.getSampleCSV()
-      setFilename(sample.name)
-      onFileReady(sample)
-    } catch (error) {
-      setLocalError(error.message)
-    } finally {
-      setLoadingSample(false)
+      setIsProcessingDemo(true)
+      const res = await fetch(`${API_BASE_URL}/sample-csv`)
+      if (!res.ok) throw new Error('Failed to load sample data')
+      const blob = await res.blob()
+      const file = new File([blob], 'sample_data.csv', { type: 'text/csv' })
+      onFileReady(file)
+    } catch (err) {
+      showToast('error', 'Could not load sample data. Is the backend running?')
+      setIsProcessingDemo(false)
     }
   }
 
   return (
-    <section className="py-12">
-      <div
-        className={`mx-auto max-w-3xl rounded-xl border-2 border-dashed bg-white p-10 text-center shadow-sm transition ${
-          isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
-        }`}
-        onDragOver={(event) => {
-          event.preventDefault()
-          setIsDragging(true)
-        }}
-        onDragLeave={() => setIsDragging(false)}
-        onDrop={(event) => {
-          event.preventDefault()
-          setIsDragging(false)
-          acceptFile(event.dataTransfer.files?.[0])
-        }}
-      >
-        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
-          <FileSpreadsheet size={30} aria-hidden="true" />
-        </div>
-        <h2 className="text-xl font-semibold text-gray-900">Upload ad campaign CSV</h2>
-        <p className="mt-2 text-sm text-gray-500">Drop a CSV file here or use the sample campaign data.</p>
-
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".csv,text/csv"
-          className="hidden"
-          onChange={(event) => acceptFile(event.target.files?.[0])}
-        />
-
-        <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-          >
-            <Upload size={18} aria-hidden="true" />
-            Upload CSV
-          </button>
-          <button
-            type="button"
-            onClick={loadSample}
-            disabled={loadingSample}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
-          >
-            <PlayCircle size={18} aria-hidden="true" />
-            {loadingSample ? 'Loading Sample...' : 'Try Sample Data'}
-          </button>
-        </div>
-
-        {filename && <p className="mt-5 text-sm font-medium text-gray-700">Selected: {filename}</p>}
-        {localError && <p className="mt-5 text-sm font-medium text-red-600">{localError}</p>}
+    <motion.section 
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="py-12"
+    >
+      <div className="mx-auto max-w-2xl text-center mb-10 mt-8">
+        <h1 className="text-4xl md:text-5xl font-bold text-textprimary tracking-tight mb-4">
+          Uncover the Hidden ROI in Your <span className="text-brand-500">Ad Campaigns</span>
+        </h1>
+        <p className="text-lg text-textmuted">
+          Upload your campaign data. Our multi-agent AI pipeline will instantly audit performance, write strategic recommendations, and generate A/B tested ad copy.
+        </p>
       </div>
-    </section>
+
+      <div className="mx-auto max-w-3xl bg-bgpanel rounded-2xl border border-borderwarm shadow-sm p-8">
+        <div
+          onDragOver={(e) => {
+            e.preventDefault()
+            setIsDragging(true)
+          }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={handleDrop}
+          className={`relative rounded-xl border-2 border-dashed p-12 text-center transition-all duration-200 ${
+            isDragging
+              ? 'border-brand-500 bg-brand-50 dark:bg-brand-500/10 scale-[0.99]'
+              : 'border-borderwarm hover:border-brand-500/50'
+          }`}
+        >
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-brand-50 dark:bg-brand-500/10 text-brand-500 mb-6">
+            <UploadCloud size={32} strokeWidth={2} />
+          </div>
+          
+          <h3 className="text-xl font-bold text-textprimary mb-2">Upload Campaign Data</h3>
+          <p className="text-textmuted mb-8 max-w-md mx-auto">
+            Drag and drop your exported CSV file containing ad performance metrics, or click to browse files.
+          </p>
+
+          <label className="relative inline-flex cursor-pointer items-center gap-2 btn-primary px-8 py-4 text-sm">
+            <FileUp size={18} aria-hidden="true" />
+            <span>Select CSV File</span>
+            <input type="file" accept=".csv" className="sr-only" onChange={handleFileChange} />
+          </label>
+        </div>
+      </div>
+
+      <div className="mt-12 text-center">
+        <p className="text-xs text-[#8A857A] mb-4 font-bold uppercase tracking-widest">Or try it out</p>
+        <button
+          type="button"
+          onClick={loadSampleData}
+          disabled={isProcessingDemo}
+          className="inline-flex items-center gap-2 rounded-full btn-secondary px-6 py-2.5 text-sm"
+        >
+          <Sparkles size={16} className="text-amber-400" aria-hidden="true" />
+          {isProcessingDemo ? 'Loading...' : 'Run Analysis with Sample Data'}
+        </button>
+      </div>
+    </motion.section>
   )
 }

@@ -25,7 +25,18 @@ def percent_to_float(value: str) -> float:
         return 0.0
 
 
+def _has_demographics(rows: Iterable[AdRow]) -> bool:
+    """Check if any row in the dataset contains demographic data."""
+    for row in rows:
+        if row.device or row.location or row.age_group:
+            return True
+    return False
+
+
 def format_campaign_table(rows: Iterable[AdRow]) -> str:
+    rows_list = list(rows)
+    has_demo = _has_demographics(rows_list)
+
     headers = [
         "campaign_name",
         "ad_group",
@@ -39,10 +50,14 @@ def format_campaign_table(rows: Iterable[AdRow]) -> str:
         "conversion_rate",
         "revenue",
     ]
+
+    if has_demo:
+        headers.extend(["device", "location", "age_group"])
+
     lines: List[str] = [" | ".join(headers)]
     lines.append(" | ".join("---" for _ in headers))
 
-    for row in rows:
+    for row in rows_list:
         values = [
             row.campaign_name,
             row.ad_group,
@@ -56,6 +71,14 @@ def format_campaign_table(rows: Iterable[AdRow]) -> str:
             row.conversion_rate,
             f"{row.revenue:.2f}",
         ]
+
+        if has_demo:
+            values.extend([
+                row.device or "N/A",
+                row.location or "N/A",
+                row.age_group or "N/A",
+            ])
+
         lines.append(" | ".join(values))
 
     return "\n".join(lines)

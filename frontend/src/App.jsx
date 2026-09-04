@@ -1,186 +1,144 @@
-import { AlertCircle, BarChart3, RotateCcw } from 'lucide-react'
-import { useState } from 'react'
+import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom'
 
-import AgentPipeline from './components/AgentPipeline'
-import AuditResults from './components/AuditResults'
-import ColdStartLoader from './components/ColdStartLoader'
-import CopyResults from './components/CopyResults'
-import Header from './components/Header'
-import StrategyResults from './components/StrategyResults'
-import UploadZone from './components/UploadZone'
-import { API } from './services/api'
+import Layout from './components/Layout'
+import Dashboard from './pages/Dashboard'
+import Analyze from './pages/Analyze'
+import History from './pages/History'
+import Tools from './pages/Tools'
+import Login from './pages/Login'
+import Signup from './pages/Signup'
+import ReportDetail from './pages/ReportDetail'
+import Settings from './pages/Settings'
+import TestTracker from './pages/TestTracker'
+import VerifyEmail from './pages/VerifyEmail'
+import CheckEmail from './pages/CheckEmail'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
+import LandingPage from './pages/LandingPage'
+import BlogPage from './pages/BlogPage'
+import BlogPost from './pages/BlogPost'
+import PrivacyPolicy from './pages/PrivacyPolicy'
+import TermsOfService from './pages/TermsOfService'
+import Community from './pages/Community'
+import AboutUs from './pages/AboutUs'
 
-const initialAgentStatus = {
-  auditor: 'idle',
-  strategist: 'idle',
-  copywriter: 'idle'
+import ContactPage from './pages/ContactPage'
+import SupportPage from './pages/SupportPage'
+import SupportTicketDetail from './pages/SupportTicketDetail'
+
+import AdminLayout from './components/AdminLayout'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminUsers from './pages/admin/AdminUsers'
+import AdminUserControls from './pages/admin/AdminUserControls'
+import AdminJobs from './pages/admin/AdminJobs'
+import AdminReviews from './pages/admin/AdminReviews'
+import AdminWorkspaces from './pages/admin/AdminWorkspaces'
+import AdminActivity from './pages/admin/AdminActivity'
+import AdminTickets from './pages/admin/AdminTickets'
+import AdminTicketDetail from './pages/admin/AdminTicketDetail'
+import AdminEmailAnalytics from './pages/admin/AdminEmailAnalytics'
+
+import ScrollToTop from './components/ScrollToTop'
+import { AuthProvider, useAuth } from './context/AuthContext'
+import { ToastProvider } from './context/ToastContext'
+import { WorkspaceProvider } from './context/WorkspaceContext'
+
+function ProtectedRoute({ children }) {
+  const { isAuthenticated } = useAuth()
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />
+  }
+  return children
 }
 
-const initialResults = {
-  audit: null,
-  strategy: null,
-  copy: null
+function PublicOnlyRoute({ children }) {
+  const { isAuthenticated } = useAuth()
+  if (isAuthenticated) {
+    return <Navigate to="/app" replace />
+  }
+  return children
 }
 
-function formatMoney(value) {
-  return `$${Number(value || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
+function AdminRoute({ children }) {
+  const { isAuthenticated, isAdmin } = useAuth()
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />
+  }
+  if (!isAdmin) {
+    return <Navigate to="/app" replace />
+  }
+  return children
 }
 
 export default function App() {
-  const [stage, setStage] = useState('upload')
-  const [agentStatus, setAgentStatus] = useState(initialAgentStatus)
-  const [results, setResults] = useState(initialResults)
-  const [csvStats, setCsvStats] = useState(null)
-  const [error, setError] = useState(null)
-  const [waitingForBackend, setWaitingForBackend] = useState(false)
-
-  const reset = () => {
-    setStage('upload')
-    setAgentStatus(initialAgentStatus)
-    setResults(initialResults)
-    setCsvStats(null)
-    setError(null)
-    setWaitingForBackend(false)
-  }
-
-  const handleEvent = (event, data) => {
-    switch (event) {
-      case 'csv_parsed':
-        setWaitingForBackend(false)
-        setCsvStats(data)
-        break
-      case 'agent_start':
-        setWaitingForBackend(false)
-        setAgentStatus((prev) => ({ ...prev, [data.agent]: 'running' }))
-        break
-      case 'agent_done': {
-        const resultKey = data.agent === 'auditor' ? 'audit' : data.agent === 'strategist' ? 'strategy' : 'copy'
-        setAgentStatus((prev) => ({ ...prev, [data.agent]: 'done' }))
-        setResults((prev) => ({ ...prev, [resultKey]: data.result }))
-        break
-      }
-      case 'complete':
-        setStage('done')
-        break
-      case 'error':
-        setError(data.message || 'Analysis failed')
-        setStage('error')
-        break
-      default:
-        break
-    }
-  }
-
-  const runAnalysis = async (file) => {
-    setStage('running')
-    setAgentStatus(initialAgentStatus)
-    setResults(initialResults)
-    setCsvStats(null)
-    setError(null)
-    setWaitingForBackend(true)
-
-    try {
-      const response = await API.analyzeCSV(file)
-      if (!response.ok || !response.body) {
-        throw new Error('Could not start analysis')
-      }
-
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        buffer += decoder.decode(value, { stream: true })
-        const chunks = buffer.split('\n\n')
-        buffer = chunks.pop() || ''
-
-        for (const chunk of chunks) {
-          const line = chunk.split('\n').find((item) => item.startsWith('data: '))
-          if (!line) continue
-          const payload = JSON.parse(line.replace('data: ', ''))
-          handleEvent(payload.event, payload.data)
-        }
-      }
-    } catch (caught) {
-      setWaitingForBackend(false)
-      setError(caught.message)
-      setStage('error')
-    }
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      <main className="mx-auto max-w-5xl px-4">
-        {stage === 'upload' && <UploadZone onFileReady={runAnalysis} />}
+    <AuthProvider>
+      <ToastProvider>
+        <WorkspaceProvider>
+          <BrowserRouter>
+            <ScrollToTop />
+            <Routes>
+              {/* Public Landing Page */}
+              <Route path="/" element={<PublicOnlyRoute><LandingPage /></PublicOnlyRoute>} />
+              
+              <Route path="/login" element={<PublicOnlyRoute><Login /></PublicOnlyRoute>} />
+              <Route path="/signup" element={<PublicOnlyRoute><Signup /></PublicOnlyRoute>} />
+              <Route path="/check-email" element={<PublicOnlyRoute><CheckEmail /></PublicOnlyRoute>} />
+              <Route path="/verify-email" element={<PublicOnlyRoute><VerifyEmail /></PublicOnlyRoute>} />
+              <Route path="/forgot-password" element={<PublicOnlyRoute><ForgotPassword /></PublicOnlyRoute>} />
+              <Route path="/reset-password" element={<PublicOnlyRoute><ResetPassword /></PublicOnlyRoute>} />
+              
+              {/* New Public Routes (No Auth Needed to View) */}
+              <Route path="/blog" element={<BlogPage />} />
+              <Route path="/blog/:id" element={<BlogPost />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfService />} />
+              <Route path="/community" element={<Community />} />
+              <Route path="/about" element={<AboutUs />} />
+              <Route path="/contact" element={<ContactPage />} />
+              
+              {/* Protected App Routes */}
+              <Route path="/app" element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<Dashboard />} />
+                <Route path="analyze" element={<Analyze />} />
+                <Route path="history" element={<History />} />
+                <Route path="history/:id" element={<ReportDetail />} />
+                <Route path="tools" element={<Tools />} />
+                <Route path="tests" element={<TestTracker />} />
+                <Route path="support" element={<SupportPage />} />
+                <Route path="support/:id" element={<SupportTicketDetail />} />
+                <Route path="settings" element={<Settings />} />
+                <Route path="*" element={<Dashboard />} />
+              </Route>
+              
+              {/* Admin Routes */}
+              <Route path="/admin" element={
+                <AdminRoute>
+                  <AdminLayout />
+                </AdminRoute>
+              }>
+                <Route index element={<AdminDashboard />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="users/:id/controls" element={<AdminUserControls />} />
+                <Route path="jobs" element={<AdminJobs />} />
+                <Route path="reviews" element={<AdminReviews />} />
+                <Route path="workspaces" element={<AdminWorkspaces />} />
+                <Route path="activity" element={<AdminActivity />} />
+                <Route path="tickets" element={<AdminTickets />} />
+                <Route path="tickets/:id" element={<AdminTicketDetail />} />
+                <Route path="email-analytics" element={<AdminEmailAnalytics />} />
+                <Route path="*" element={<Navigate to="/admin" replace />} />
+              </Route>
 
-        {(stage === 'running' || stage === 'done' || stage === 'error') && (
-          <>
-            <ColdStartLoader visible={waitingForBackend && stage === 'running'} />
-            <AgentPipeline agentStatus={agentStatus} />
-            {csvStats && (
-              <section className="pb-4">
-                <div className="flex flex-wrap items-center gap-3 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
-                    <BarChart3 size={21} aria-hidden="true" />
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    <span className="font-semibold text-gray-900">{csvStats.rows}</span> rows parsed
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Spend: <span className="font-semibold text-gray-900">{formatMoney(csvStats.total_spend)}</span>
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Revenue: <span className="font-semibold text-gray-900">{formatMoney(csvStats.total_revenue)}</span>
-                  </p>
-                </div>
-              </section>
-            )}
-          </>
-        )}
-
-        {stage === 'error' && (
-          <section className="py-8">
-            <div className="rounded-xl border border-red-100 bg-white p-6 shadow-sm">
-              <div className="flex items-start gap-3 text-red-700">
-                <AlertCircle size={22} aria-hidden="true" />
-                <div>
-                  <h2 className="font-semibold">Analysis failed</h2>
-                  <p className="mt-1 text-sm text-red-600">{error}</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={reset}
-                className="mt-5 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-              >
-                <RotateCcw size={16} aria-hidden="true" />
-                Analyze Another File
-              </button>
-            </div>
-          </section>
-        )}
-
-        <AuditResults audit={results.audit} />
-        <StrategyResults strategy={results.strategy} />
-        <CopyResults copy={results.copy} />
-
-        {stage === 'done' && (
-          <section className="py-8 text-center">
-            <button
-              type="button"
-              onClick={reset}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
-            >
-              <RotateCcw size={18} aria-hidden="true" />
-              Analyze Another File
-            </button>
-          </section>
-        )}
-      </main>
-    </div>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </WorkspaceProvider>
+      </ToastProvider>
+    </AuthProvider>
   )
 }

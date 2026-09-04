@@ -1,0 +1,7 @@
+campaign_name,ad_group,keyword,impressions,clicks,ctr,avg_cpc,spend,conversions,conversion_rate,revenue,device,location,age_group
+High-Ticket Search,Luxury Brands,luxury watches,5000,250,5.00%,2.50,625.00,15,6.00%,4500.00,Desktop,New York,35-44
+High-Ticket Search,Luxury Brands,luxury watches,3000,150,5.00%,2.50,375.00,10,6.67%,3000.00,Mobile,New York,35-44
+Competitor Conquest,Smartwatches,apple watch alternative,10000,100,1.00%,1.50,150.00,1,1.00%,199.00,Mobile,California,18-24
+Broad Match Trap,Cheap Tech,cheap smartwatches,8000,400,5.00%,1.25,500.00,0,0.00%,0.00,Mobile,Texas,18-24
+Middle Funnel,E-commerce,buy watch online,6000,120,2.00%,1.00,120.00,0,0.00%,0.00,Desktop,Florida,25-34
+Retargeting,Cart Abandoners,watch discount code,2000,300,15.00%,0.50,150.00,25,8.33%,2500.00,Mobile,National,25-34

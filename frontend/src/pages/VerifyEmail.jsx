@@ -1,0 +1,112 @@
+import { useState, useEffect } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { CheckCircle, XCircle, Loader2, ArrowLeft, Sun, Moon } from 'lucide-react'
+import { API } from '../services/api'
+import AnimatedBackground from '../components/AnimatedBackground'
+import Logo from '../components/Logo'
+
+export default function VerifyEmail() {
+  const [searchParams] = useSearchParams()
+  const token = searchParams.get('token')
+  const navigate = useNavigate()
+  
+  const [status, setStatus] = useState('loading') // loading, success, error
+  const [message, setMessage] = useState('')
+
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem('theme')
+    if (saved) return saved === 'dark'
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  })
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', isDark)
+    localStorage.setItem('theme', isDark ? 'dark' : 'light')
+  }, [isDark])
+
+  useEffect(() => {
+    if (!token) {
+      setStatus('error')
+      setMessage('No verification token provided.')
+      return
+    }
+
+    const verify = async () => {
+      try {
+        await API.verifyEmail(token)
+        // Redirect immediately — no 3s wait, no flash window
+        navigate('/login', { state: { message: 'Email verified! You can now log in.' } })
+      } catch (err) {
+        setStatus('error')
+        const msg = err.message || ''
+        // Unified message for used/invalid/expired token
+        if (msg.includes('invalid or has already been used') || msg.includes('already used') || msg.includes('Invalid token') || msg.includes('expired')) {
+          setMessage('This link has already been used or has expired. Please request a new verification email from the login page.')
+        } else {
+          setMessage(msg || 'Verification failed. Please try again.')
+        }
+      }
+    }
+
+    verify()
+  }, [token, navigate])
+
+  return (
+    <div className="flex min-h-screen bg-bgbase text-textprimary items-center justify-center relative">
+      <AnimatedBackground density="light" />
+      <div className="grain-overlay" />
+      
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="w-full max-w-md bg-bgpanel border border-borderwarm p-10 rounded-2xl shadow-xl z-10 text-center relative overflow-hidden"
+      >
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-500 to-amber-500" />
+        
+        <button 
+          onClick={() => setIsDark(!isDark)} 
+          className="absolute top-6 right-6 p-2 text-textmuted hover:text-brand-500 transition-colors"
+          aria-label="Toggle theme"
+        >
+          {isDark ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
+        
+        <div className="flex justify-center mb-8">
+          <Logo className="h-14 w-14 text-brand-500" />
+        </div>
+
+        {status === 'loading' && (
+          <div className="space-y-6">
+            <Loader2 className="w-16 h-16 text-brand-500 animate-spin mx-auto" />
+            <h2 className="text-2xl font-serif text-textprimary">Verifying your email...</h2>
+            <p className="text-textmuted">Please wait a moment.</p>
+          </div>
+        )}
+
+        {status === 'success' && (
+          <div className="space-y-6">
+            <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
+            <h2 className="text-2xl font-serif text-textprimary">Email Verified!</h2>
+            <p className="text-textmuted">Redirecting you to login...</p>
+          </div>
+        )}
+
+        {status === 'error' && (
+          <div className="space-y-6">
+            <XCircle className="w-16 h-16 text-red-500 mx-auto" />
+            <h2 className="text-2xl font-serif text-textprimary">Verification Failed</h2>
+            <p className="text-textmuted">{message}</p>
+            
+            <Link 
+              to="/login"
+              className="inline-flex items-center justify-center gap-2 btn-primary w-full py-3 mt-4"
+            >
+              <ArrowLeft size={18} /> Back to Login
+            </Link>
+          </div>
+        )}
+      </motion.div>
+    </div>
+  )
+}

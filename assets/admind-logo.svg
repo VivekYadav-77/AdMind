@@ -1,0 +1,29 @@
+<svg 
+  xmlns="http://www.w3.org/2000/svg" 
+  viewBox="0 0 24 24" 
+  width="240" 
+  height="240" 
+  fill="none" 
+  stroke-width="2" 
+  stroke-linecap="round" 
+  stroke-linejoin="round" 
+>
+  <path d="M12 2v2" stroke="#22c55e" stroke-opacity="0.6" />
+  <path d="M12 20v2" stroke="#22c55e" stroke-opacity="0.6" />
+  <path d="M4 12H2" stroke="#22c55e" stroke-opacity="0.6" />
+  <path d="M22 12h-2" stroke="#22c55e" stroke-opacity="0.6" />
+  <circle cx="12" cy="12" r="6" stroke="#16a34a" fill="#16a34a" fill-opacity="0.1" />
+  <path d="M12 9v6" stroke="#15803d" />
+  <path d="M9 12h6" stroke="#15803d" />
+  <circle cx="12" cy="12" r="2" fill="#22c55e" stroke="#ffffff" />
+  
+  <!-- Node connections -->
+  <circle cx="17.5" cy="6.5" r="1.5" stroke="#22c55e" fill="#22c55e" />
+  <path d="M16.5 7.5L14 10" stroke="#16a34a" stroke-opacity="0.5" />
+  
+  <circle cx="6.5" cy="17.5" r="1.5" stroke="#22c55e" fill="#22c55e" />
+  <path d="M7.5 16.5L10 14" stroke="#16a34a" stroke-opacity="0.5" />
+  
+  <circle cx="6.5" cy="6.5" r="1.5" stroke="#22c55e" fill="#22c55e" />
+  <path d="M7.5 7.5L10 10" stroke="#16a34a" stroke-opacity="0.5" />
+</svg>

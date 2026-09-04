@@ -2,6 +2,261 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  margin: 0;
+@layer base {
+  :root {
+    --brand-50: 240 253 244;
+    --brand-100: 220 252 231;
+    --brand-400: 34 197 94;
+    --brand-500: 22 163 74;
+    --brand-600: 21 128 61;
+    --brand-900: 20 83 45;
+    --bg-base: #F0FDF4;
+    --bg-panel: #FFFFFF;
+    --bg-panel-hover: #DCFCE7;
+    --text-primary: #14532D;
+    --text-secondary: #166534;
+    --text-muted: #4D7C5F;
+    --border-warm: rgba(22, 101, 52, 0.12);
+    --bg-glass: rgba(255, 255, 255, 0.95);
+    --brand-glow-subtle: rgba(22, 163, 74, 0.15);
+    --brand-glow-light: rgba(22, 163, 74, 0.3);
+    --brand-glow: rgba(22, 163, 74, 0.4);
+    --brand-glow-strong: rgba(22, 163, 74, 0.5);
+    --brand-glow-max: rgba(22, 163, 74, 0.6);
+  }
+  
+  .dark {
+    --brand-50: 253 248 245;
+    --brand-100: 249 236 230;
+    --brand-400: 232 131 106;
+    --brand-500: 217 119 87;
+    --brand-600: 194 98 67;
+    --brand-900: 84 35 22;
+    --bg-base: #09090B;
+    --bg-panel: #18181B;
+    --bg-panel-hover: #27272A;
+    --text-primary: #FAFAFA;
+    --text-secondary: #E4E4E7;
+    --text-muted: #A1A1AA;
+    --border-warm: rgba(255, 255, 255, 0.1);
+    --bg-glass: rgba(24, 24, 24, 0.95);
+    --brand-glow-subtle: rgba(217, 119, 87, 0.15);
+    --brand-glow-light: rgba(217, 119, 87, 0.3);
+    --brand-glow: rgba(217, 119, 87, 0.4);
+    --brand-glow-strong: rgba(217, 119, 87, 0.5);
+    --brand-glow-max: rgba(217, 119, 87, 0.6);
+  }
+
+
+  body {
+    @apply font-sans antialiased text-textprimary bg-bgbase transition-colors duration-300;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif font-normal text-textprimary;
+  }
+}
+
+/* Custom Scrollbar for a premium feel */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-bgpanelhover rounded-full border border-borderwarm;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-textmuted;
+}
+
+/* Panel utilities - Clean, solid */
+.glass {
+  @apply bg-bgpanel border border-borderwarm shadow-xl;
+}
+
+.glass-panel {
+  @apply bg-bgpanel border border-borderwarm shadow-lg;
+}
+
+.card-warm {
+  @apply bg-bgpanel border border-borderwarm rounded-2xl transition-all hover:border-brand-400 shadow-md hover:shadow-xl;
+}
+
+.glow-text {
+  /* Removed glow for cleaner typography */
+}
+
+.btn-primary {
+  @apply bg-brand-500 hover:bg-brand-600 text-white px-5 py-2.5 rounded-xl font-semibold shadow-sm hover:shadow transition-all duration-200 active:scale-[0.98];
+}
+
+.btn-secondary {
+  @apply bg-bgpanelhover hover:bg-borderwarm border border-borderwarm text-textprimary px-5 py-2.5 rounded-xl font-medium transition-all duration-200 active:scale-[0.98];
+}
+
+/* Subtle noise texture removed for glossy look */
+.grain-overlay {
+  display: none;
+}
+
+/* Background Animation Layer */
+@keyframes kite-drift {
+  0%   { transform: translate(0px, 0px) rotate(-5deg); }
+  33%  { transform: translate(30px, -20px) rotate(3deg); }
+  66%  { transform: translate(-15px, 15px) rotate(-8deg); }
+  100% { transform: translate(0px, 0px) rotate(-5deg); }
+}
+
+@keyframes icon-float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33%      { transform: translateY(-15px) rotate(3deg); }
+  66%      { transform: translateY(10px) rotate(-2deg); }
+}
+
+@keyframes icon-float-reverse {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33%      { transform: translateY(15px) rotate(-3deg); }
+  66%      { transform: translateY(-10px) rotate(2deg); }
+}
+
+@keyframes svg-draw {
+  0% { stroke-dashoffset: 1; opacity: 0; }
+  20% { opacity: 1; }
+  80% { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0.2; } /* Pulsing effect at end */
+}
+
+@keyframes svg-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+/* Base Styles for Drawing SVGs */
+.svg-draw-path, .svg-draw-path-dashed {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: svg-draw 8s cubic-bezier(0.4, 0, 0.2, 1) forwards infinite alternate;
+}
+
+.svg-draw-path-dashed {
+  /* Dashed paths might need special handling, but pathLength=1 normalizes them mostly. 
+     If we want them to look strictly dashed, we omit pathLength and use a fixed stroke-dasharray. */
+  stroke-dasharray: 4 4;
+  stroke-dashoffset: 0;
+  animation: svg-pulse 6s ease-in-out infinite alternate;
+}
+
+/* Respect accessibility preferences */
+@media (prefers-reduced-motion: reduce) {
+  .bg-animated-layer *, .svg-draw-path, .svg-draw-path-dashed { 
+    animation: none !important; 
+    stroke-dashoffset: 0 !important;
+    opacity: 0.4 !important;
+  }
+}
+
+/* Subtle, elegant styling for the background SVGs */
+.bg-svg-icon {
+  color: var(--brand-500); /* Use a subtle brand color */
+  opacity: 0.15;
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.3)); /* Glowing effect */
+  transition: all 0.5s ease;
+}
+
+/* Individual Icon Overrides (Optional for variety) */
+.bg-svg-icon:nth-child(even) {
+  color: var(--brand-400);
+  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.3));
+}
+
+.bg-kite {
+  color: var(--brand-500);
+  opacity: 0.25;
+  filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.4));
+}
+
+.bg-animated-card {
+  background: rgba(255, 255, 255, 0.85);
+  opacity: 0.95;
+  backdrop-filter: blur(8px);
+}
+
+.dark .bg-animated-card {
+  opacity: 0.3;
+  backdrop-filter: blur(4px);
+  border-color: rgba(255,255,255,0.05);
+}
+
+/* Landing Page Specific Styles & Animations */
+
+@keyframes blob-drift {
+  0% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.landing-blob {
+  position: absolute;
+  filter: blur(100px);
+  border-radius: 50%;
+  animation: blob-drift 20s ease-in-out infinite;
+  opacity: 0.6;
+}
+
+.landing-shimmer-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.landing-shimmer-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  animation: shimmer 2.5s infinite;
+}
+
+.landing-gradient-text {
+  background: linear-gradient(to right, var(--text-primary), var(--text-muted));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Marquee animations for Wall of Love ─────────────────────────────────── */
+@keyframes marquee-ltr {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+@keyframes marquee-rtl {
+  0%   { transform: translateX(-50%); }
+  100% { transform: translateX(0); }
+}
+
+/* Pause on hover */
+.marquee-row:hover > div {
+  animation-play-state: paused !important;
 }

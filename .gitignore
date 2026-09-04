@@ -9,6 +9,13 @@ __pycache__/
 backend/.env
 backend/.env.*
 !backend/.env.example
+# Docker
+backend/Dockerfile.dev
+docker-compose*.yml
+
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
 
 # Python
 __pycache__/
