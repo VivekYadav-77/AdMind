@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { UserPlus, ArrowRight, Sun, Moon, Eye, EyeOff } from 'lucide-react'
+import { UserPlus, ArrowRight, ArrowLeft, Sun, Moon, Eye, EyeOff } from 'lucide-react'
 import { API } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import AnimatedBackground from '../components/AnimatedBackground'
@@ -38,9 +38,8 @@ export default function Signup() {
     setError(null)
     setLoading(true)
     try {
-      const data = await API.register(email, password)
-      login(data.access_token)
-      navigate('/app')
+      await API.register(name, email, password)
+      navigate('/check-email', { state: { email } })
     } catch (err) {
       setError(err.message)
     } finally {
@@ -98,6 +97,14 @@ export default function Signup() {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md"
         >
+          <Link 
+            to="/" 
+            className="inline-flex items-center gap-2 text-sm font-medium text-textmuted hover:text-textprimary transition-colors mb-8 group w-fit"
+          >
+            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform duration-300" />
+            Back to home
+          </Link>
+
           <div className="lg:hidden flex items-center gap-3 mb-10">
             <Logo className="h-10 w-10 text-brand-500" />
             <span className="text-2xl font-serif tracking-tight text-textprimary">AdMind</span>

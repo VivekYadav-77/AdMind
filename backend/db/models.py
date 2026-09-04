@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, Float, Integer, JSON, String, ForeignKey
+from sqlalchemy import Column, DateTime, Float, Integer, JSON, String, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -12,7 +12,14 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
+    name = Column(String, nullable=True)
     hashed_password = Column(String, nullable=False)
+    is_superadmin = Column(Boolean, default=False)
+    is_verified = Column(Boolean, default=False)
+    is_banned = Column(Boolean, default=False)
+    login_blocked = Column(Boolean, default=False)
+    email_blocked = Column(Boolean, default=False)
+    last_seen_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     analysis_jobs = relationship("AnalysisJob", back_populates="user")
@@ -50,6 +57,7 @@ class AnalysisJob(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     workspace_id = Column(Integer, ForeignKey("workspaces.id"), nullable=True) # nullable for backward compatibility
+    name = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     user = relationship("User", back_populates="analysis_jobs")
@@ -120,3 +128,76 @@ class CommunityReview(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     user = relationship("User")
+
+class SupportTicket(Base):
+    __tablename__ = "support_tickets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True) # Null for guests
+    guest_name = Column(String, nullable=True)
+    guest_email = Column(String, nullable=True)
+    category = Column(String, nullable=False) # e.g., "Bug", "Feature", "Billing", "Other"
+    subject = Column(String, nullable=False)
+    status = Column(String, default="open") # open, in_progress, resolved, closed
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    user = relationship("User")
+    messages = relationship("TicketMessage", back_populates="ticket", cascade="all, delete-orphan")
+
+
+class TicketMessage(Base):
+    __tablename__ = "ticket_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    ticket_id = Column(Integer, ForeignKey("support_tickets.id"), nullable=False)
+    sender_type = Column(String, nullable=False) # "user", "admin", "guest"
+    message = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    ticket = relationship("SupportTicket", back_populates="messages")
+
+
+class EmailToken(Base):
+    __tablename__ = "email_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    token_hash = Column(String, unique=True, index=True, nullable=False)
+    token_type = Column(String, nullable=False) # "verify" or "reset"
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    used_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
+
+
+class EmailLog(Base):
+    __tablename__ = "email_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    email_to = Column(String, nullable=False)
+    email_type = Column(String, nullable=False)
+    status = Column(String, nullable=False)
+    ip_address = Column(String, nullable=True)
+    user_agent = Column(String, nullable=True)
+    gas_response = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User")
+
+
+class UserFeatureControl(Base):
+    __tablename__ = "user_feature_controls"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    feature = Column(String, nullable=False)   # e.g. "analyze", "tools", "chat", etc.
+    is_blocked = Column(Boolean, default=False)
+    reason = Column(String, nullable=True)     # optional admin note
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    updated_by = Column(Integer, ForeignKey("users.id"), nullable=True)  # admin who changed it
+
+    user = relationship("User", foreign_keys=[user_id])
+    updater = relationship("User", foreign_keys=[updated_by])

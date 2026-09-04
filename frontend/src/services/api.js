@@ -1,3 +1,5 @@
+import { apiFetch } from './apiFetch'
+
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 function apiUrl(path) {
@@ -21,22 +23,48 @@ function getAuthHeaders() {
 }
 
 export const API = {
-  register: async (email, password) => {
-    const res = await fetch(apiUrl('/register'), {
+  register: async (name, email, password) => {
+    const res = await apiFetch(apiUrl('/register'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    })
-    if (!res.ok) {
-      let errorMessage = 'Registration failed'
-      try {
-        const data = await res.json()
-        errorMessage = data.detail || errorMessage
-      } catch (e) {
-        errorMessage = `Server Error: ${res.status} ${res.statusText}`
-      }
-      throw new Error(errorMessage)
-    }
+      body: JSON.stringify({ name, email, password })
+    }, 'Registration failed')
+    return res.json()
+  },
+
+  verifyEmail: async (token) => {
+    const res = await apiFetch(apiUrl('/auth/verify-email'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token })
+    }, 'Verification failed')
+    return res.json()
+  },
+
+  resendVerification: async (email) => {
+    const res = await apiFetch(apiUrl('/auth/resend-verification'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    }, 'Failed to resend')
+    return res.json()
+  },
+
+  forgotPassword: async (email) => {
+    const res = await apiFetch(apiUrl('/auth/forgot-password'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
+    }, 'Failed to request password reset')
+    return res.json()
+  },
+
+  resetPassword: async (token, newPassword) => {
+    const res = await apiFetch(apiUrl('/auth/reset-password'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, new_password: newPassword })
+    }, 'Failed to reset password')
     return res.json()
   },
 
@@ -45,41 +73,29 @@ export const API = {
     formData.append('username', email)
     formData.append('password', password)
 
-    const res = await fetch(apiUrl('/login'), {
+    const res = await apiFetch(apiUrl('/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: formData
-    })
-    if (!res.ok) {
-      let errorMessage = 'Login failed'
-      try {
-        const data = await res.json()
-        errorMessage = data.detail || errorMessage
-      } catch (e) {
-        errorMessage = `Server Error: ${res.status} ${res.statusText}`
-      }
-      throw new Error(errorMessage)
-    }
+    }, 'Login failed')
     return res.json()
   },
 
   // Workspaces
   getWorkspaces: async () => {
-    const res = await fetch(apiUrl('/workspaces'), {
+    const res = await apiFetch(apiUrl('/workspaces'), {
       method: 'GET',
       headers: getAuthHeaders()
-    })
-    if (!res.ok) throw new Error('Could not fetch workspaces')
+    }, 'Could not fetch workspaces')
     return res.json()
   },
 
   createWorkspace: async (name) => {
-    const res = await fetch(apiUrl('/workspaces'), {
+    const res = await apiFetch(apiUrl('/workspaces'), {
       method: 'POST',
       headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ name })
-    })
-    if (!res.ok) throw new Error('Could not create workspace')
+    }, 'Could not create workspace')
     return res.json()
   },
 
@@ -87,7 +103,6 @@ export const API = {
     const formData = new FormData()
     formData.append('file', file)
     
-    // Add configs from localStorage if available
     const wasteAlert = localStorage.getItem('threshold_wasteAlert')
     const minRoas = localStorage.getItem('threshold_minRoas')
     const aiModel = localStorage.getItem('ai_model')
@@ -98,21 +113,12 @@ export const API = {
     if (aiModel) formData.append('aiModel', aiModel)
     if (aiTemp) formData.append('aiTemperature', aiTemp)
     
-    const res = await fetch(apiUrl('/analyze'), { 
+    const res = await apiFetch(apiUrl('/analyze'), { 
       method: 'POST', 
       headers: getAuthHeaders(),
       body: formData 
-    })
-    
-    if (!res.ok) {
-      let errorMessage = 'Upload failed'
-      try {
-        const data = await res.json()
-        errorMessage = data.detail || errorMessage
-      } catch (e) {}
-      throw new Error(errorMessage)
-    }
-    return res.json() // returns { job_id: 123 }
+    }, 'Upload failed')
+    return res.json()
   },
 
   streamAnalysis: async (jobId) => {
@@ -126,198 +132,200 @@ export const API = {
     const formData = new FormData()
     formData.append('file', docxBlob, 'report.docx')
     
-    const res = await fetch(apiUrl('/export/pdf'), {
+    const res = await apiFetch(apiUrl('/export/pdf'), {
       method: 'POST',
       headers: getAuthHeaders(),
       body: formData
-    })
-    
-    if (!res.ok) throw new Error('PDF export failed')
+    }, 'PDF export failed')
     return res.blob()
   },
 
   getSampleCSV: async () => {
-    const res = await fetch(apiUrl('/sample-csv'))
-    if (!res.ok) {
-      throw new Error('Could not load sample CSV')
-    }
+    const res = await apiFetch(apiUrl('/sample-csv'), {}, 'Could not load sample CSV')
     const text = await res.text()
     return new File([text], 'sample_ads.csv', { type: 'text/csv' })
   },
 
   getHistory: async (page = 1, size = 10) => {
-    const res = await fetch(apiUrl(`/history?page=${page}&size=${size}`), {
+    const res = await apiFetch(apiUrl(`/history?page=${page}&size=${size}`), {
       method: 'GET',
       headers: getAuthHeaders()
-    })
-    if (!res.ok) {
-      throw new Error('Could not fetch analysis history')
-    }
+    }, 'Could not fetch analysis history')
     return res.json()
   },
 
   getJobDetails: async (jobId) => {
-    const res = await fetch(apiUrl(`/history/${jobId}`), {
+    const res = await apiFetch(apiUrl(`/history/${jobId}`), {
       method: 'GET',
       headers: getAuthHeaders()
-    })
-    if (!res.ok) {
-      throw new Error(`Could not fetch details for report #${jobId}`)
-    }
+    }, `Could not fetch details for report #${jobId}`)
+    return res.json()
+  },
+
+  renameAnalysis: async (jobId, name) => {
+    const res = await apiFetch(apiUrl(`/history/${jobId}/rename`), {
+      method: 'PATCH',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    }, 'Failed to rename analysis')
+    return res.json()
+  },
+
+  deleteAnalysis: async (jobId) => {
+    const res = await apiFetch(apiUrl(`/history/${jobId}`), {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    }, 'Failed to delete analysis')
     return res.json()
   },
 
   getTrends: async () => {
-    const res = await fetch(apiUrl('/history/trends'), {
+    const res = await apiFetch(apiUrl('/history/trends'), {
       method: 'GET',
       headers: getAuthHeaders()
-    })
-    if (!res.ok) {
-      throw new Error('Could not fetch historical trends')
-    }
+    }, 'Could not fetch historical trends')
+    return res.json()
+  },
+
+  getEmailAnalytics: async (page = 1, size = 20, logType = '', logStatus = '') => {
+    const res = await apiFetch(apiUrl(`/admin/email-analytics?page=${page}&size=${size}&log_type=${encodeURIComponent(logType)}&log_status=${encodeURIComponent(logStatus)}`), {
+      method: 'GET',
+      headers: getAuthHeaders()
+    }, 'Could not fetch email analytics')
     return res.json()
   },
 
   // Chat
   getChatHistory: async (jobId) => {
-    const res = await fetch(apiUrl(`/history/${jobId}/chat`), {
+    const res = await apiFetch(apiUrl(`/history/${jobId}/chat`), {
       method: 'GET',
       headers: getAuthHeaders()
-    })
-    if (!res.ok) throw new Error('Could not fetch chat history')
+    }, 'Could not fetch chat history')
     return res.json()
   },
 
   sendChatMessage: async (jobId, message) => {
-    const res = await fetch(apiUrl(`/history/${jobId}/chat`), {
+    const res = await apiFetch(apiUrl(`/history/${jobId}/chat`), {
       method: 'POST',
       headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ message })
-    })
-    if (!res.ok) {
-      let errorMessage = 'Failed to send message'
-      try {
-        const data = await res.json()
-        errorMessage = data.detail || errorMessage
-      } catch (e) {}
-      throw new Error(errorMessage)
-    }
+    }, 'Failed to send message')
     return res.json()
   },
 
   // Tools
   auditLandingPage: async (url) => {
-    const res = await fetch(apiUrl('/tools/audit-landing-page'), {
+    const res = await apiFetch(apiUrl('/tools/audit-landing-page'), {
       method: 'POST',
       headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ url })
-    })
-    if (!res.ok) {
-      throw new Error('Failed to audit landing page')
-    }
+    }, 'Failed to audit landing page')
     return res.json()
   },
 
   buildAudience: async (description) => {
-    const res = await fetch(apiUrl('/tools/audience-builder'), {
+    const res = await apiFetch(apiUrl('/tools/audience-builder'), {
       method: 'POST',
       headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ description })
-    })
-    if (!res.ok) {
-      throw new Error('Failed to build audience')
-    }
+    }, 'Failed to build audience')
     return res.json()
   },
 
   competitorTeardown: async (ad_copy) => {
-    const res = await fetch(apiUrl('/tools/competitor-teardown'), {
+    const res = await apiFetch(apiUrl('/tools/competitor-teardown'), {
       method: 'POST',
       headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ ad_copy })
-    })
-    if (!res.ok) {
-      throw new Error('Failed to tear down competitor ad')
-    }
+    }, 'Failed to tear down competitor ad')
     return res.json()
   },
 
   // Comments
   getComments: async (jobId) => {
-    const res = await fetch(apiUrl(`/history/${jobId}/comments`), {
+    const res = await apiFetch(apiUrl(`/history/${jobId}/comments`), {
       method: 'GET',
       headers: getAuthHeaders()
-    })
-    if (!res.ok) throw new Error('Could not fetch comments')
+    }, 'Could not fetch comments')
     return res.json()
   },
 
   addComment: async (jobId, targetKeyword, commentText) => {
-    const res = await fetch(apiUrl(`/history/${jobId}/comments`), {
+    const res = await apiFetch(apiUrl(`/history/${jobId}/comments`), {
       method: 'POST',
       headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ target_keyword: targetKeyword, comment_text: commentText })
-    })
-    if (!res.ok) throw new Error('Could not add comment')
+    }, 'Could not add comment')
     return res.json()
   },
 
   // AB Test Tracker
   getAbTests: async () => {
-    const res = await fetch(apiUrl('/workspaces/tests'), {
+    const res = await apiFetch(apiUrl('/workspaces/tests'), {
       method: 'GET',
       headers: getAuthHeaders()
-    })
-    if (!res.ok) throw new Error('Could not fetch AB tests')
+    }, 'Could not fetch AB tests')
     return res.json()
   },
 
   createAbTest: async (testName, variantA, variantB) => {
-    const res = await fetch(apiUrl('/workspaces/tests'), {
+    const res = await apiFetch(apiUrl('/workspaces/tests'), {
       method: 'POST',
       headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ test_name: testName, variant_a_copy: variantA, variant_b_copy: variantB })
-    })
-    if (!res.ok) throw new Error('Could not create AB test')
+    }, 'Could not create AB test')
     return res.json()
   },
 
   declareWinner: async (testId, winner) => {
-    const res = await fetch(apiUrl(`/workspaces/tests/${testId}/winner`), {
+    const res = await apiFetch(apiUrl(`/workspaces/tests/${testId}/winner`), {
       method: 'PUT',
       headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ winner })
-    })
-    if (!res.ok) throw new Error('Could not declare winner')
+    }, 'Could not declare winner')
     return res.json()
   },
 
   // Community Reviews
   getReviews: async () => {
-    const res = await fetch(apiUrl('/reviews'), {
+    const res = await apiFetch(apiUrl('/reviews'), {
       method: 'GET'
-      // No auth headers required for viewing
-    })
-    if (!res.ok) throw new Error('Could not fetch reviews')
+    }, 'Could not fetch reviews')
     return res.json()
   },
 
+  getMyReview: async () => {
+    // 401 means not logged in — return null gracefully without throwing
+    try {
+      const res = await fetch(apiUrl('/reviews/my'), {
+        method: 'GET',
+        headers: getAuthHeaders()
+      })
+      if (res.status === 401) return null
+      if (!res.ok) throw new Error('Could not fetch your review')
+      return res.json()
+    } catch (err) {
+      if (err.message.includes('Failed to fetch')) {
+        throw new Error('Unable to reach the server. Please check your connection and try again.')
+      }
+      throw err
+    }
+  },
+
   submitReview: async (rating, content) => {
-    const res = await fetch(apiUrl('/reviews'), {
+    const res = await apiFetch(apiUrl('/reviews'), {
       method: 'POST',
       headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify({ rating, content })
-    })
-    if (!res.ok) throw new Error('Could not submit review')
+    }, 'Could not submit review')
     return res.json()
   },
 
   deleteReview: async (id) => {
-    const res = await fetch(apiUrl(`/reviews/${id}`), {
+    const res = await apiFetch(apiUrl(`/reviews/${id}`), {
       method: 'DELETE',
       headers: getAuthHeaders()
-    })
-    if (!res.ok) throw new Error('Could not delete review')
+    }, 'Could not delete review')
     return res.json()
   }
 }

@@ -1,10 +1,10 @@
-import { History, LayoutDashboard, LogOut, Settings, ChevronDown, Plus, Wrench, FlaskConical, Zap, Sun, Moon } from 'lucide-react'
+import { History, LayoutDashboard, LogOut, Settings, ChevronDown, Plus, Wrench, FlaskConical, Zap, Sun, Moon, MessageSquare, Menu, X } from 'lucide-react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useWorkspace } from '../context/WorkspaceContext'
 import { useEffect, useState, useRef } from 'react'
 import clsx from 'clsx'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import Modal from './ui/Modal'
 import AnimatedBackground from './AnimatedBackground'
 import Logo from './Logo'
@@ -12,10 +12,11 @@ import Logo from './Logo'
 export default function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { logout, user } = useAuth()
+  const { logout, user, isAdmin } = useAuth()
   const { workspaces, activeWorkspace, changeWorkspace, createWorkspace } = useWorkspace()
 
   const [showWsDropdown, setShowWsDropdown] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const wsDropdownRef = useRef(null)
 
   useEffect(() => {
@@ -70,6 +71,11 @@ export default function Layout() {
       setIsSubmittingWs(false)
     }
   }
+  
+  // Close mobile menu when navigating
+  useEffect(() => {
+    setIsMobileMenuOpen(false)
+  }, [location.pathname])
 
   const navItems = [
     { name: 'Dashboard', path: '/app', icon: LayoutDashboard },
@@ -77,13 +83,15 @@ export default function Layout() {
     { name: 'History', path: '/app/history', icon: History },
     { name: 'AI Tools', path: '/app/tools', icon: Wrench },
     { name: 'A/B Tracker', path: '/app/tests', icon: FlaskConical },
+    { name: 'Community', path: '/community', icon: MessageSquare },
+    { name: 'Support', path: '/app/support', icon: MessageSquare },
     { name: 'Settings', path: '/app/settings', icon: Settings }
   ]
 
-  const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : 'U'
+  const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : user?.email ? user.email.charAt(0).toUpperCase() : 'U'
 
   return (
-    <div className="relative flex min-h-screen bg-bgbase text-textprimary font-sans selection:bg-brand-500/30 transition-colors duration-300" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+    <div className="relative flex flex-col min-h-screen bg-bgbase text-textprimary font-sans selection:bg-brand-500/30 transition-colors duration-300" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
       
       {/* Background Blobs matching the landing page */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
@@ -94,126 +102,233 @@ export default function Layout() {
 
       <AnimatedBackground density="low" showKite={false} />
       <div className="grain-overlay print:hidden" />
-      {/* Sidebar */}
-      <aside className="w-64 flex-shrink-0 flex flex-col bg-bgpanel border-r border-borderwarm z-10 relative print:hidden">
-        <div className="flex h-20 items-center px-6 border-b border-borderwarm relative z-10">
-          <div className="flex items-center gap-3">
-            <Logo className="h-8 w-8 text-brand-500" />
-            <span className="text-xl font-bold tracking-tight text-textprimary">AdMind</span>
+      
+      {/* Top Navbar */}
+      <nav className="sticky top-0 z-50 w-full bg-bgpanel/80 backdrop-blur-md border-b border-borderwarm print:hidden transition-colors duration-300">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between">
+            {/* Logo area */}
+            <div className="flex items-center gap-3">
+              <Logo className="h-8 w-8 text-brand-500" />
+              <span className="text-xl font-bold tracking-tight text-textprimary hidden sm:block">AdMind</span>
+            </div>
+
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex flex-1 justify-center px-4 xl:px-8 overflow-hidden">
+              <div className="flex space-x-1 lg:space-x-2">
+                {navItems.map((item) => {
+                  const isActive = item.path === '/app' 
+                    ? location.pathname === '/app' 
+                    : location.pathname.startsWith(item.path)
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.path}
+                      className={clsx(
+                        "flex items-center gap-2 px-3 xl:px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300",
+                        isActive
+                          ? "bg-brand-500/10 text-brand-600 dark:text-brand-400 font-semibold"
+                          : "text-textmuted hover:bg-bgpanelhover hover:text-textprimary"
+                      )}
+                    >
+                      <item.icon size={16} className={clsx(isActive ? "text-brand-600 dark:text-brand-400" : "text-textmuted")} />
+                      <span className="hidden xl:inline">{item.name}</span>
+                      {/* Show icon only on smaller desktop screens to save space if needed, or hide text for some */}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Right Controls */}
+            <div className="hidden lg:flex items-center gap-3 xl:gap-4 shrink-0">
+              {isAdmin && (
+                <Link 
+                  to="/admin" 
+                  className="flex items-center gap-2 bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-500 hover:text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-all duration-300"
+                >
+                  Admin
+                </Link>
+              )}
+
+              <button
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className="p-2.5 rounded-xl bg-bgpanelhover hover:bg-bgpanel border border-borderwarm text-textmuted hover:text-textprimary transition-all duration-300"
+                title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              >
+                {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
+
+              <div className="relative" ref={wsDropdownRef}>
+                <button 
+                  onClick={() => setShowWsDropdown(!showWsDropdown)}
+                  className="flex items-center gap-2 bg-bgpanelhover hover:bg-bgpanel border border-borderwarm px-4 py-2 rounded-xl text-sm font-medium text-textprimary transition-colors"
+                >
+                  <span className="truncate max-w-[120px]">{activeWorkspace ? activeWorkspace.name : 'Loading...'}</span>
+                  <ChevronDown size={16} className="text-textmuted" />
+                </button>
+                
+                {showWsDropdown && (
+                  <div className="absolute right-0 mt-2 w-56 bg-bgpanel border border-borderwarm rounded-2xl shadow-xl overflow-hidden z-50">
+                    <div className="p-2 space-y-1">
+                      {workspaces.map(ws => (
+                        <button
+                          key={ws.id}
+                          onClick={() => {
+                            changeWorkspace(ws.id)
+                            setShowWsDropdown(false)
+                          }}
+                          className={clsx(
+                            "w-full text-left px-4 py-2.5 rounded-xl text-sm transition-colors",
+                            activeWorkspace?.id === ws.id
+                              ? "bg-brand-500/10 text-brand-600 dark:text-brand-400 font-medium" 
+                              : "text-textmuted hover:bg-bgpanelhover"
+                          )}
+                        >
+                          {ws.name}
+                        </button>
+                      ))}
+                      <div className="h-px bg-borderwarm my-2" />
+                      <button
+                        onClick={() => setShowNewWsModal(true)}
+                        className="w-full flex items-center gap-2 text-left px-4 py-2.5 rounded-xl text-sm text-textmuted hover:bg-bgpanelhover transition-colors"
+                      >
+                        <Plus size={16} /> New Workspace
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <motion.button
+                  whileHover={{ y: -1 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    navigate('/app/settings')
+                    setShowWsDropdown(false)
+                  }}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-bgpanel border border-borderwarm font-bold text-textprimary hover:bg-bgpanelhover transition-colors"
+                  title="Go to Settings"
+                >
+                  {userInitial}
+                </motion.button>
+              </div>
+            </div>
+
+            {/* Mobile menu button */}
+            <div className="lg:hidden flex items-center gap-2">
+              <button
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className="p-2 rounded-xl text-textmuted hover:text-textprimary"
+              >
+                {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+              </button>
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="p-2 rounded-xl text-textmuted hover:text-textprimary bg-bgpanelhover transition-colors"
+              >
+                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+            </div>
           </div>
         </div>
-        
-        <nav className="flex-1 mt-8 px-4 space-y-2 relative z-10">
-          {navItems.map((item) => {
-            const isActive = item.path === '/app' 
-              ? location.pathname === '/app' 
-              : location.pathname.startsWith(item.path)
-            return (
-              <Link
-                key={item.name}
-                to={item.path}
-                className={clsx(
-                  "group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300",
-                  isActive
-                    ? "bg-brand-500/10 text-brand-600 dark:text-brand-400 font-semibold"
-                    : "text-textmuted hover:bg-bgpanelhover hover:text-textprimary"
-                )}
-              >
-                <item.icon size={18} className={clsx(isActive ? "text-brand-600 dark:text-brand-400" : "text-textmuted group-hover:text-textprimary transition-colors")} />
-                {item.name}
-              </Link>
-            )
-          })}
-        </nav>
-      </aside>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden z-10">
-        <header className="h-24 flex items-center justify-between px-10 shrink-0">
-          <h1 className="text-2xl font-bold text-textprimary tracking-tight">
-            {location.pathname === '/app' 
-              ? 'Campaign Dashboard' 
-              : location.pathname.startsWith('/app/history/')
-              ? 'Detailed Analysis Report'
-              : location.pathname === '/app/history'
-              ? 'Analysis History'
-              : location.pathname.startsWith('/app/tools')
-              ? 'AI Marketing Tools'
-              : location.pathname.startsWith('/app/tests')
-              ? 'A/B Test Tracking'
-              : location.pathname === '/app/settings'
-              ? 'System Settings'
-              : 'Overview'}
-          </h1>
-          
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-2.5 rounded-xl bg-bgpanelhover hover:bg-bgpanel border border-borderwarm text-textmuted hover:text-textprimary transition-all duration-300"
-              title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        {/* Mobile Navigation Menu */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="lg:hidden bg-bgpanel border-b border-borderwarm overflow-hidden shadow-lg"
             >
-              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
+              <div className="px-4 py-4 space-y-1">
+                {navItems.map((item) => {
+                  const isActive = item.path === '/app' 
+                    ? location.pathname === '/app' 
+                    : location.pathname.startsWith(item.path)
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.path}
+                      className={clsx(
+                        "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300",
+                        isActive
+                          ? "bg-brand-500/10 text-brand-600 dark:text-brand-400 font-semibold"
+                          : "text-textmuted hover:bg-bgpanelhover hover:text-textprimary"
+                      )}
+                    >
+                      <item.icon size={18} className={clsx(isActive ? "text-brand-600 dark:text-brand-400" : "text-textmuted")} />
+                      {item.name}
+                    </Link>
+                  )
+                })}
+                
+                {isAdmin && (
+                  <Link 
+                    to="/admin" 
+                    className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold text-orange-600 dark:text-orange-400 hover:bg-orange-500/10 transition-colors"
+                  >
+                    Admin Panel
+                  </Link>
+                )}
 
-            <div className="relative" ref={wsDropdownRef}>
-              <button 
-                onClick={() => setShowWsDropdown(!showWsDropdown)}
-                className="flex items-center gap-2 bg-bgpanelhover hover:bg-bgpanel border border-borderwarm px-4 py-2.5 rounded-xl text-sm font-medium text-textprimary transition-colors"
-              >
-                {activeWorkspace ? activeWorkspace.name : 'Loading...'}
-                <ChevronDown size={16} className="text-textmuted" />
-              </button>
-              
-              {showWsDropdown && (
-                <div className="absolute right-0 mt-2 w-56 bg-bgpanel border border-borderwarm rounded-2xl shadow-xl overflow-hidden z-50">
-                  <div className="p-2 space-y-1">
+                <div className="h-px bg-borderwarm my-2" />
+                
+                {/* Mobile Workspace Selection */}
+                <div className="px-4 py-2">
+                  <div className="text-xs font-semibold text-textmuted uppercase tracking-wider mb-2">Workspace</div>
+                  <div className="flex flex-wrap gap-2">
                     {workspaces.map(ws => (
                       <button
                         key={ws.id}
                         onClick={() => {
                           changeWorkspace(ws.id)
-                          setShowWsDropdown(false)
+                          setIsMobileMenuOpen(false)
                         }}
                         className={clsx(
-                          "w-full text-left px-4 py-2.5 rounded-xl text-sm transition-colors",
+                          "px-3 py-1.5 rounded-lg text-sm transition-colors border",
                           activeWorkspace?.id === ws.id
-                            ? "bg-brand-500/10 text-brand-600 dark:text-brand-400 font-medium" 
-                            : "text-textmuted hover:bg-bgpanelhover"
+                            ? "bg-brand-500/10 border-brand-500/30 text-brand-600 dark:text-brand-400" 
+                            : "bg-bgbase border-borderwarm text-textmuted"
                         )}
                       >
                         {ws.name}
                       </button>
                     ))}
-                    <div className="h-px bg-borderwarm my-2" />
                     <button
-                      onClick={() => setShowNewWsModal(true)}
-                      className="w-full flex items-center gap-2 text-left px-4 py-2.5 rounded-xl text-sm text-textmuted hover:bg-bgpanelhover transition-colors"
+                      onClick={() => {
+                        setShowNewWsModal(true)
+                        setIsMobileMenuOpen(false)
+                      }}
+                      className="px-3 py-1.5 rounded-lg text-sm transition-colors border border-dashed border-borderwarm text-textmuted hover:text-textprimary flex items-center gap-1"
                     >
-                      <Plus size={16} /> New Workspace
+                      <Plus size={14} /> New
                     </button>
                   </div>
                 </div>
-              )}
-            </div>
+                
+                <div className="h-px bg-borderwarm my-2" />
+                
+                <Link
+                  to="/app/settings"
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-textmuted hover:bg-bgpanelhover hover:text-textprimary"
+                >
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-bgbase border border-borderwarm font-bold text-xs text-textprimary">
+                    {userInitial}
+                  </div>
+                  Account Settings
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </nav>
 
-            <div>
-              <motion.button
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => {
-                  navigate('/app/settings')
-                  setShowWsDropdown(false)
-                }}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-bgpanel border border-borderwarm font-bold text-textprimary hover:bg-bgpanelhover transition-colors"
-                title="Go to Settings"
-              >
-                {userInitial}
-              </motion.button>
-            </div>
-          </div>
-        </header>
-
-        <div className="p-8 max-w-7xl mx-auto w-full h-full overflow-auto print:p-0 print:h-auto print:overflow-visible print:max-w-none print:block">
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col relative z-10 w-full">
+        <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto w-full flex-1 print:p-0 print:block overflow-auto">
           <Outlet />
         </div>
       </main>

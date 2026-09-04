@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { LogIn, ArrowRight, Sun, Moon, Eye, EyeOff } from 'lucide-react'
+import { LogIn, ArrowRight, ArrowLeft, Sun, Moon, Eye, EyeOff } from 'lucide-react'
 import { API } from '../services/api'
 import { useAuth } from '../context/AuthContext'
 import AnimatedBackground from '../components/AnimatedBackground'
@@ -13,8 +13,14 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
+  const [resendStatus, setResendStatus] = useState('idle')  // idle, loading, success, error
+  const [resendCooldown, setResendCooldown] = useState(0)
+  const [resendMessage, setResendMessage] = useState('')
   const navigate = useNavigate()
+  const location = useLocation()
   const { login } = useAuth()
+  
+  const successMessage = location.state?.message
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('theme')
@@ -32,6 +38,12 @@ export default function Login() {
     }
   }, [isDarkMode])
 
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const timer = setInterval(() => setResendCooldown(c => c - 1), 1000)
+    return () => clearInterval(timer)
+  }, [resendCooldown])
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError(null)
@@ -41,9 +53,22 @@ export default function Login() {
       login(data.access_token)
       navigate('/app')
     } catch (err) {
-      setError(err.message)
+      setError(err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleResendVerification = async () => {
+    setResendStatus('loading')
+    try {
+      const res = await API.resendVerification(email)
+      setResendMessage(res.message || 'Check your inbox for further instructions.')
+      setResendCooldown(60)
+      setResendStatus('success')
+    } catch (err) {
+      setResendMessage(err.message || 'Failed to resend.')
+      setResendStatus('error')
     }
   }
 
@@ -97,6 +122,14 @@ export default function Login() {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md"
         >
+          <Link 
+            to="/" 
+            className="inline-flex items-center gap-2 text-sm font-medium text-textmuted hover:text-textprimary transition-colors mb-8 group w-fit"
+          >
+            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform duration-300" />
+            Back to home
+          </Link>
+
           <div className="lg:hidden flex items-center gap-3 mb-10">
             <Logo className="h-10 w-10 text-brand-500" />
             <span className="text-2xl font-serif tracking-tight text-textprimary">AdMind</span>
@@ -108,9 +141,59 @@ export default function Login() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
+            {successMessage && (
+              <div className="rounded-xl bg-green-500/10 p-4 text-sm text-green-500 border border-green-500/20 font-medium">
+                {successMessage}
+              </div>
+            )}
+            
             {error && (
               <div className="rounded-xl bg-red-500/10 p-4 text-sm text-red-400 border border-red-500/20 font-medium">
-                {error}
+                {error.message || String(error)}
+                {error.verificationRequired && (
+                  <div className="mt-2">
+                    {resendStatus === 'idle' && (
+                      <button 
+                        type="button" 
+                        onClick={handleResendVerification}
+                        className="text-brand-400 hover:text-brand-300 underline transition-colors"
+                      >
+                        Resend verification email
+                      </button>
+                    )}
+                    {resendStatus === 'loading' && (
+                      <span className="text-brand-400 text-sm block">Sending...</span>
+                    )}
+                    {resendStatus === 'success' && (
+                      <div className="space-y-1">
+                        <span className="text-green-500 text-sm block">{resendMessage}</span>
+                        {resendCooldown > 0 ? (
+                          <span className="text-textmuted text-sm block">Resend again in {resendCooldown}s</span>
+                        ) : (
+                          <button 
+                            type="button" 
+                            onClick={handleResendVerification}
+                            className="text-brand-400 hover:text-brand-300 underline text-sm block transition-colors"
+                          >
+                            Resend again
+                          </button>
+                        )}
+                      </div>
+                    )}
+                    {resendStatus === 'error' && (
+                      <div className="space-y-1">
+                        <span className="text-red-400 text-sm block">{resendMessage}</span>
+                        <button 
+                          type="button" 
+                          onClick={() => setResendStatus('idle')}
+                          className="text-brand-400 hover:text-brand-300 underline text-sm block transition-colors"
+                        >
+                          Try again
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
             
@@ -127,7 +210,12 @@ export default function Login() {
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-textsecondary">Password</label>
+              <div className="flex items-center justify-between">
+                <label className="block text-sm font-medium text-textsecondary">Password</label>
+                <Link to="/forgot-password" className="text-sm text-brand-400 hover:text-brand-300 font-medium transition-colors">
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}

@@ -86,11 +86,11 @@ Respond ONLY with this JSON structure:
         "headline": "<your headline for test B>",
         "description": "<your description for test B>"
       }},
-      "poster_prompts": {
+      "poster_prompts": {{
         "ideogram": "<A complete poster prompt for Ideogram. Include the exact headline text in quotes, CTA label, visual style, subject, color palette, and --aspect-ratio 4:5 --style realism.>",
         "midjourney": "<A visual-first prompt for Midjourney v6. Describe the visual scene around the copy, specify composition zones, and use --ar 4:5 --style raw --v 6.1.>",
         "canva": "<A layout instruction for Canva AI / Adobe Firefly. Describe the poster as a structured design system with typography, color palette, and exact text placement.>"
-      },
+      }},
       "test_rationale": "<1-2 sentences explaining WHY testing these two angles will reveal which messaging resonates best with this audience>"
     }}
   ],

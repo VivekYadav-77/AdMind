@@ -149,7 +149,7 @@ export default function BlogPage() {
             <h4 className="font-bold text-textprimary mb-4">Company</h4>
             <ul className="space-y-3 text-textmuted text-sm">
               <li><Link to="/about" className="hover:text-brand-500 transition-colors">About Us</Link></li>
-              <li><a href="#" className="hover:text-brand-500 transition-colors">Contact</a></li>
+              <li><Link to="/contact" className="hover:text-brand-500 transition-colors">Contact</Link></li>
               <li><Link to="/privacy" className="hover:text-brand-500 transition-colors">Privacy Policy</Link></li>
               <li><Link to="/terms" className="hover:text-brand-500 transition-colors">Terms of Service</Link></li>
             </ul>

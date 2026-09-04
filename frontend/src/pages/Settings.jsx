@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { KeyRound, Check, AlertCircle, Briefcase, Wifi, WifiOff, LogOut } from 'lucide-react'
+import { KeyRound, Check, AlertCircle, Briefcase, Wifi, WifiOff, LogOut, MessageSquare, Star } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import { API } from '../services/api'
@@ -108,15 +108,15 @@ export default function Settings() {
           <div className="bg-bgpanel rounded-2xl p-6 border border-borderwarm shadow-sm flex flex-col items-center text-center">
             <div className="relative mb-4">
               <div className="h-20 w-20 rounded-full bg-brand-50 dark:bg-brand-500/10 flex items-center justify-center text-brand-500 text-3xl font-bold shadow-sm border border-brand-100 dark:border-brand-500/20">
-                {user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
+                {user?.name ? user.name.charAt(0).toUpperCase() : user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
               </div>
               <div className={`absolute bottom-0 right-0 h-5 w-5 rounded-full border-4 border-bgpanel transition-colors ${
                 apiStatus === 'online' ? 'bg-emerald-500' : apiStatus === 'offline' ? 'bg-red-500' : 'bg-amber-400 animate-pulse'
               }`} />
             </div>
 
-            <h2 className="text-xl font-bold text-textprimary tracking-tight truncate w-full px-2" title={user?.email || 'User Account'}>
-              {user?.email || 'User Account'}
+            <h2 className="text-xl font-bold text-textprimary tracking-tight truncate w-full px-2" title={user?.name || user?.email || 'User Account'}>
+              {user?.name || user?.email || 'User Account'}
             </h2>
 
             <div className="mt-6 pt-6 border-t border-borderwarm w-full space-y-3 text-left text-sm">
@@ -286,6 +286,26 @@ export default function Settings() {
                 </motion.button>
               </div>
             </form>
+          </div>
+
+          {/* Share Feedback / Community */}
+          <div className="bg-bgpanel rounded-2xl p-8 border border-borderwarm shadow-sm">
+            <h3 className="text-lg font-bold text-textprimary mb-4 flex items-center gap-2">
+              <MessageSquare size={20} className="text-brand-500" />
+              Community & Feedback
+            </h3>
+            <p className="text-sm text-textmuted mb-6 leading-relaxed">
+              Help us improve and let other marketers know how AdMind has impacted your campaigns. Your feedback means the world to us!
+            </p>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate('/community')}
+                className="btn-secondary px-5 py-2.5 rounded-xl font-medium flex items-center gap-2"
+              >
+                <Star size={16} className="text-amber-400" fill="currentColor" />
+                Write a Review
+              </button>
+            </div>
           </div>
 
         </div>
